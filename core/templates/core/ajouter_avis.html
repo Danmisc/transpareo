@@ -1,0 +1,251 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laisser un avis - Transpareo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        h1 {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        input[type="text"],
+        textarea,
+        input[type="number"],
+        input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .star-rating {
+            display: flex;
+            gap: 10px;
+            font-size: 30px;
+            margin-bottom: 15px;
+        }
+        
+        .star {
+            cursor: pointer;
+            color: #ddd;
+            transition: color 0.2s;
+        }
+        
+        .star:hover,
+        .star.active {
+            color: #FFC107;
+        }
+        
+        .criteria-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>✍️ Laisser un avis</h1>
+            <p class="subtitle">Partagez votre expérience avec ce logement</p>
+            
+            <div class="info-box">
+                <strong>🏠 Bien concerné :</strong>
+                {{ logement.titre }} - {{ logement.adresse }}
+            </div>
+            
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <!-- Note globale -->
+                <div class="form-group">
+                    <label>Votre note générale *</label>
+                    <div class="star-rating">
+                        <span class="star" data-rating="1">★</span>
+                        <span class="star" data-rating="2">★</span>
+                        <span class="star" data-rating="3">★</span>
+                        <span class="star" data-rating="4">★</span>
+                        <span class="star" data-rating="5">★</span>
+                    </div>
+                    <input type="hidden" name="note" id="note" required>
+                </div>
+                
+                <!-- Titre -->
+                <div class="form-group">
+                    <label for="titre">Titre de l'avis *</label>
+                    <input type="text" name="titre" id="titre" placeholder="Ex: Très bon rapport qualité-prix" required>
+                </div>
+                
+                <!-- Commentaire -->
+                <div class="form-group">
+                    <label for="commentaire">Votre avis *</label>
+                    <textarea name="commentaire" id="commentaire" placeholder="Décrivez votre expérience, les points forts, les points faibles, etc." required></textarea>
+                </div>
+                
+                <!-- Critères détaillés -->
+                <div class="form-group">
+                    <label>Évaluations détaillées (optionnel)</label>
+                    <div class="criteria-grid">
+                        <div>
+                            <label for="note_proprete" style="margin-bottom: 5px;">Propreté</label>
+                            <input type="number" name="note_proprete" min="1" max="5" placeholder="1-5">
+                        </div>
+                        <div>
+                            <label for="note_equipements" style="margin-bottom: 5px;">Équipements</label>
+                            <input type="number" name="note_equipements" min="1" max="5" placeholder="1-5">
+                        </div>
+                        <div>
+                            <label for="note_localisation" style="margin-bottom: 5px;">Localisation</label>
+                            <input type="number" name="note_localisation" min="1" max="5" placeholder="1-5">
+                        </div>
+                        <div>
+                            <label for="note_bailleur" style="margin-bottom: 5px;">Bailleur</label>
+                            <input type="number" name="note_bailleur" min="1" max="5" placeholder="1-5">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Justificatif -->
+                <div class="form-group">
+                    <label for="justificatif">Justificatif de location (optionnel)</label>
+                    <input type="file" name="justificatif" id="justificatif" accept=".pdf,.jpg,.jpeg,.png">
+                    <small style="color: #666; display: block; margin-top: 8px;">
+                        Pour vérifier votre statut de locataire (quittance, contrat, etc.)
+                    </small>
+                </div>
+                
+                <div class="info-box">
+                    💡 Votre avis sera publié après vérification par notre équipe. Cela peut prendre 24-48h.
+                </div>
+                
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary">
+                        ✅ Publier mon avis
+                    </button>
+                    <a href="{% url 'logement-detail' logement.id %}" class="btn btn-secondary" style="text-align: center; display: flex; align-items: center; justify-content: center;">
+                        ← Annuler
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Star rating
+        const stars = document.querySelectorAll('.star');
+        const noteInput = document.getElementById('note');
+        
+        stars.forEach(star => {
+            star.addEventListener('click', () => {
+                const rating = star.dataset.rating;
+                noteInput.value = rating;
+                stars.forEach(s => {
+                    if (s.dataset.rating <= rating) {
+                        s.classList.add('active');
+                    } else {
+                        s.classList.remove('active');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

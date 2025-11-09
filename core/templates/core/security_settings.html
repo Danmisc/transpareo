@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paramètres de sécurité - Transpareo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+        }
+        
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        
+        .card h2 {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .session-item {
+            padding: 20px;
+            border: 2px solid #f0f0f0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .session-current {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+        
+        .session-info {
+            flex: 1;
+        }
+        
+        .session-device {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        .session-details {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 10px;
+            background: #667eea;
+            color: white;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Paramètres de sécurité</h1>
+            <p>Gérez vos sessions actives et consultez l'historique de connexion</p>
+        </div>
+        
+        <!-- Sessions actives -->
+        <div class="card">
+            <h2>💻 Sessions actives ({{ active_sessions|length }})</h2>
+            {% if active_sessions %}
+                {% for session in active_sessions %}
+                <div class="session-item {% if session.is_current %}session-current{% endif %}">
+                    <div class="session-info">
+                        <div class="session-device">
+                            {{ session.device_name }}
+                            {% if session.is_current %}
+                                <span class="badge">Session actuelle</span>
+                            {% endif %}
+                        </div>
+                        <div class="session-details">
+                            <strong>{{ session.browser }}</strong> sur {{ session.os }}<br>
+                            IP: {{ session.ip_address }}<br>
+                            Dernière activité: {{ session.last_activity|date:"d/m/Y H:i" }}<br>
+                            Connecté depuis: {{ session.created_at|date:"d/m/Y H:i" }}
+                        </div>
+                    </div>
+                    {% if not session.is_current %}
+                    <a href="{% url 'revoke-session' session.id %}" class="btn btn-danger" 
+                       onclick="return confirm('Voulez-vous vraiment révoquer cette session ?')">
+                        Révoquer
+                    </a>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">Aucune session active</div>
+            {% endif %}
+        </div>
+        
+        <!-- Historique complet -->
+        <div class="card">
+            <h2>📜 Historique de connexion (20 derniers)</h2>
+            {% if login_history %}
+                {% for login in login_history %}
+                <div class="session-item" style="{% if not login.success %}background: #fff5f5;{% elif login.suspicious %}background: #fffef5;{% endif %}">
+                    <div class="session-info">
+                        <div class="session-device">
+                            {{ login.device_type }} - {{ login.browser }}
+                            {% if login.success %}
+                                <span class="badge" style="background: #28a745;">✓ Réussi</span>
+                            {% elif login.suspicious %}
+                                <span class="badge" style="background: #ffc107;">⚠ Suspect</span>
+                            {% else %}
+                                <span class="badge" style="background: #dc3545;">✗ Échoué</span>
+                            {% endif %}
+                        </div>
+                        <div class="session-details">
+                            <strong>{{ login.os }}</strong><br>
+                            IP: {{ login.ip_address }}<br>
+                            Date: {{ login.timestamp|date:"d/m/Y à H:i:s" }}<br>
+                            {% if login.reason %}Raison: {{ login.reason }}{% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">Aucun historique disponible</div>
+            {% endif %}
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="{% url 'profile' %}" class="btn btn-secondary">← Retour au profil</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,1399 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transpareo</title>
+  
+ 
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+  <link rel="stylesheet" href="{% static 'core/styles.css' %}">   
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.0/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.0/dist/MarkerCluster.Default.css" />
+
+</head>
+<body>
+
+ <nav class="navbar">
+  <a href="{% url 'landing-page' %}" id="logo">Transpareo</a>
+
+
+  <ul class="nav-center">
+    <li class="dropdown">
+      <button class="dropbtn" aria-haspopup="true" aria-expanded="false" aria-controls="dropdown-locataire">
+        Je suis locataire
+      </button>
+      <div id="dropdown-locataire" class="dropdown-content" role="menu" aria-hidden="true">
+        <div class="connect-section">
+          <h3>Transpareo Connect</h3>
+          <img src="D:\transpareo html version\public\11115.jpg" alt="Illustration Transpareo Connect" />
+          <p>Découvrez un réseau social qui met en relation directe propriétaires et locataires grâce à des fonctionnalités innovantes.</p>
+          <a href="D:\transpareo html version\pages\transpareo-connect.html">
+          <button class="btn-more">En savoir plus</button>
+          </a>
+        </div>
+        <div class="features-section">
+          <h3>Fonctionnalités locataire</h3>
+          <div class="feature-category">
+            <h4>Noter et trouver un logement</h4>
+            <ul>
+              <li><a href="noter-location.html">Noter votre location</a></li>
+              <li><a href="trouver-logement.html">Trouver votre futur logement</a></li>
+              <li><a href="temporalite.html">Sed do eiusmod tempor</a></li>
+            </ul>
+          </div>
+          <div class="feature-category">
+            <h4>Gestion administrative</h4>
+            <ul>
+              <li><a href="">Incididunt ut labore et dolore</a></li>
+              <li><a href="">Magna aliqua</a></li>
+              <li><a href="">Ut enim ad minim veniam</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </li>
+
+    <li class="dropdown">
+      <button class="dropbtn" aria-haspopup="true" aria-expanded="false" aria-controls="dropdown-proprietaire">
+        Je suis propriétaire
+      </button>
+      <div id="dropdown-proprietaire" class="dropdown-content" role="menu" aria-hidden="true">
+        <div class="connect-section">
+          <h3>Transpareo Connect</h3>
+          <p>Découvrez un réseau social qui met en relation directe propriétaires et locataires grâce à des fonctionnalités innovantes.</p>
+          <img src="D:\transpareo html version\public\11115.jpg" alt="Illustration Transpareo Connect" />
+          <a href="D:\transpareo html version\pages\transpareo-connect.html">
+          <button class="btn-more">En savoir plus</button>
+          </a>
+        </div>
+        <div class="features-section">
+          <h3>Fonctionnalités propriétaire</h3>
+          <div class="feature-category">
+            <h4>Mettre en avant son bien</h4>
+            <ul>
+              <li><a href="">Lorem ipsum dolor sit amet</a></li>
+              <li><a href="">Consectetur adipiscing elit</a></li>
+              <li><a href="">Sed do eiusmod tempor</a></li>
+            </ul>
+          </div>
+          <div class="feature-category">
+            <h4>Gestion locative</h4>
+            <ul>
+              <li><a href="">Portefeuille immobilier</a></li>
+              <li><a href="">Administratif</a> </li>
+              <li><a href="">Ut enim ad minim veniam</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </li>
+
+    <li><a href="{% url 'map' %}">Carte</a></li>
+    <li><a href="#">Contactez-nous</a></li>
+  </ul>
+
+  <ul class="user">
+  {% if user.is_authenticated %}
+    <li><a href="{% url 'profile' %}">{{ user.username }}</a></li>
+    <li><a href="{% url 'logout' %}">Déconnexion</a></li>
+  {% else %}
+    <li><a href="{% url 'login' %}">Se connecter</a></li>
+    <li><a href="{% url 'signup' %}">S'inscrire</a></li>
+  {% endif %}
+</ul>
+
+</nav>
+<div class="navbar-spacer"></div>
+
+<section class="hero-section">
+  <div class="hero-main">
+    
+    <!-- HERO LEFT - Contenu texte -->
+    <div class="hero-left">
+      <span class="hero-top-label">[translate:Découvrez la nouvelle expérience locative à Toulouse]</span>
+      <h1 class="hero-title">[translate:Placez] <span class="highlight">[translate:l'humain]</span> [translate:au cœur]<br> [translate:de la location à Toulouse]</h1>
+      <p class="hero-subtitle">[translate:Transpareo simplifie la mise en relation entre propriétaires et locataires avec des notes fiables, une gestion de dossier moderne et une carte interactive.]</p>
+      
+      <div class="hero-stats">
+        <div class="stat-block">
+          <span class="stat-value">82.6%</span>
+          <span class="stat-label">[translate:de satisfaction locataires]</span>
+        </div>
+        <div class="stat-block">
+          <span class="stat-value">+18 384</span>
+          <span class="stat-label">[translate:utilisateurs actifs sur Toulouse]</span>
+        </div>
+        <div class="stat-block">
+          <span class="stat-value">4.7★</span>
+          <span class="stat-label">[translate:note moyenne des logements]</span>
+        </div>
+      </div>
+      
+      <div class="hero-actions">
+        <button class="action-btn primary">[translate:Voir la carte complète →]</button>
+        <button class="action-btn secondary">[translate:S'inscrire →]</button>
+      </div>
+    </div>
+
+    <!-- HERO RIGHT - Recherche, Filtres et Carte -->
+    <div class="hero-right">
+      <div class="map-search-container">
+        
+        <!-- BARRE DE RECHERCHE -->
+        <div class="search-container map-search-bar" style="position: relative; z-index: 1001;">
+          <div class="search-bar mini">
+            <div class="search-input-wrapper">
+              <label class="search-label" for="addressInputRight">[translate:Adresse]</label>
+              <input 
+                type="text" 
+                id="addressInputRight" 
+                class="search-input"
+                placeholder="[translate:Rechercher une adresse]"
+                autocomplete="off"
+              >
+              <div class="suggestions-dropdown" id="suggestionsDropdownRight"></div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <!-- BOUTON FILTRES -->
+            <div class="filters-wrapper">
+              <button type="button" class="filters-btn" id="filters-btn-right">
+                [translate:Filtres]
+                <svg class="chevron-icon" width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              
+              <!-- DROPDOWN FILTRES -->
+              <div class="filters-dropdown" id="filtersDropdownRight">
+                
+                <!-- Type de logement -->
+                <div style="margin-bottom: 15px;">
+                  <h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 600; color: #333;">[translate:Type]</h4>
+                  <label class="filter-option"><input type="checkbox" class="filter-type" value="appartement"> [translate:Appartement]</label>
+                  <label class="filter-option"><input type="checkbox" class="filter-type" value="maison"> [translate:Maison]</label>
+                  <label class="filter-option"><input type="checkbox" class="filter-type" value="studio"> [translate:Studio]</label>
+                  <label class="filter-option"><input type="checkbox" class="filter-type" value="meuble"> [translate:Meublé]</label>
+                </div>
+                
+                <!-- Filtre Prix -->
+                <div style="margin-bottom: 15px;">
+                  <h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 600; color: #333;">[translate:Prix (€)]</h4>
+                  <input type="number" id="filter-prix-min" placeholder="[translate:Min]" style="width: 48%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+                  <input type="number" id="filter-prix-max" placeholder="[translate:Max]" style="width: 48%; margin-left: 4%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                
+                <!-- Filtre Surface -->
+                <div style="margin-bottom: 15px;">
+                  <h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 600; color: #333;">[translate:Surface (m²)]</h4>
+                  <input type="number" id="filter-surface-min" placeholder="[translate:Min]" style="width: 48%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+                  <input type="number" id="filter-surface-max" placeholder="[translate:Max]" style="width: 48%; margin-left: 4%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                
+                <!-- Filtre Chambres -->
+                <div style="margin-bottom: 15px;">
+                  <h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 600; color: #333;">[translate:Chambres]</h4>
+                  <select id="filter-chambres" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="">[translate:Toutes]</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4+</option>
+                  </select>
+                </div>
+                
+                <!-- Filtre Tri -->
+                <div style="margin-bottom: 15px;">
+                  <h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 600; color: #333;">[translate:Tri]</h4>
+                  <select id="filter-tri" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="-date_ajout">[translate:Plus récent]</option>
+                    <option value="prix_asc">[translate:Prix croissant]</option>
+                    <option value="prix_desc">[translate:Prix décroissant]</option>
+                    <option value="note_desc">[translate:Meilleure note]</option>
+                    <option value="vues_desc">[translate:Popularité]</option>
+                  </select>
+                </div>
+                
+                <!-- PHASE 2 : GÉOLOCALISATION -->
+                <div style="margin-bottom: 15px; border-top: 1px solid #ddd; padding-top: 15px;">
+                  <h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 600; color: #333;">🗺️ [translate:Rayon de recherche (km)]</h4>
+                  <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                    <input type="range" id="filter-radius-slider" min="1" max="50" value="10" style="flex: 1;">
+                    <input type="number" id="filter-radius-input" min="1" max="50" value="10" placeholder="km" style="width: 50px; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+                  </div>
+                  <button id="btn-localiser" style="width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                    📍 [translate:Me localiser]
+                  </button>
+                </div>
+                
+                <!-- Compteur Favoris dans les filtres -->
+                <div style="padding-top: 10px; border-top: 1px solid #ddd; text-align: center;">
+                  <p style="margin: 10px 0; font-size: 12px; color: #666;">
+                    ❤️ <span id="favori-count-filters">0</span> [translate:en favoris]
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- BOUTON RECHERCHE -->
+            <button type="button" class="search-btn" id="searchBtnRight">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+                <path d="M20 20l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        <!-- AFFICHAGE DE LA CARTE ET LISTE -->
+        <div class="map-and-list">
+          <div id="map"></div>
+          <div id="list-logements"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- SECTION PARTENAIRES -->
+  <section class="trusted-by-section">
+    <p class="trusted-by-title">[translate:Nos partenaires de confiance]</p>
+    <div class="trusted-banner-infinite">
+      <div class="trusted-logos-track">
+        <img src="{% static 'images/logo-lymerac.webp' %}" alt="[translate:Logo partenaire 1]" />
+        <img src="{% static 'images/7459344.jpg' %}" alt="[translate:Logo partenaire 2]" />
+        <img src="{% static 'images/143_p_stairs.jpg' %}" alt="[translate:Logo partenaire 3]" />
+        <img src="{% static 'images/7.jpg' %}" alt="[translate:Logo partenaire 4]" />
+        <img src="{% static 'images/OFAAX40.jpg' %}" alt="[translate:Logo partenaire 5]" />
+        <img src="{% static 'images/8041941.jpg' %}" alt="[translate:Logo partenaire 6]" />
+        
+        <!-- Répétition pour l'animation infinie -->
+        <img src="{% static 'images/logo-lymerac.webp' %}" alt="[translate:Logo partenaire 1]" />
+        <img src="{% static 'images/7459344.jpg' %}" alt="[translate:Logo partenaire 2]" />
+        <img src="{% static 'images/143_p_stairs.jpg' %}" alt="[translate:Logo partenaire 3]" />
+        <img src="{% static 'images/7.jpg' %}" alt="[translate:Logo partenaire 4]" />
+        <img src="{% static 'images/OFAAX40.jpg' %}" alt="[translate:Logo partenaire 5]" />
+        <img src="{% static 'images/8041941.jpg' %}" alt="[translate:Logo partenaire 6]" />
+      </div>
+    </div>
+  </section>
+  
+  <!-- VIDÉO -->
+  <div class="video-container">
+    <video autoplay muted loop playsinline>
+      <source src="{% static 'videos/video.mp4' %}" type="video/mp4"/>
+    </video>
+  </div>
+</section>
+
+<br><br><br><br><br><br><br><br><br><br><br><br> 
+    <div class="Big-text">
+  <h2>
+    <strong class="heading-bold">
+      Toute la transparence du logement locatif<br>
+      en un seul endroit.
+    </strong>
+  </h2>
+  <p class="description">
+    Fini les arnaques et les mauvaises surprises.<br>
+    Transpareo <span class="highlight-orange">révolutionne</span> vos recherches et locations avec des
+    <strong>avis vérifiés</strong>,
+    une <strong>carte interactive</strong>
+    et une communauté <strong>bienveillante</strong>.
+  </p>
+</div>
+<br><br><br><br>
+
+
+<section class="carrousel-section" aria-label="Logements populaires">
+  <div class="carrousel-header">
+    <h2 class="section-title">Logements populaires</h2>
+    <button class="btn-more" type="button" aria-label="Voir plus logements populaires">En voir plus</button>
+  </div>
+  <div class="carrousel-container">
+    <div class="carrousel" tabindex="0" aria-roledescription="carousel" aria-label="Logements populaires">
+      <article class="card" tabindex="0">
+        <img src="D:\transpareo html version\public\ac82af8e-5f8f-4b75-aa3a-2a07429e2bd9.webp" alt="[translate:Maison moderne]" class="card-image" />
+        <button class="btn-fav" aria-pressed="false" aria-label="Ajouter aux favoris">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+        <div class="card-content">
+          <h3 class="card-title">Villa Contemporaine</h3>
+          <p class="card-subtitle">[translate:Nice, France]</p>
+          <div class="card-details">
+            <div><span class="detail-icon">📐</span>120 m²</div>
+            <div><span class="detail-icon">💶</span>350 000 €</div>
+            <div class="stars">⭐️⭐️⭐️⭐️☆</div>
+          </div>
+        </div>
+      </article>
+      <article class="card" tabindex="0">
+        <img src="https://source.unsplash.com/320x180/?apartment,city" alt="[translate:Appartement en ville]" class="card-image" />
+        <button class="btn-fav" aria-pressed="false" aria-label="Ajouter aux favoris">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+        <div class="card-content">
+          <h3 class="card-title">Appartement Central</h3>
+          <p class="card-subtitle">[translate:Paris, France]</p>
+          <div class="card-details">
+            <div><span class="detail-icon">📐</span>85 m²</div>
+            <div><span class="detail-icon">💶</span>420 000 €</div>
+            <div class="stars">⭐️⭐️⭐️⭐️⭐️</div>
+          </div>
+        </div>
+      </article>
+      <article class="card" tabindex="0">
+        <img src="https://source.unsplash.com/320x180/?cottage,countryside" alt="[translate:Maison de campagne]" class="card-image" />
+        <button class="btn-fav" aria-pressed="false" aria-label="Ajouter aux favoris">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+        <div class="card-content">
+          <h3 class="card-title">Chalet Rustique</h3>
+          <p class="card-subtitle">[translate:Annecy, France]</p>
+          <div class="card-details">
+            <div><span class="detail-icon">📐</span>140 m²</div>
+            <div><span class="detail-icon">💶</span>290 000 €</div>
+            <div class="stars">⭐️⭐️⭐️☆☆</div>
+          </div>
+        </div>
+      </article>
+            <article class="card" tabindex="0">
+        <img src="https://source.unsplash.com/320x180/?loft,city" alt="[translate:Loft en ville]" class="card-image" />
+        <button class="btn-fav" aria-pressed="false" aria-label="Ajouter aux favoris">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+        <div class="card-content">
+          <h3 class="card-title">Loft Urbain</h3>
+          <p class="card-subtitle">[translate:Lille, France]</p>
+          <div class="card-details">
+            <div><span class="detail-icon">📐</span>100 m²</div>
+            <div><span class="detail-icon">💶</span>380 000 €</div>
+            <div class="stars">⭐️⭐️⭐️⭐️☆</div>
+          </div>
+        </div>
+      </article>
+      <article class="card" tabindex="0">
+        <img src="https://source.unsplash.com/320x180/?bungalow,nature" alt="[translate:Bungalow nature]" class="card-image" />
+        <button class="btn-fav" aria-pressed="false" aria-label="Ajouter aux favoris">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+        <div class="card-content">
+          <h3 class="card-title">Bungalow Nature</h3>
+          <p class="card-subtitle">[translate:Bordeaux, France]</p>
+          <div class="card-details">
+            <div><span class="detail-icon">📐</span>90 m²</div>
+            <div><span class="detail-icon">💶</span>315 000 €</div>
+            <div class="stars">⭐️⭐️⭐️☆☆</div>
+          </div>
+        </div>
+      </article>
+      <article class="card" tabindex="0">
+        <img src="https://source.unsplash.com/320x180/?penthouse,city" alt="[translate:Penthouse]" class="card-image" />
+        <button class="btn-fav" aria-pressed="false" aria-label="Ajouter aux favoris">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+        <div class="card-content">
+          <h3 class="card-title">Penthouse Luxe</h3>
+          <p class="card-subtitle">[translate:Nice, France]</p>
+          <div class="card-details">
+            <div><span class="detail-icon">📐</span>150 m²</div>
+            <div><span class="detail-icon">💶</span>920 000 €</div>
+            <div class="stars">⭐️⭐️⭐️⭐️⭐️</div>
+          </div>
+        </div>
+      </article>
+      <article class="card" tabindex="0">
+        <img src="https://source.unsplash.com/320x180/?villa,pool" alt="[translate:Villa avec piscine]" class="card-image" />
+        <button class="btn-fav" aria-pressed="false" aria-label="Ajouter aux favoris">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+        <div class="card-content">
+          <h3 class="card-title">Villa avec Piscine</h3>
+          <p class="card-subtitle">[translate:Montpellier, France]</p>
+          <div class="card-details">
+            <div><span class="detail-icon">📐</span>200 m²</div>
+            <div><span class="detail-icon">💶</span>1 100 000 €</div>
+            <div class="stars">⭐️⭐️⭐️⭐️⭐️</div>
+          </div>
+        </div>
+      </article>
+    </div>
+    <button class="arrow arrow-left" aria-label="Défiler à gauche">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <button class="arrow arrow-right" aria-label="Défiler à droite">
+      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+</section>
+
+<section class="carrousel-section" aria-label="Logements économiques">
+  <div class="carrousel-header">
+    <h2 class="section-title">Logements économiques</h2>
+    <button class="btn-more" type="button" aria-label="Voir plus logements économiques">En voir plus</button>
+  </div>
+  <div class="carrousel-container">
+    <div class="carrousel" tabindex="0" aria-roledescription="carousel" aria-label="Logements économiques">
+      <article class="card" tabindex="0">
+        <img src="https://source.unsplash.com/320x180/?small-house" alt="[translate:Petite maison]" class="card-image" />
+        <button class="btn-fav" aria-pressed="false" aria-label="Ajouter aux favoris">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+        <div class="card-content">
+          <h3 class="card-title">Studio Moderne</h3>
+          <p class="card-subtitle">[translate:Lyon, France]</p>
+          <div class="card-details">
+            <div><span class="detail-icon">📐</span>30 m²</div>
+            <div><span class="detail-icon">💶</span>120 000 €</div>
+            <div class="stars">⭐️⭐️⭐️☆☆</div>
+          </div>
+        </div>
+      </article>
+      <article class="card" tabindex="0">
+        <img src="https://source.unsplash.com/320x180/?tiny-house" alt="[translate:Petite maison]" class="card-image" />
+        <button class="btn-fav" aria-pressed="false" aria-label="Ajouter aux favoris">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+        <div class="card-content">
+          <h3 class="card-title">T1 Cosy</h3>
+          <p class="card-subtitle">[translate:Marseille, France]</p>
+          <div class="card-details">
+            <div><span class="detail-icon">📐</span>27 m²</div>
+            <div><span class="detail-icon">💶</span>105 000 €</div>
+            <div class="stars">⭐️⭐️☆☆☆</div>
+          </div>
+        </div>
+      </article>
+      <article class="card" tabindex="0">
+        <img src="https://source.unsplash.com/320x180/?apartment,small" alt="[translate:Petit appartement]" class="card-image" />
+        <button class="btn-fav" aria-pressed="false" aria-label="Ajouter aux favoris">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+        <div class="card-content">
+          <h3 class="card-title">Appartement Simple</h3>
+          <p class="card-subtitle">[translate:Toulouse, France]</p>
+          <div class="card-details">
+            <div><span class="detail-icon">📐</span>40 m²</div>
+            <div><span class="detail-icon">💶</span>150 000 €</div>
+            <div class="stars">⭐️⭐️⭐️☆☆</div>
+          </div>
+        </div>
+      </article>
+            <article class="card" tabindex="0">
+        <img src="https://source.unsplash.com/320x180/?flat,budget" alt="[translate:Appartement économique]" class="card-image" />
+        <button class="btn-fav" aria-pressed="false" aria-label="Ajouter aux favoris">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+        <div class="card-content">
+          <h3 class="card-title">Appartement Économique</h3>
+          <p class="card-subtitle">[translate:Nancy, France]</p>
+          <div class="card-details">
+            <div><span class="detail-icon">📐</span>35 m²</div>
+            <div><span class="detail-icon">💶</span>98 000 €</div>
+            <div class="stars">⭐️⭐️☆☆☆</div>
+          </div>
+        </div>
+      </article>
+      <article class="card" tabindex="0">
+        <img src="https://source.unsplash.com/320x180/?small-house,budget" alt="[translate:Petite maison simple]" class="card-image" />
+        <button class="btn-fav" aria-pressed="false" aria-label="Ajouter aux favoris">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+        <div class="card-content">
+          <h3 class="card-title">Petite Maison Simple</h3>
+          <p class="card-subtitle">[translate:Orléans, France]</p>
+          <div class="card-details">
+            <div><span class="detail-icon">📐</span>38 m²</div>
+            <div><span class="detail-icon">💶</span>110 000 €</div>
+            <div class="stars">⭐️⭐️⭐️☆☆</div>
+          </div>
+        </div>
+      </article>
+      <article class="card" tabindex="0">
+        <img src="https://source.unsplash.com/320x180/?condo,cheap" alt="[translate:Condos abordables]" class="card-image" />
+        <button class="btn-fav" aria-pressed="false" aria-label="Ajouter aux favoris">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+        <div class="card-content">
+          <h3 class="card-title">Condo Abordable</h3>
+          <p class="card-subtitle">[translate:Nantes, France]</p>
+          <div class="card-details">
+            <div><span class="detail-icon">📐</span>42 m²</div>
+            <div><span class="detail-icon">💶</span>130 000 €</div>
+            <div class="stars">⭐️⭐️⭐️⭐️☆</div>
+          </div>
+        </div>
+      </article>
+      <article class="card" tabindex="0">
+        <img src="https://source.unsplash.com/320x180/?studio,budget" alt="[translate:Studio étudiant]" class="card-image" />
+        <button class="btn-fav" aria-pressed="false" aria-label="Ajouter aux favoris">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+        <div class="card-content">
+          <h3 class="card-title">Studio Étudiant</h3>
+          <p class="card-subtitle">[translate:Clermont-Ferrand, France]</p>
+          <div class="card-details">
+            <div><span class="detail-icon">📐</span>28 m²</div>
+            <div><span class="detail-icon">💶</span>95 000 €</div>
+            <div class="stars">⭐️⭐️☆☆☆</div>
+          </div>
+        </div>
+      </article>
+    </div>
+    <button class="arrow arrow-left" aria-label="Défiler à gauche">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <button class="arrow arrow-right" aria-label="Défiler à droite">
+      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+</section>
+
+<section class="carrousel-section" aria-label="Logements de luxe">
+  <div class="carrousel-header">
+    <h2 class="section-title">Logements de luxe</h2>
+    <button class="btn-more" type="button" aria-label="Voir plus logements de luxe">En voir plus</button>
+  </div>
+  <div class="carrousel-container">
+    <div class="carrousel" tabindex="0" aria-roledescription="carousel" aria-label="Logements de luxe">
+      <article class="card" tabindex="0">
+        <img src="https://source.unsplash.com/320x180/?luxury-house" alt="[translate:Maison de luxe]" class="card-image" />
+        <button class="btn-fav" aria-pressed="false" aria-label="Ajouter aux favoris">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+        <div class="card-content">
+          <h3 class="card-title">Penthouse Vue Mer</h3>
+          <p class="card-subtitle">[translate:Cannes, France]</p>
+          <div class="card-details">
+            <div><span class="detail-icon">📐</span>180 m²</div>
+            <div><span class="detail-icon">💶</span>1 200 000 €</div>
+            <div class="stars">⭐️⭐️⭐️⭐️⭐️</div>
+          </div>
+        </div>
+      </article>
+      <article class="card" tabindex="0">
+        <img src="https://source.unsplash.com/320x180/?mansion,luxury" alt="[translate:Manoir de luxe]" class="card-image" />
+        <button class="btn-fav" aria-pressed="false" aria-label="Ajouter aux favoris">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+        <div class="card-content">
+          <h3 class="card-title">Manoir Élégant</h3>
+          <p class="card-subtitle">[translate:Saint-Tropez, France]</p>
+          <div class="card-details">
+            <div><span class="detail-icon">📐</span>250 m²</div>
+            <div><span class="detail-icon">💶</span>2 400 000 €</div>
+            <div class="stars">⭐️⭐️⭐️⭐️⭐️</div>
+          </div>
+        </div>
+      </article>
+      <article class="card" tabindex="0">
+        <img src="https://source.unsplash.com/320x180/?villa,luxury" alt="[translate:Villa de luxe]" class="card-image" />
+        <button class="btn-fav" aria-pressed="false" aria-label="Ajouter aux favoris">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+        <div class="card-content">
+          <h3 class="card-title">Villa Jardin Privé</h3>
+          <p class="card-subtitle">[translate:Saint-Barthélemy]</p>
+          <div class="card-details">
+            <div><span class="detail-icon">📐</span>320 m²</div>
+            <div><span class="detail-icon">💶</span>3 800 000 €</div>
+            <div class="stars">⭐️⭐️⭐️⭐️⭐️</div>
+          </div>
+        </div>
+      </article>
+            <article class="card" tabindex="0">
+        <img src="https://source.unsplash.com/320x180/?castle,luxury" alt="[translate:Château de luxe]" class="card-image" />
+        <button class="btn-fav" aria-pressed="false" aria-label="Ajouter aux favoris">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+        <div class="card-content">
+          <h3 class="card-title">Château Historique</h3>
+          <p class="card-subtitle">[translate:Bordeaux, France]</p>
+          <div class="card-details">
+            <div><span class="detail-icon">📐</span>600 m²</div>
+            <div><span class="detail-icon">💶</span>5 200 000 €</div>
+            <div class="stars">⭐️⭐️⭐️⭐️⭐️</div>
+          </div>
+        </div>
+      </article>
+      <article class="card" tabindex="0">
+        <img src="https://source.unsplash.com/320x180/?penthouse,luxury" alt="[translate:Penthouse haut de gamme]" class="card-image" />
+        <button class="btn-fav" aria-pressed="false" aria-label="Ajouter aux favoris">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+        <div class="card-content">
+          <h3 class="card-title">Penthouse Haut de Gamme</h3>
+          <p class="card-subtitle">[translate:Monaco]</p>
+          <div class="card-details">
+            <div><span class="detail-icon">📐</span>210 m²</div>
+            <div><span class="detail-icon">💶</span>4 800 000 €</div>
+            <div class="stars">⭐️⭐️⭐️⭐️⭐️</div>
+          </div>
+        </div>
+      </article>
+      <article class="card" tabindex="0">
+        <img src="https://source.unsplash.com/320x180/?resort,luxury" alt="[translate:Résidence de luxe]" class="card-image" />
+        <button class="btn-fav" aria-pressed="false" aria-label="Ajouter aux favoris">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+        <div class="card-content">
+          <h3 class="card-title">Résidence de Luxe</h3>
+          <p class="card-subtitle">[translate:Miami, USA]</p>
+          <div class="card-details">
+            <div><span class="detail-icon">📐</span>400 m²</div>
+            <div><span class="detail-icon">💶</span>7 800 000 €</div>
+            <div class="stars">⭐️⭐️⭐️⭐️⭐️</div>
+          </div>
+        </div>
+      </article>
+      <article class="card" tabindex="0">
+        <img src="https://source.unsplash.com/320x180/?house,glass" alt="[translate:Maison en verre]" class="card-image" />
+        <button class="btn-fav" aria-pressed="false" aria-label="Ajouter aux favoris">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+        <div class="card-content">
+          <h3 class="card-title">Maison en Verre</h3>
+          <p class="card-subtitle">[translate:Los Angeles, USA]</p>
+          <div class="card-details">
+            <div><span class="detail-icon">📐</span>270 m²</div>
+            <div><span class="detail-icon">💶</span>3 500 000 €</div>
+            <div class="stars">⭐️⭐️⭐️⭐️⭐️</div>
+          </div>
+        </div>
+      </article>
+      <article class="card" tabindex="0">
+        <img src="https://source.unsplash.com/320x180/?yacht,luxury" alt="[translate:Villa sur Yacht]" class="card-image" />
+        <button class="btn-fav" aria-pressed="false" aria-label="Ajouter aux favoris">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+        <div class="card-content">
+          <h3 class="card-title">Villa sur Yacht</h3>
+          <p class="card-subtitle">[translate:Cannes, France]</p>
+          <div class="card-details">
+            <div><span class="detail-icon">📐</span>350 m²</div>
+            <div><span class="detail-icon">💶</span>9 500 000 €</div>
+            <div class="stars">⭐️⭐️⭐️⭐️⭐️</div>
+          </div>
+        </div>
+      </article>
+    </div>
+    <button class="arrow arrow-left" aria-label="Défiler à gauche">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <button class="arrow arrow-right" aria-label="Défiler à droite">
+      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+</section>
+
+
+
+
+   <section class="split-section" aria-label="Services Transpareo pour locataires, propriétaires et réseau social">
+
+  <div class="split-row fade-in">
+    <div class="split-content">
+      <span class="axe-label axe-loc">Pour les locataires</span>
+      <h3>Noter son bail ou trouver son logement idéal.</h3>
+      <p>Notez votre logement ou trouvez votre futur logement à l’aide d’une map interactive de votre ville.</p>
+      <button class="btn-primary" type="button">
+        En savoir plus
+        <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+    </div>
+    <div class="split-img">
+      <img src="/vue-laterale-mains-tenant-la-carte.jpg" alt="Aperçu map interactive" loading="lazy" />
+    </div>
+  </div>
+
+  <div class="split-row fade-in">
+    <div class="split-content">
+      <span class="axe-label axe-prop">Pour les propriétaires</span>
+      <h3>Gérer ses biens et communiquer avec ses locataires.</h3>
+      <p>Gérez vos biens, catégorisez-les et profitez d’un système de certification pour mettre en avant votre bien.</p>
+      <button class="btn-primary" type="button">
+        En savoir plus
+        <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+    </div>
+    <div class="split-img">
+      <img src="/groupe-de-gens-d-affaires-ayant-une-reunion.jpg" alt="Aperçu tableau de gestion" loading="lazy" />
+    </div>
+  </div>
+
+  <div class="split-row fade-in">
+    <div class="split-content">
+      <span class="axe-label axe-connect">Transpareo Connect</span>
+      <h3>Discutez, échangez, soyez connectés.</h3>
+      <p>Connectez locataires et propriétaires dans un réseau social immobilier nouvelle génération.</p>
+      <button class="btn-primary" type="button">
+        En savoir plus
+        <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+    </div>
+    <div class="split-img">
+      <img src="/4575.jpg" alt="Aperçu chat réseau social" loading="lazy" />
+    </div>
+  </div>
+
+</section>
+
+
+
+
+    <section class="faq-section-bg">
+  </div>
+  <div class="accordion-body">
+    <div class="accordion">
+      <h1 class="titre-accordion">
+        Questions/réponses en toute
+        <span class="highlighted">transparence</span>
+        <span class="chevron">&#9660;</span>
+      </h1>
+      <div class="container">
+        <div class="label">Pourquoi utiliser Transpareo ?</div>
+        <div class="content">Texte de la réponse ici.</div>
+      </div>
+      <div class="container">
+        <div class="label">Comment fonctionne le système de notations ?</div>
+        <div class="content">Texte de la réponse ici.</div>
+      </div>
+      <div class="container">
+        <div class="label">C’est gratuit ?</div>
+        <div class="content">Texte de la réponse ici.</div>
+      </div>
+      <div class="container">
+        <div class="label">Comment faire un compte sur Transpareo Connect ?</div>
+        <div class="content">Texte de la réponse ici.</div>
+      </div>
+      <div class="container">
+        <div class="label">Mes données sont-elles protégées ?</div>
+        <div class="content">Texte de la réponse ici.</div>
+      </div>
+      <div class="container">
+        <div class="label">Transpareo est-il sur l’appstore ?</div>
+        <div class="content">Texte de la réponse ici.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+   <section class="about-section">
+  <div class="content-wrapper">
+    <div class="about-text">
+      <h2>
+        Entreprise <span class="accent-text">Toulousaine</span><br>et fière de l'être
+      </h2>
+      <p>
+        Transpareo, c’est avant tout une <strong>aventure humaine</strong> née au cœur de Toulouse,
+        la ville rose où <em>innovation</em> et convivialité se rencontrent. Créée par une équipe passionnée,
+        notre mission est claire : <strong>rendre le marché locatif plus juste, transparent et humain</strong>.
+      </p>
+      <p>
+        Inspirée par notre propre expérience, cette plateforme permet à chaque locataire et propriétaire
+        de bâtir une relation de confiance, sans stress ni mauvaise surprise. Notre équipe,
+        fière de ses racines toulousaines, s’engage à faire bouger les choses, une location à la fois.
+      </p>
+      <p>
+        Parce qu’à Toulouse comme ailleurs, la transparence commence local... mais elle peut changer le monde.
+      </p>
+    </div>
+    <div class="about-image">
+      <img src="D:\transpareo html version\public\visiter-toulouse-la-grave-1.webp" alt="Équipe de Transpareo à Toulouse" loading="lazy" />
+      <svg class="about-deco" viewBox="0 0 400 400" aria-hidden="true">
+        <defs>
+          <radialGradient id="grad1" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#FFBE69" stop-opacity="0.6" />
+            <stop offset="100%" stop-color="#FF6E20" stop-opacity="0" />
+          </radialGradient>
+        </defs>
+      </svg>
+    </div>
+  </div>
+</section>
+
+   <br> <br> <br>
+
+    <footer class="footer">
+  	 <div class="container">
+  	 	<div class="row">
+  	 		<div class="footer-col">
+  	 			<h4>À propos</h4>
+  	 			<ul>
+  	 				<li><a href="#">about us</a></li>
+  	 				<li><a href="#">our services</a></li>
+  	 				<li><a href="#">privacy policy</a></li>
+  	 				<li><a href="#">affiliate program</a></li>
+  	 			</ul>
+  	 		</div>
+  	 		<div class="footer-col">
+  	 			<h4>Nos services</h4>
+  	 			<ul>
+  	 				<li><a href="#">FAQ</a></li>
+  	 				<li><a href="#">shipping</a></li>
+  	 				<li><a href="#">returns</a></li>
+  	 				<li><a href="#">order status</a></li>
+  	 				<li><a href="#">payment options</a></li>
+  	 			</ul>
+  	 		</div>
+  	 		<div class="footer-col">
+  	 			<h4>Contactez-nous</h4>
+  	 			<ul>
+  	 				<li><a href="#">watch</a></li>
+  	 				<li><a href="#">bag</a></li>
+  	 				<li><a href="#">shoes</a></li>
+  	 				<li><a href="#">dress</a></li>
+  	 			</ul>
+  	 		</div>
+  	 		<div class="footer-col">
+  	 			<h4>Suivez-nous</h4>
+  	 			<div class="social-links">
+  	 				<a href="#"><i class="fab fa-facebook-f"></i></a>
+  	 				<a href="#"><i class="fab fa-twitter"></i></a>
+  	 				<a href="#"><i class="fab fa-instagram"></i></a>
+  	 				<a href="#"><i class="fab fa-linkedin-in"></i></a>
+  	 			</div>
+  	 		</div>
+  	 	</div>
+  	 </div>
+     <div class="footer-copy">
+    &copy; 2025 Transpareo - La confiance au cœur de votre location
+  </div>
+  </footer>
+
+  
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+  
+<script src="https://unpkg.com/leaflet.markercluster@1.5.0/dist/leaflet.markercluster.js"></script>
+
+
+<script>
+
+// ============================================
+// GESTION NAVBAR
+// ============================================
+
+document.querySelectorAll('.nav-center li.dropdown').forEach(dropdown => {
+  const btn = dropdown.querySelector('.dropbtn');
+  const content = dropdown.querySelector('.dropdown-content');
+
+  btn.addEventListener('click', e => {
+    e.preventDefault();
+    const isExpanded = btn.getAttribute('aria-expanded') === 'true';
+    document.querySelectorAll('.nav-center li.dropdown').forEach(d => {
+      const button = d.querySelector('.dropbtn');
+      const cont = d.querySelector('.dropdown-content');
+      if (d !== dropdown) {
+        button.setAttribute('aria-expanded', 'false');
+        d.classList.remove('show');
+        cont.style.display = 'none';
+      }
+    });
+
+    if (isExpanded) {
+      btn.setAttribute('aria-expanded', 'false');
+      dropdown.classList.remove('show');
+      content.style.display = 'none';
+    } else {
+      btn.setAttribute('aria-expanded', 'true');
+      dropdown.classList.add('show');
+      content.style.display = 'flex';
+    }
+  });
+
+  dropdown.addEventListener('mouseenter', () => {
+    btn.setAttribute('aria-expanded', 'true');
+    dropdown.classList.add('show');
+    content.style.display = 'flex';
+  });
+
+  let timeoutClose;
+  dropdown.addEventListener('mouseleave', () => {
+    timeoutClose = setTimeout(() => {
+      btn.setAttribute('aria-expanded', 'false');
+      dropdown.classList.remove('show');
+      content.style.display = 'none';
+    }, 200);
+  });
+
+  dropdown.addEventListener('mouseenter', () => {
+    clearTimeout(timeoutClose);
+  });
+});
+
+document.addEventListener('click', e => {
+  document.querySelectorAll('.nav-center li.dropdown').forEach(dropdown => {
+    const btn = dropdown.querySelector('.dropbtn');
+    const content = dropdown.querySelector('.dropdown-content');
+    if (!dropdown.contains(e.target)) {
+      btn.setAttribute('aria-expanded', 'false');
+      dropdown.classList.remove('show');
+      content.style.display = 'none';
+    }
+  });
+});
+
+// ============================================
+// GESTION UTILISATEUR ET FAVORIS - INITIALIZATION
+// ============================================
+
+let userFavoris = [];
+let logementsAffichés = [];
+let userLocation = null;
+
+async function initializeUser() {
+  try {
+    const response = await fetch('/api/get-user-favoris/');
+    const data = await response.json();
+    window.USER_ID = data.user_id;
+    userFavoris = data.favoris;
+    
+    const favCount = document.getElementById('favori-count');
+    if (favCount) favCount.textContent = data.count;
+    
+    console.log('✅ Favoris chargés:', data.count);
+  } catch (error) {
+    console.error('⚠️ Erreur chargement favoris:', error);
+  }
+}
+
+initializeUser();
+
+// ============================================
+// GESTION CARTE LEAFLET - PHASE 1 + PHASE 2 + FAVORIS
+// ============================================
+
+const logements = JSON.parse('{{ logements_json|escapejs }}');  // 30 logements seulement
+const totalLogements = {{ total_logements }};  // Total réel (6M)
+const map = L.map('map').setView([43.6045, 1.444], 13);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+setTimeout(() => map.invalidateSize(), 300);
+
+let markers = [];
+logementsAffichés = [...logements];
+
+// ============================================
+// AFFICHAGE DES MARQUEURS AVEC FAVORIS
+// ============================================
+
+function afficherMarkers(logementsAAfficher) {
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+  
+  logementsAAfficher.forEach(l => {
+    const marker = L.marker([l.latitude, l.longitude]).addTo(map);
+    
+    const isFav = userFavoris.includes(l.id);
+    
+    marker.bindPopup(`
+      <div style="max-width:250px;">
+        <h3 style="margin: 0 0 8px 0;">${l.titre}</h3>
+        <p style="margin: 2px 0;"><b>Type:</b> ${l.type_logement}</p>
+        <p style="margin: 2px 0;"><b>Adresse:</b> ${l.adresse}</p>
+        <p style="margin: 2px 0;"><b>Prix:</b> ${l.prix.toLocaleString()} €</p>
+        <p style="margin: 2px 0;"><b>Surface:</b> ${l.surface} m²</p>
+        <p style="margin: 2px 0;"><b>Chambres:</b> ${l.chambres}</p>
+        <p style="margin: 2px 0;"><b>Note:</b> ${l.note} / 5</p>
+        <button onclick="toggleFavori(${l.id})" style="width: 100%; margin-top: 8px; padding: 6px; background: ${isFav ? '#ff6b6b' : '#ddd'}; color: ${isFav ? 'white' : 'black'}; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+          ${isFav ? '❤️ Favoris' : '🤍 Ajouter'}
+        </button>
+      </div>
+    `);
+    
+    markers.push(marker);
+  });
+
+  if (logementsAAfficher.length > 0) {
+    const group = new L.featureGroup(markers);
+    map.fitBounds(group.getBounds().pad(0.1));
+  }
+}
+
+// ============================================
+// AFFICHAGE DE LA LISTE AVEC FAVORIS
+// ============================================
+
+function afficherLogements(logementsAAfficher) {
+  const list = document.getElementById('list-logements');
+  list.innerHTML = '';
+  
+  if (logementsAAfficher.length === 0) {
+    list.innerHTML = '<p style="padding:20px; text-align:center; color:#999;">Aucun logement trouvé.</p>';
+    return;
+  }
+  
+  const compteur = document.createElement('p');
+  compteur.style.cssText = 'padding:10px 15px; font-size:12px; color:#666; border-bottom:1px solid #eee; margin:0;';
+  compteur.innerHTML = `<b>${logementsAAfficher.length} logement${logementsAAfficher.length > 1 ? 's' : ''}</b>`;
+  list.appendChild(compteur);
+  
+  logementsAAfficher.slice(0, 20).forEach(l => {
+    const isFav = userFavoris.includes(l.id);
+    
+    const div = document.createElement('div');
+    div.style.cssText = 'padding:12px; margin-bottom:10px; background:#fff; border-radius:8px; cursor:pointer; border:1px solid #eee; transition:all 0.2s; position: relative;';
+    div.innerHTML = `
+      <button onclick="event.stopPropagation(); toggleFavori(${l.id});" style="position: absolute; right: 10px; top: 10px; background: none; border: none; font-size: 18px; cursor: pointer; padding: 0;">
+        ${isFav ? '❤️' : '🤍'}
+      </button>
+      <h4 style="margin:0 0 8px 0; font-size:14px; color:#D3580B; padding-right: 40px;">${l.titre}</h4>
+      <p style="margin:2px 0; font-size:12px; color:#666;"><b>${l.type_logement}</b> • ${l.chambres} ch.</p>
+      <p style="margin:4px 0; font-size:13px; font-weight:600;">${l.prix.toLocaleString()} €</p>
+      <p style="margin:4px 0; font-size:12px; color:#999;">${l.surface} m² • ${l.note}★</p>
+    `;
+    
+    div.addEventListener('mouseover', () => div.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)');
+    div.addEventListener('mouseout', () => div.style.boxShadow = 'none');
+    div.addEventListener('click', () => {
+      map.setView([l.latitude, l.longitude], 16);
+      const marker = markers.find(m => {
+        const latLng = m.getLatLng();
+        return latLng.lat === l.latitude && latLng.lng === l.longitude;
+      });
+      if (marker) marker.openPopup();
+    });
+    list.appendChild(div);
+  });
+  
+  if (logementsAAfficher.length > 20) {
+    const btnMore = document.createElement('button');
+    btnMore.style.cssText = 'width:90%; margin:10px auto; padding:10px; background:#D3580B; color:white; border:none; border-radius:6px; cursor:pointer; display:block;';
+    btnMore.textContent = `Voir plus (${logementsAAfficher.length - 20} supplémentaires)`;
+    btnMore.addEventListener('click', () => {
+      logementsAAfficher.slice(20).forEach(l => {
+        const isFav = userFavoris.includes(l.id);
+        
+        const div = document.createElement('div');
+        div.style.cssText = 'padding:12px; margin-bottom:10px; background:#fff; border-radius:8px; cursor:pointer; border:1px solid #eee; position: relative;';
+        div.innerHTML = `
+          <button onclick="event.stopPropagation(); toggleFavori(${l.id});" style="position: absolute; right: 10px; top: 10px; background: none; border: none; font-size: 18px; cursor: pointer; padding: 0;">
+            ${isFav ? '❤️' : '🤍'}
+          </button>
+          <h4 style="margin:0 0 8px 0; font-size:14px; color:#D3580B; padding-right: 40px;">${l.titre}</h4>
+          <p style="margin:2px 0; font-size:12px; color:#666;"><b>${l.type_logement}</b> • ${l.chambres} ch.</p>
+          <p style="margin:4px 0; font-size:13px; font-weight:600;">${l.prix.toLocaleString()} €</p>
+          <p style="margin:4px 0; font-size:12px; color:#999;">${l.surface} m² • ${l.note}★</p>
+        `;
+        div.addEventListener('click', () => {
+          map.setView([l.latitude, l.longitude], 16);
+        });
+        list.insertBefore(div, btnMore);
+      });
+      btnMore.remove();
+    });
+    list.appendChild(btnMore);
+  }
+}
+
+// Affichage initial
+afficherMarkers(logements);
+afficherLogements(logements);
+
+// Bouton "Voir plus"
+if ({{ total_logements }} > 30) {
+  const moreContainer = document.getElementById('list-logements');
+  const btnFullMap = document.createElement('div');
+  btnFullMap.style.cssText = 'padding:20px; text-align:center; border-top:2px solid #eee;';
+  btnFullMap.innerHTML = `
+    <p style="color:#666; margin-bottom:10px; font-size:12px;">
+      Affichage 30 / <strong>${{ total_logements }}</strong> logements
+    </p>
+    <a href="{% url 'map' %}" class="btn btn-success" style="display:inline-block; padding:12px 24px; background:#D3580B; color:white; text-decoration:none; border-radius:6px; font-weight:600; cursor:pointer;">
+      🗺️ Voir la carte complète avec tous les logements
+    </a>
+  `;
+  moreContainer.appendChild(btnFullMap);
+}
+
+// ============================================
+// FONCTION TOGGLE FAVORIS
+// ============================================
+
+async function toggleFavori(logementId) {
+  try {
+    const response = await fetch('/api/toggle-favori/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({ logement_id: logementId })
+    });
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      if (response.status === 401) {
+        alert('⚠️ Veuillez vous connecter pour ajouter des favoris');
+      }
+      return;
+    }
+    
+    // Mettre à jour la liste des favoris
+    if (data.is_favorite) {
+      if (!userFavoris.includes(logementId)) {
+        userFavoris.push(logementId);
+      }
+    } else {
+      userFavoris = userFavoris.filter(id => id !== logementId);
+    }
+    
+    // Mettre à jour tous les compteurs
+    document.querySelectorAll('#favori-count, #favori-count-filters').forEach(el => {
+      el.textContent = data.count;
+    });
+    
+    // Rafraîchir l'affichage
+    afficherLogements(logementsAffichés);
+    afficherMarkers(logementsAffichés);
+    
+    console.log('✅', data.message);
+  } catch (error) {
+    console.error('❌ Erreur favori:', error);
+  }
+}
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+// ============================================
+// PHASE 1 : FILTRES ET RECHERCHE
+// ============================================
+
+const addressInput = document.getElementById('addressInputRight');
+const suggestionsDropdown = document.getElementById('suggestionsDropdownRight');
+
+if (addressInput) {
+  addressInput.addEventListener('input', async (e) => {
+    const query = e.target.value.trim();
+    if (query.length < 2) {
+      suggestionsDropdown.innerHTML = '';
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/search-adresse/?q=${encodeURIComponent(query)}`);
+      const data = await response.json();
+      suggestionsDropdown.innerHTML = '';
+      
+      data.adresses.forEach(adresse => {
+        const item = document.createElement('div');
+        item.className = 'suggestion-item';
+        item.textContent = adresse;
+        item.addEventListener('click', () => {
+          addressInput.value = adresse;
+          suggestionsDropdown.innerHTML = '';
+          applyFilters();
+        });
+        suggestionsDropdown.appendChild(item);
+      });
+      
+      if (data.adresses.length > 0) {
+        suggestionsDropdown.classList.add('active');
+      }
+    } catch (error) {
+      console.error('Erreur autocomplétion:', error);
+    }
+  });
+}
+
+async function applyFilters() {
+  const selectedTypes = Array.from(document.querySelectorAll('.filter-type:checked')).map(cb => cb.value);
+  const prixMin = document.getElementById('filter-prix-min')?.value || '';
+  const prixMax = document.getElementById('filter-prix-max')?.value || '';
+  const surfaceMin = document.getElementById('filter-surface-min')?.value || '';
+  const surfaceMax = document.getElementById('filter-surface-max')?.value || '';
+  const chambres = document.getElementById('filter-chambres')?.value || '';
+  const tri = document.getElementById('filter-tri')?.value || '';
+  const adresse = addressInput?.value || '';
+  
+  let url = '/api/filter-logements/?';
+  
+  if (selectedTypes.length > 0) {
+    url += selectedTypes.map(t => `type=${t}`).join('&') + '&';
+  }
+  
+  if (prixMin) url += `prix_min=${prixMin}&`;
+  if (prixMax) url += `prix_max=${prixMax}&`;
+  if (surfaceMin) url += `surface_min=${surfaceMin}&`;
+  if (surfaceMax) url += `surface_max=${surfaceMax}&`;
+  if (chambres) url += `chambres=${chambres}&`;
+  if (tri) url += `tri=${tri}&`;
+  
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    let résultats = data.logements;
+    
+    if (adresse) {
+      résultats = résultats.filter(l => l.adresse.toLowerCase().includes(adresse.toLowerCase()));
+    }
+    
+    logementsAffichés = résultats;
+    afficherMarkers(résultats);
+    afficherLogements(résultats);
+  } catch (error) {
+    console.error('Erreur filtrage:', error);
+  }
+}
+
+// Écouteurs Phase 1
+const searchBtnRight = document.getElementById('searchBtnRight');
+if (searchBtnRight) searchBtnRight.addEventListener('click', applyFilters);
+
+document.getElementById('filter-tri')?.addEventListener('change', applyFilters);
+document.querySelectorAll('.filter-type').forEach(cb => {
+  cb.addEventListener('change', applyFilters);
+});
+document.getElementById('filter-prix-min')?.addEventListener('change', applyFilters);
+document.getElementById('filter-prix-max')?.addEventListener('change', applyFilters);
+document.getElementById('filter-surface-min')?.addEventListener('change', applyFilters);
+document.getElementById('filter-surface-max')?.addEventListener('change', applyFilters);
+document.getElementById('filter-chambres')?.addEventListener('change', applyFilters);
+
+const filtersBtnRight = document.getElementById('filters-btn-right');
+const filtersDropdownRight = document.getElementById('filtersDropdownRight');
+
+if (filtersBtnRight && filtersDropdownRight) {
+  filtersBtnRight.addEventListener('click', () => {
+    filtersDropdownRight.classList.toggle('active');
+    const chevron = filtersBtnRight.querySelector('.chevron-icon');
+    if (chevron) {
+      chevron.style.transform = 
+        filtersDropdownRight.classList.contains('active') ? 'rotate(180deg)' : 'none';
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.filters-wrapper')) {
+      filtersDropdownRight.classList.remove('active');
+    }
+  });
+}
+
+
+// ============================================
+// PHASE 2 : GÉOLOCALISATION ET RAYON
+// ============================================
+
+const radiusSlider = document.getElementById('filter-radius-slider');
+const radiusValue = document.getElementById('radius-value');
+const radiusInput = document.getElementById('filter-radius-input');
+const localiserBtn = document.getElementById('btn-localiser');
+
+// Afficher et synchroniser le rayon
+if (radiusSlider) {
+  radiusSlider.addEventListener('input', (e) => {
+    const value = e.target.value;
+    if (radiusValue) radiusValue.textContent = value;
+    if (radiusInput) radiusInput.value = value;
+  });
+}
+
+if (radiusInput) {
+  radiusInput.addEventListener('input', (e) => {
+    if (radiusSlider) radiusSlider.value = e.target.value;
+    if (radiusValue) radiusValue.textContent = e.target.value;
+  });
+}
+
+// Géolocalisation
+if (localiserBtn) {
+  localiserBtn.addEventListener('click', async () => {
+    if (!navigator.geolocation) {
+      alert('❌ Géolocalisation non disponible sur votre navigateur');
+      return;
+    }
+    
+    localiserBtn.textContent = '📍 Localisation en cours...';
+    localiserBtn.disabled = true;
+    
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        userLocation = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        
+        console.log('✅ Position obtenue:', userLocation);
+        
+        const radius = parseFloat(radiusSlider?.value || 5);
+        
+        try {
+          const response = await fetch(`/api/filter-by-radius/?lat=${userLocation.lat}&lng=${userLocation.lng}&radius=${radius}`);
+          const data = await response.json();
+          
+          console.log('✅ Logements trouvés:', data.logements.length);
+          
+          logementsAffichés = data.logements;
+          afficherMarkers(data.logements);
+          afficherLogements(data.logements);
+          
+          // Ajouter marqueur position utilisateur
+          L.marker([userLocation.lat, userLocation.lng], {
+            icon: L.icon({
+              iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+              shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+              iconSize: [25, 41],
+              iconAnchor: [12, 41],
+              popupAnchor: [1, -34]
+            })
+          }).addTo(map).bindPopup('📍 Votre position');
+          
+          // Centrer la carte
+          map.setView([userLocation.lat, userLocation.lng], 14);
+        } catch (error) {
+          console.error('❌ Erreur filtrage rayon:', error);
+          alert('❌ Erreur lors du filtrage par rayon');
+        }
+        
+        localiserBtn.textContent = '📍 Me localiser';
+        localiserBtn.disabled = false;
+      },
+      (error) => {
+        console.error('❌ Erreur géolocalisation:', error);
+        alert('❌ Impossible d\'accéder à votre localisation : ' + error.message);
+        localiserBtn.textContent = '📍 Me localiser';
+        localiserBtn.disabled = false;
+      }
+    );
+  });
+}
+
+
+
+</script>
+
+<script src="{% static 'core/scripts.js' %}"></script>
+</body>
+</html>

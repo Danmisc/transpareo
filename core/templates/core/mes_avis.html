@@ -1,0 +1,289 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mes Avis - Transpareo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .header-subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .avis-item {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .avis-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+            gap: 15px;
+        }
+        
+        .avis-logement {
+            flex: 1;
+        }
+        
+        .avis-logement-titre {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        
+        .avis-logement-adresse {
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .avis-status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-verifie {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-attente {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .avis-rating {
+            font-size: 20px;
+            color: #FFC107;
+            margin-bottom: 15px;
+        }
+        
+        .avis-titre {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .avis-contenu {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .avis-criterias {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .criteria {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 13px;
+        }
+        
+        .criteria-label {
+            color: #666;
+        }
+        
+        .criteria-stars {
+            color: #FFC107;
+            font-weight: bold;
+        }
+        
+        .avis-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 15px;
+            border-top: 1px solid #f0f0f0;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .avis-date {
+            color: #999;
+        }
+        
+        .avis-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-link {
+            background: none;
+            border: none;
+            color: #667eea;
+            text-decoration: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            transition: color 0.3s;
+        }
+        
+        .btn-link:hover {
+            color: #764ba2;
+        }
+        
+        .empty-state {
+            background: white;
+            padding: 60px 20px;
+            border-radius: 12px;
+            text-align: center;
+            color: #666;
+        }
+        
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        
+        .empty-state h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .btn-primary {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>⭐ Mes Avis</h1>
+            <p class="header-subtitle">{{ avis.count }} avis publié(s)</p>
+        </div>
+        
+        <!-- Avis -->
+        {% if avis %}
+            {% for av in avis %}
+            <div class="avis-item">
+                <div class="avis-header">
+                    <div class="avis-logement">
+                        <div class="avis-logement-titre">{{ av.logement.titre }}</div>
+                        <div class="avis-logement-adresse">📍 {{ av.logement.adresse }}</div>
+                    </div>
+                    <span class="avis-status {% if av.verifie %}status-verifie{% else %}status-attente{% endif %}">
+                        {% if av.verifie %}✓ Vérifié{% else %}⏱ En attente{% endif %}
+                    </span>
+                </div>
+                
+                <div class="avis-rating">
+                    {% for i in "x"|rjust:"5" %}{% if forloop.counter <= av.note %}★{% else %}☆{% endif %}{% endfor %}
+                    {{ av.note }}/5
+                </div>
+                
+                <div class="avis-titre">{{ av.titre }}</div>
+                
+                <div class="avis-contenu">
+                    {{ av.commentaire }}
+                </div>
+                
+                <!-- Critères -->
+                {% if av.note_proprete or av.note_equipements or av.note_localisation or av.note_bailleur %}
+                <div class="avis-criterias">
+                    {% if av.note_proprete %}
+                    <div class="criteria">
+                        <span class="criteria-label">🧹 Propreté</span>
+                        <span class="criteria-stars">{{ av.note_proprete }}/5</span>
+                    </div>
+                    {% endif %}
+                    {% if av.note_equipements %}
+                    <div class="criteria">
+                        <span class="criteria-label">🔧 Équipements</span>
+                        <span class="criteria-stars">{{ av.note_equipements }}/5</span>
+                    </div>
+                    {% endif %}
+                    {% if av.note_localisation %}
+                    <div class="criteria">
+                        <span class="criteria-label">🗺 Localisation</span>
+                        <span class="criteria-stars">{{ av.note_localisation }}/5</span>
+                    </div>
+                    {% endif %}
+                    {% if av.note_bailleur %}
+                    <div class="criteria">
+                        <span class="criteria-label">👤 Bailleur</span>
+                        <span class="criteria-stars">{{ av.note_bailleur }}/5</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <!-- Footer -->
+                <div class="avis-footer">
+                    <span class="avis-date">{{ av.date_avis|date:'d/m/Y à H:i' }}</span>
+                    <div class="avis-actions">
+                        <a href="{% url 'logement-detail' av.logement.id %}" class="btn-link">
+                            Voir le bien →
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">✍️</div>
+            <h2>Aucun avis publié</h2>
+            <p>Vous n'avez pas encore laissé d'avis. Visitez des logements et partagez votre expérience !</p>
+            <a href="{% url 'landing-page' %}" class="btn-primary">
+                ← Retour à la carte
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

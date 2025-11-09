@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Transpareo{% endblock %}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .auth-container {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            max-width: 480px;
+            width: 100%;
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            font-size: 32px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+        
+        h2 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 26px;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .form-check {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .form-check-input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .form-check label {
+            margin: 0;
+            font-weight: 400;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .links {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .links a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .links a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+        
+        .help-text {
+            font-size: 12px;
+            color: #999;
+            margin-top: 6px;
+            line-height: 1.4;
+        }
+        
+        .errorlist {
+            list-style: none;
+            padding: 0;
+            margin: 8px 0 0 0;
+        }
+        
+        .errorlist li {
+            color: #dc3545;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        
+        /* Password strength indicator */
+        .password-strength {
+            margin-top: 8px;
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .password-strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: all 0.3s;
+        }
+        
+        .strength-weak { background: #dc3545; width: 33%; }
+        .strength-medium { background: #ffc107; width: 66%; }
+        .strength-strong { background: #28a745; width: 100%; }
+        
+        .g-recaptcha {
+            margin: 20px 0;
+        }
+        
+        @media (max-width: 500px) {
+            .auth-container {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="auth-container">
+        <div class="logo">
+            <h1>🏠 Transpareo</h1>
+        </div>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        {% block content %}{% endblock %}
+    </div>
+    
+    <script>
+        // Password strength indicator
+        const passwordInput = document.getElementById('password1');
+        if (passwordInput) {
+            const strengthIndicator = document.createElement('div');
+            strengthIndicator.className = 'password-strength';
+            strengthIndicator.innerHTML = '<div class="password-strength-bar"></div>';
+            passwordInput.parentNode.appendChild(strengthIndicator);
+            
+            passwordInput.addEventListener('input', function() {
+                const password = this.value;
+                const bar = strengthIndicator.querySelector('.password-strength-bar');
+                
+                if (password.length === 0) {
+                    strengthIndicator.style.display = 'none';
+                    return;
+                }
+                
+                strengthIndicator.style.display = 'block';
+                bar.className = 'password-strength-bar';
+                
+                let strength = 0;
+                if (password.length >= 8) strength++;
+                if (/[A-Z]/.test(password)) strength++;
+                if (/[a-z]/.test(password)) strength++;
+                if (/\d/.test(password)) strength++;
+                if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength++;
+                
+                if (strength <= 2) {
+                    bar.classList.add('strength-weak');
+                } else if (strength <= 4) {
+                    bar.classList.add('strength-medium');
+                } else {
+                    bar.classList.add('strength-strong');
+                }
+            });
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

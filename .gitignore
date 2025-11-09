@@ -1,0 +1,44 @@
+# 🚫 FICHIERS À IGNORER ABSOLUMENT
+
+# Environnement
+.venv/
+venv/
+env/
+ENV/
+
+# 📊 Base de données (trop grosse !)
+db.sqlite3
+*.db
+
+# 📁 Données DVF (trop grosse !)
+data/dvf*.csv
+data/dvf*.csv.gz
+data/dvf*.txt
+data/*.json
+
+# Cache Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+dist/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Système
+.DS_Store
+Thumbs.db
+
+# Media & Static
+media/
+static/
+
+# Secrets
+.env
+secrets.json

@@ -1,0 +1,118 @@
+{% extends 'core/auth_base.html' %}
+
+{% block title %}Inscription - Transpareo{% endblock %}
+
+{% block content %}
+<h2>✨ Créer un compte</h2>
+<p class="subtitle">Rejoignez Transpareo et trouvez votre logement idéal</p>
+
+<form method="post" novalidate>
+    {% csrf_token %}
+    
+    <!-- Email -->
+    <div class="form-group">
+        <label for="{{ form.email.id_for_label }}">Email *</label>
+        {{ form.email }}
+        {% if form.email.errors %}
+            <ul class="errorlist">
+                {% for error in form.email.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+    
+    <!-- Username -->
+    <div class="form-group">
+        <label for="{{ form.username.id_for_label }}">Nom d'utilisateur *</label>
+        {{ form.username }}
+        <div class="help-text">{{ form.username.help_text }}</div>
+        {% if form.username.errors %}
+            <ul class="errorlist">
+                {% for error in form.username.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+    
+    <!-- Phone (optional) -->
+    <div class="form-group">
+        <label for="{{ form.phone_number.id_for_label }}">Téléphone</label>
+        {{ form.phone_number }}
+        <div class="help-text">Optionnel - Format: +33 6 12 34 56 78</div>
+        {% if form.phone_number.errors %}
+            <ul class="errorlist">
+                {% for error in form.phone_number.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+    
+    <!-- Password -->
+    <div class="form-group">
+        <label for="{{ form.password1.id_for_label }}">Mot de passe *</label>
+        {{ form.password1 }}
+        <div class="help-text">
+            ✓ Minimum 8 caractères<br>
+            ✓ Au moins une majuscule, une minuscule, un chiffre et un caractère spécial
+        </div>
+        {% if form.password1.errors %}
+            <ul class="errorlist">
+                {% for error in form.password1.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+    
+    <!-- Confirm Password -->
+    <div class="form-group">
+        <label for="{{ form.password2.id_for_label }}">Confirmer le mot de passe *</label>
+        {{ form.password2 }}
+        {% if form.password2.errors %}
+            <ul class="errorlist">
+                {% for error in form.password2.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+    
+    <!-- Terms -->
+    <div class="form-check">
+        {{ form.terms_accepted }}
+        <label for="{{ form.terms_accepted.id_for_label }}">
+            {{ form.terms_accepted.label }}
+        </label>
+    </div>
+    {% if form.terms_accepted.errors %}
+        <ul class="errorlist">
+            {% for error in form.terms_accepted.errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    
+    <!-- Newsletter -->
+    <div class="form-check">
+        {{ form.newsletter }}
+        <label for="{{ form.newsletter.id_for_label }}">
+            {{ form.newsletter.label }}
+        </label>
+    </div>
+    
+    <!-- reCAPTCHA -->
+    
+    
+    <!-- Submit -->
+    <button type="submit" class="btn">S'inscrire</button>
+</form>
+
+<div class="links">
+    <a href="{% url 'login' %}">Déjà un compte ? Se connecter</a>
+    <br><br>
+    <a href="{% url 'landing-page' %}">← Retour à l'accueil</a>
+</div>
+{% endblock %}

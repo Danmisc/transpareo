@@ -1,0 +1,362 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{% static 'core/map.css' %}"> 
+  <title>Carte interactive Transpareo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f0f2f5;
+    }
+    .hero {
+      text-align: center;
+      background: white;
+      border-radius: 10px;
+      padding: 40px 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      max-width: 900px;
+      margin: 0 auto 30px;
+    }
+    .hero h1 {
+      margin-bottom: 15px;
+      color: #333;
+      font-size: 28px;
+    }
+    .hero p {
+      max-width: 700px;
+      margin: 0 auto;
+      color: #555;
+      font-size: 16px;
+    }
+    .content-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .search-container {
+      margin-bottom: 32px;
+    }
+    .search-bar {
+      background: white;
+      border-radius: 16px;
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      max-width: 900px;
+      margin: 0 auto;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+      position: relative;
+      flex-wrap: wrap;
+    }
+    .search-input-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .search-label {
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 6px;
+    }
+    .search-input {
+      width: 100%;
+      border: none;
+      outline: none;
+      font-size: 1rem;
+      color: #666;
+      background: transparent;
+      padding: 0;
+    }
+    .search-input::placeholder {
+      color: #999;
+    }
+    .divider {
+      width: 1px;
+      height: 48px;
+      background: #e0e0e0;
+      flex-shrink: 0;
+    }
+    .filters-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .filters-btn {
+      background: transparent;
+      border: none;
+      font-size: 1rem;
+      font-weight: 500;
+      color: #333;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+    .filters-btn:hover {
+      background: #f8f8f8;
+    }
+    .chevron-icon {
+      transition: transform 0.2s;
+    }
+    .filters-btn:hover .chevron-icon {
+      transform: translateY(2px);
+    }
+    .filters-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      background: white;
+      border-radius: 12px;
+      padding: 12px 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      min-width: 200px;
+      border: 1px solid #e5e5e5;
+      z-index: 100;
+    }
+    .filters-dropdown.active {
+      display: block;
+    }
+    .filter-option {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+      color: #333;
+    }
+    .filter-option label {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .filter-option input {
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    .search-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 10px;
+      border-radius: 50%;
+      color: #ff6b35;
+      font-size: 1.3rem;
+      transition: background 0.2s;
+    }
+    .search-btn:hover {
+      background: #fff5ed;
+    }
+    .map-and-list {
+      display: flex;
+      gap: 20px;
+      height: 600px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+      overflow: hidden;
+    }
+    #map {
+      flex: 2;
+      height: 100%;
+      border-radius: 10px 0 0 10px;
+      min-width: 300px;
+    }
+    #list-logements {
+      flex: 1;
+      overflow-y: auto;
+      background: #fafafa;
+      border-radius: 0 10px 10px 0;
+      padding: 10px;
+      box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      min-width: 250px;
+    }
+    .logement-card {
+      background: white;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: box-shadow 0.3s;
+    }
+    .logement-card:hover {
+      box-shadow: 0 4px 12px rgba(255,102,0,0.6);
+    }
+    .logement-card h4 {
+      margin: 0 0 8px;
+      font-size: 18px;
+      color: #333;
+    }
+    .logement-card img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+    .logement-card p {
+      margin: 4px 0;
+      font-size: 14px;
+      color: #555;
+    }
+    @media (max-width: 900px) {
+      .map-and-list {
+        flex-direction: column;
+        height: auto;
+      }
+      #map {
+        border-radius: 10px 10px 0 0;
+        height: 400px;
+      }
+      #list-logements {
+        border-radius: 0 0 10px 10px;
+        height: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+  <a href="index.html" id="logo">Transpareo</a>
+
+  <ul class="nav-center">
+    <li class="dropdown">
+      <a href="#" class="dropbtn">Je suis locataire</a>
+      <div class="dropdown-content">
+        <div class="dropdown-left">
+          <h3>Fonctionnalités</h3>
+          <ul>
+            <li><a href="#">Recherche de logement</a></li>
+            <li><a href="#">Gestion du bail</a></li>
+            <li><a href="#">Paiement en ligne</a></li>
+          </ul>
+        </div>
+        <div class="dropdown-right">
+          <h3>Blog locataire</h3>
+          <div class="blog-examples">
+            <article>
+              <img src="https://via.placeholder.com/150" alt="Blog 1">
+              <p>Conseils pour bien louer</p>
+            </article>
+            <article>
+              <img src="https://via.placeholder.com/150" alt="Blog 2">
+              <p>Droits du locataire</p>
+            </article>
+            <article>
+              <img src="https://via.placeholder.com/150" alt="Blog 3">
+              <p>Entretenir son logement</p>
+            </article>
+          </div>
+        </div>
+      </div>
+    </li>
+
+    <li class="dropdown">
+      <a href="#" class="dropbtn">Je suis propriétaire</a>
+      <div class="dropdown-content">
+        <div class="dropdown-left">
+          <h3>Fonctionnalités</h3>
+          <ul>
+            <li><a href="#">Gestion des locataires</a></li>
+            <li><a href="#">Suivi des paiements</a></li>
+            <li><a href="#">Documents légaux</a></li>
+          </ul>
+        </div>
+        <div class="dropdown-right">
+          <h3>Blog propriétaire</h3>
+          <div class="blog-examples">
+            <article>
+              <img src="https://via.placeholder.com/150" alt="Blog 4">
+              <p>Optimiser ses loyers</p>
+            </article>
+            <article>
+              <img src="https://via.placeholder.com/150" alt="Blog 5">
+              <p>Loi sur la location</p>
+            </article>
+            <article>
+              <img src="https://via.placeholder.com/150" alt="Blog 6">
+              <p>Travaux et rénovations</p>
+            </article>
+          </div>
+        </div>
+      </div>
+    </li>
+    <li><a href="#">Carte</a></li>
+    <li><a href="#">Contactez-nous</a></li>
+  </ul>
+
+  <ul class="user">
+    <li><a href="#">Se connecter</a></li>
+    <li><a href="#">S'inscrire</a></li>
+  </ul>
+</nav>
+<div class="navbar-spacer"></div>
+
+  <section class="hero">
+    <h1>Bienvenue sur la carte interactive de Transpareo</h1>
+    <p>
+      Explorez les logements disponibles à Toulouse avec nos filtres avancés et découvrez leurs détails, notes, prix et photos.
+      Cliquez sur un pin pour plus d'informations.
+    </p>
+  </section>
+
+  <main>
+    <div class="content-container">
+      <div class="search-container">
+        <form class="search-bar" id="search-bar" onsubmit="event.preventDefault(); onSearch();">
+          <div class="search-input-wrapper">
+            <label for="search-input" class="search-label">Rechercher une adresse</label>
+            <input id="search-input" class="search-input" type="text" placeholder="Ex: Rue de Toulouse, Boulevard..." autocomplete="off" />
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="filters-wrapper">
+            <button type="button" id="filters-btn" class="filters-btn">
+              Filtres <span class="chevron-icon">▼</span>
+            </button>
+            <div class="filters-dropdown" id="filters-dropdown">
+              <div class="filter-option">
+                <label for="filter-price">Prix max (€)</label>
+                <input id="filter-price" type="number" min="0" placeholder="Ex: 300000" />
+              </div>
+              <div class="filter-option">
+                <label for="filter-surface">Surface min (m²)</label>
+                <input id="filter-surface" type="number" min="0" placeholder="Ex: 50" />
+              </div>
+              <div class="filter-option">
+                <label for="filter-note">Note min (0-5)</label>
+                <input id="filter-note" type="number" min="0" max="5" step="0.1" placeholder="Ex: 4.5" />
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="search-btn" aria-label="Rechercher">🔍</button>
+        </form>
+      </div>
+
+      <div class="map-and-list">
+        <div id="map"></div>
+        <div id="list-logements"></div>
+      </div>
+    </div>
+  </main>
+
+</body>
+</html>
+

@@ -1,0 +1,306 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mes Biens - Transpareo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .stat-box {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .bien-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .bien-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        
+        .bien-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+        }
+        
+        .bien-titre {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .bien-adresse {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        
+        .bien-body {
+            padding: 20px;
+        }
+        
+        .bien-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .bien-stat {
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        
+        .bien-stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .bien-stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 3px;
+        }
+        
+        .bien-status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .status-verifie {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-reclame {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-disponible {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+        
+        .bien-avis {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .bien-avis-count {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .bien-note {
+            font-size: 18px;
+            font-weight: bold;
+            color: #FFC107;
+        }
+        
+        .bien-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            text-align: center;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .empty-state {
+            background: white;
+            padding: 60px 20px;
+            border-radius: 12px;
+            text-align: center;
+            color: #666;
+        }
+        
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        
+        .empty-state h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🏠 Mes Biens Immobiliers</h1>
+            
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-value">{{ total_biens }}</div>
+                    <div class="stat-label">Biens totaux</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">{{ biens_verifies }}</div>
+                    <div class="stat-label">Biens vérifiés</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">{{ biens|length|add:biens_verifies }}</div>
+                    <div class="stat-label">En attente</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Grille des biens -->
+        {% if biens %}
+        <div class="grid">
+            {% for bien in biens %}
+            <div class="bien-card">
+                <div class="bien-header">
+                    <div class="bien-titre">{{ bien.titre }}</div>
+                    <div class="bien-adresse">📍 {{ bien.adresse }}</div>
+                </div>
+                
+                <div class="bien-body">
+                    <!-- Statut -->
+                    <span class="bien-status status-{{ bien.statut }}">
+                        {% if bien.statut == 'verifie' %}✓ Vérifié
+                        {% elif bien.statut == 'reclame' %}⚠ En attente
+                        {% else %}Disponible{% endif %}
+                    </span>
+                    
+                    <!-- Stats du bien -->
+                    <div class="bien-stats">
+                        <div class="bien-stat">
+                            <div class="bien-stat-value">{{ bien.prix }}€</div>
+                            <div class="bien-stat-label">Loyer</div>
+                        </div>
+                        <div class="bien-stat">
+                            <div class="bien-stat-value">{{ bien.surface }}m²</div>
+                            <div class="bien-stat-label">Surface</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Avis -->
+                    <div class="bien-avis">
+                        <div class="bien-note">⭐ {{ bien.note_moyenne|floatformat:1 }}/5</div>
+                        <div class="bien-avis-count">({{ bien.nombre_avis }} avis)</div>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="bien-actions">
+                        <a href="{% url 'logement-detail' bien.id %}" class="btn btn-primary">
+                            Voir détails
+                        </a>
+                        <a href="{% url 'logement-detail' bien.id %}" class="btn btn-secondary">
+                            Avis ({{ bien.avis.count }})
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">🏠</div>
+            <h2>Aucun bien trouvé</h2>
+            <p>Vous n'avez pas encore de biens vérifiés. Allez sur la carte pour réclamer vos propriétés !</p>
+            <a href="{% url 'landing-page' %}" style="display: inline-block; margin-top: 20px; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">
+                ← Retour à la carte
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
