@@ -37,7 +37,6 @@ Thumbs.db
 
 # Media & Static
 media/
-static/
 
 # Secrets
 .env
