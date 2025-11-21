@@ -1,0 +1,1088 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Messages - Transpareo Connect{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'core/connect-home.css' %}">
+<link rel="stylesheet" href="{% static 'core/messages-complete.css' %}">
+<meta name="csrf-token" content="{{ csrf_token }}">
+<style>
+    /* Masquer la navbar par défaut pour cette page */
+    .navbar {
+        display: none !important;
+    }
+    .navbar-spacer {
+        display: none !important;
+    }
+    /* Masquer le bouton "Aller au contenu principal" */
+    .skip-link {
+        display: none !important;
+    }
+    body {
+        background-color: #F9FAFB !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow-x: hidden !important;
+    }
+    #main-content {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    /* Garantir que la navbar reste identique à la page connect - AUCUN STYLE PERSONNALISÉ SUR LA NAVBAR */
+    html {
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow-x: hidden !important;
+        overflow-y: scroll !important; /* Force le scrollbar à toujours être présent pour éviter les décalages */
+    }
+    body {
+        scrollbar-gutter: stable !important; /* Réserve l'espace du scrollbar pour éviter les décalages */
+    }
+    /* IMPORTANT: Ne pas modifier .connect-navbar ou .navbar-container ici - laisser connect-home.css gérer */
+</style>
+<style>
+    /* Override pour forcer les styles */
+    .messages-page-wrapper {
+        height: calc(100vh - 64px) !important;
+        overflow: hidden !important;
+        background: #F9FAFB !important;
+        margin-top: 64px !important;
+    }
+    .messages-layout {
+        display: flex !important;
+        height: 100% !important;
+    }
+    .conversations-panel {
+        width: 380px !important;
+        min-width: 380px !important;
+        border-right: 1px solid #E5E7EB !important;
+        display: flex !important;
+        flex-direction: column !important;
+        background: #FFFFFF !important;
+    }
+    .chat-panel {
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        background: #F9FAFB !important;
+    }
+    .details-panel {
+        width: 340px !important;
+        min-width: 340px !important;
+        border-left: 1px solid #E5E7EB !important;
+        background: #FFFFFF !important;
+        display: none;
+    }
+    .details-panel.visible {
+        display: flex !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- NAVBAR PRINCIPALE (FIXE TOP) -->
+<nav class="connect-navbar" id="connect-navbar">
+    <div class="navbar-container">
+        <!-- Section gauche -->
+        <div class="navbar-left">
+            <!-- Logo -->
+            <a href="{% url 'connect-home' %}" class="navbar-logo">
+                <span class="logo-text">Transpareo</span>
+            </a>
+            
+            <!-- Barre recherche -->
+            <div class="navbar-search" id="navbar-search-container">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input type="text" 
+                       id="navbar-search-input" 
+                       placeholder="Rechercher posts, personnes, groupes..." 
+                       class="search-input"
+                       autocomplete="off"
+                       aria-label="Recherche"
+                       aria-expanded="false"
+                       aria-controls="search-dropdown">
+                <div class="search-dropdown" id="search-dropdown" role="listbox" aria-label="Résultats de recherche" style="display: none;">
+                    <div class="search-dropdown-content">
+                        <!-- État de chargement -->
+                        <div class="search-loading" id="search-loading" style="display: none;">
+                            <div class="search-loading-spinner"></div>
+                            <span>Recherche en cours...</span>
+                        </div>
+                        
+                        <!-- Résultats -->
+                        <div class="search-results" id="search-results" style="display: none;">
+                            <!-- Posts -->
+                            <div class="search-results-section" id="search-posts-section" style="display: none;">
+                                <div class="search-section-header">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                    <h4>Posts</h4>
+                                </div>
+                                <div class="search-results-list" id="search-posts-results"></div>
+                            </div>
+                            
+                            <!-- Utilisateurs -->
+                            <div class="search-results-section" id="search-users-section" style="display: none;">
+                                <div class="search-section-header">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                    <h4>Personnes</h4>
+                                </div>
+                                <div class="search-results-list" id="search-users-results"></div>
+                            </div>
+                            
+                            <!-- Groupes -->
+                            <div class="search-results-section" id="search-groups-section" style="display: none;">
+                                <div class="search-section-header">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="9" cy="7" r="4"></circle>
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                    </svg>
+                                    <h4>Groupes</h4>
+                                </div>
+                                <div class="search-results-list" id="search-groups-results"></div>
+                            </div>
+                            
+                            <!-- Événements -->
+                            <div class="search-results-section" id="search-events-section" style="display: none;">
+                                <div class="search-section-header">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                    </svg>
+                                    <h4>Événements</h4>
+                                </div>
+                                <div class="search-results-list" id="search-events-results"></div>
+                            </div>
+                            
+                            <!-- Hashtags -->
+                            <div class="search-results-section" id="search-hashtags-section" style="display: none;">
+                                <div class="search-section-header">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="4" y1="9" x2="20" y2="9"></line>
+                                        <line x1="4" y1="15" x2="20" y2="15"></line>
+                                        <line x1="10" y1="3" x2="8" y2="21"></line>
+                                        <line x1="16" y1="3" x2="14" y2="21"></line>
+                                    </svg>
+                                    <h4>Hashtags</h4>
+                                </div>
+                                <div class="search-results-list" id="search-hashtags-results"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Message vide -->
+                        <div class="search-empty" id="search-empty" style="display: none;">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                            <p>Aucun résultat trouvé</p>
+                            <span>Essayez avec d'autres mots-clés</span>
+                        </div>
+                        
+                        <!-- Lien voir tous les résultats -->
+                        <div class="search-view-all-wrapper" id="search-view-all-wrapper" style="display: none;">
+                            <a href="#" class="search-view-all" id="search-view-all">
+                                <span>Voir tous les résultats</span>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Section droite (catégories + avatar) -->
+        <div class="navbar-right">
+            <!-- Catégories de navigation -->
+            <div class="navbar-nav-items">
+                <a href="{% url 'connect-home' %}" 
+                   class="nav-item {% if request.resolver_match.url_name == 'connect-home' %}active{% endif %}"
+                   title="Accueil">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span class="nav-label">Accueil</span>
+                </a>
+                
+                <a href="{% url 'connect-messages' %}" 
+                   class="nav-item"
+                   title="Messages">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span class="nav-label">Messages</span>
+                    {% if unread_messages_count > 0 %}
+                    <span class="nav-badge">{{ unread_messages_count }}</span>
+                    {% endif %}
+                </a>
+                
+                <div class="nav-item nav-notifications" id="nav-notifications" title="Notifications">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span class="nav-label">Notifications</span>
+                    {% if unread_notifications_count > 0 %}
+                    <span class="nav-badge">{{ unread_notifications_count }}</span>
+                    {% endif %}
+                    <div class="notifications-dropdown" id="notifications-dropdown" style="display: none;">
+                        <div class="dropdown-header">
+                            <h3>Notifications</h3>
+                            <a href="{% url 'connect-notifications' %}">Voir tout</a>
+                        </div>
+                        <div class="notifications-list" id="notifications-preview">
+                            <!-- Chargé via JS -->
+                        </div>
+                    </div>
+                </div>
+                
+                <a href="{% url 'connect-groups' %}" 
+                   class="nav-item"
+                   title="Groupes">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <span class="nav-label">Groupes</span>
+                </a>
+            </div>
+            <!-- Avatar utilisateur -->
+            <div class="user-menu" id="user-menu">
+                <button class="user-menu-btn" aria-haspopup="true" aria-expanded="false" id="user-menu-btn">
+                    {% if user.avatar %}
+                    <img src="{{ user.avatar.url }}" alt="{{ user.username }}" class="user-avatar">
+                    {% else %}
+                    <div class="user-avatar-placeholder">{{ user.username|first|upper }}</div>
+                    {% endif %}
+                    <span class="user-username">{{ user.username }}</span>
+                    <svg class="user-dropdown-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+                <div class="user-dropdown" id="user-dropdown">
+                    <div class="dropdown-user-info">
+                        <div class="dropdown-avatar">
+                            {% if user.avatar %}
+                            <img src="{{ user.avatar.url }}" alt="{{ user.username }}">
+                            {% else %}
+                            <div class="avatar-placeholder-large">{{ user.username|first|upper }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="dropdown-user-details">
+                            <strong>{{ user.get_full_name|default:user.username }}</strong>
+                            <span>{{ user.email }}</span>
+                        </div>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <a href="{% url 'profile' %}" class="dropdown-item">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        Voir mon profil
+                    </a>
+                    <a href="#" class="dropdown-item">Paramètres</a>
+                    {% if user.is_locataire %}
+                    <a href="#" class="dropdown-item">Gérer mon bail</a>
+                    {% endif %}
+                    {% if user.is_proprietaire %}
+                    <a href="{% url 'connect-properties' %}" class="dropdown-item">Gérer mes locations</a>
+                    {% endif %}
+                    <a href="#" class="dropdown-item">Aide et support</a>
+                    <div class="dropdown-divider"></div>
+                    <a href="{% url 'logout' %}" class="dropdown-item logout">Déconnexion</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="messages-page-wrapper" id="messages-page">
+    <div class="messages-layout">
+        
+        <!-- COLONNE 1 - LISTE CONVERSATIONS (380px) -->
+        <aside class="conversations-panel" id="conversations-panel">
+            <!-- Header -->
+            <div class="conversations-header">
+                <h1 class="conversations-title">Messages</h1>
+                <div class="conversations-actions">
+                    <button class="icon-btn round" id="btn-new-conversation" onclick="openNewConversationModal()" title="Nouvelle conversation">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                    </button>
+                    <div class="messages-settings-wrapper" style="position: relative;">
+                        <button class="icon-btn round" id="btn-messages-settings" onclick="toggleMessagesSettings()" title="Paramètres">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
+                            </svg>
+                        </button>
+                        <div class="messages-settings-dropdown" id="messages-settings-dropdown" style="display: none;">
+                            <div class="settings-dropdown-item" onclick="markAllConversationsRead()">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                                <span>Marquer toutes les conversations comme lues</span>
+                            </div>
+                            <div class="settings-dropdown-item" onclick="archiveAllConversations()">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="21 8 21 21 3 3"></polyline>
+                                    <line x1="1" y1="12" x2="21" y2="12"></line>
+                                </svg>
+                                <span>Archiver toutes les conversations</span>
+                            </div>
+                            <div class="settings-dropdown-divider"></div>
+                            <div class="settings-dropdown-item" onclick="openMessagesPreferences()">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
+                                </svg>
+                                <span>Préférences de messages</span>
+                            </div>
+                            <div class="settings-dropdown-item" onclick="openNotificationSettings()">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                </svg>
+                                <span>Paramètres de notifications</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recherche -->
+            <div class="conversations-search">
+                <div class="search-input-wrapper">
+                    <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <input type="text" 
+                           id="search-conversations" 
+                           class="search-input" 
+                           placeholder="Rechercher conversations...">
+                    <button class="search-clear" id="search-clear" onclick="clearSearch()" style="display: none;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filtres -->
+            <div class="conversations-filters">
+                <button class="filter-tab active" data-filter="all" onclick="switchFilter('all')">
+                    Tous
+                </button>
+                <button class="filter-tab" data-filter="unread" onclick="switchFilter('unread')">
+                    Non lus
+                    {% if unread_count > 0 %}<span class="filter-badge">{{ unread_count }}</span>{% endif %}
+                </button>
+                <button class="filter-tab" data-filter="archived" onclick="switchFilter('archived')">
+                    Archivés
+                </button>
+                <button class="filter-tab" data-filter="important" onclick="switchFilter('important')">
+                    Importants
+                </button>
+            </div>
+
+            <!-- Liste conversations -->
+            <div class="conversations-list" id="conversations-list">
+                {% if conversations_data %}
+                    {% for data in conversations_data %}
+                        {% with conversation=data.conversation other_user=data.other_user unread=data.unread_count %}
+                        <div class="conversation-item {% if conversation.id == active_conversation_id %}active{% endif %}" 
+                             data-conversation-id="{{ conversation.id }}"
+                             onclick="loadConversation({{ conversation.id }})">
+                            <!-- Avatar -->
+                            <div class="conversation-avatar">
+                                {% if other_user %}
+                                    {% if other_user.profile_picture or other_user.avatar %}
+                                        <img src="{{ other_user.profile_picture|default:other_user.avatar }}" alt="{{ other_user.username }}">
+                                    {% else %}
+                                        <div class="avatar-placeholder">{{ other_user.username|first|upper }}</div>
+                                    {% endif %}
+                                    {% if other_user.is_online %}
+                                        <span class="online-badge"></span>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="avatar-placeholder">G</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Contenu -->
+                            <div class="conversation-content">
+                                <div class="conversation-header">
+                                    <span class="conversation-name">
+                                        {% if other_user %}
+                                            {{ other_user.get_full_name|default:other_user.username }}
+                                        {% else %}
+                                            Groupe {{ conversation.id }}
+                                        {% endif %}
+                                    </span>
+                                        {% if conversation.last_message %}
+                                        <span class="conversation-time">{{ conversation.last_message.created_at|naturaltime }}</span>
+                                        {% endif %}
+                                </div>
+                                <div class="conversation-preview">
+                                    {% if conversation.last_message %}
+                                        {% if conversation.last_message.sender == user %}
+                                            <span class="you-prefix">Vous : </span>
+                                        {% endif %}
+                                        {{ conversation.last_message.content|truncatewords:10 }}
+                                    {% else %}
+                                        Aucun message
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Badges -->
+                                {% if unread > 0 %}
+                                    <span class="unread-badge">{{ unread }}</span>
+                                {% endif %}
+                        </div>
+                        {% endwith %}
+                    {% endfor %}
+                                    {% else %}
+                    <div class="empty-state">
+                        <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <h3>Aucune conversation</h3>
+                        <button class="btn-primary" onclick="openNewConversationModal()">Démarrer une conversation</button>
+                    </div>
+                {% endif %}
+            </div>
+        </aside>
+
+        <!-- COLONNE 2 - ZONE CHAT (flex) -->
+        <main class="chat-panel" id="chat-panel" {% if not active_conversation_id %}style="display: none;"{% endif %}>
+            <!-- Header conversation -->
+            <div class="chat-header" id="chat-header" style="{% if not active_conversation_id %}display: none;{% endif %}">
+                    <div class="chat-header-left">
+                        <button class="back-btn" onclick="showConversationsList()" style="display: none;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                        </button>
+                        <div class="chat-avatar" id="chat-avatar">
+                            {% if active_other_user %}
+                                {% if active_other_user.avatar %}
+                                    <img src="{{ active_other_user.avatar.url }}" alt="{{ active_other_user.username }}">
+                                {% elif active_other_user.profile_picture %}
+                                    <img src="{{ active_other_user.profile_picture.url }}" alt="{{ active_other_user.username }}">
+                                {% else %}
+                                    <div class="avatar-placeholder">{{ active_other_user.username|first|upper }}</div>
+                                {% endif %}
+                                {% if active_other_user.is_online %}
+                                    <span class="online-badge"></span>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                        <div class="chat-info">
+                            <div class="chat-name-row">
+                                <h3 class="chat-name" id="chat-name">
+                                    {% if active_other_user %}
+                                        {{ active_other_user.get_full_name|default:active_other_user.username }}
+                                    {% else %}
+                                        Groupe {{ active_conversation.id }}
+                                    {% endif %}
+                                </h3>
+                                <div class="chat-status" id="chat-status">
+                                    {% if active_other_user and active_other_user.is_online %}
+                                        <span class="status-online">En ligne</span>
+                                    {% else %}
+                                        <span class="status-offline">Hors ligne</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="typing-indicator" id="typing-indicator" style="display: none;">
+                                <span class="typing-dots"></span>
+                                <span>est en train d'écrire...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-header-right">
+                        <button class="icon-btn" onclick="startVoiceCall()" title="Appel vocal">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                            </svg>
+                        </button>
+                        <button class="icon-btn" onclick="startVideoCall()" title="Appel vidéo">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                <circle cx="12" cy="13" r="4"></circle>
+                            </svg>
+                        </button>
+                        <button class="icon-btn" id="btn-details" title="Détails">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Zone messages -->
+                <div class="messages-area" id="messages-area" style="{% if not active_conversation_id %}display: none;{% endif %}">
+                    <div class="messages-container" id="messages-container">
+                        {% if active_conversation_id and active_messages %}
+                            {% regroup active_messages by created_at|date:"d/m/Y" as messages_by_date %}
+                            {% for date_group in messages_by_date %}
+                                <div class="date-separator">{{ date_group.grouper }}</div>
+                                {% for message in date_group.list %}
+                                    <div class="message-wrapper {% if message.sender == user %}message-sent{% else %}message-received{% endif %}" 
+                                         data-message-id="{{ message.id }}">
+                                        {% if message.sender != user %}
+                                            <div class="message-avatar">
+                                                {% if message.sender.profile_picture %}
+                                                    <img src="{{ message.sender.profile_picture.url }}" alt="{{ message.sender.username }}">
+                                                {% else %}
+                                                    <div class="avatar-placeholder small">{{ message.sender.username|first|upper }}</div>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                        <div class="message-bubble">
+                                            {% if message.image %}
+                                                <div class="message-image">
+                                                    <img src="{{ message.image.url }}" alt="Image" onclick="openLightbox('{{ message.image.url }}')">
+                                                </div>
+                                            {% elif message.document %}
+                                                <div class="message-file">
+                                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                                    </svg>
+                                                    <div class="file-info">
+                                                        <div class="file-name">{{ message.document_name|default:"Fichier" }}</div>
+                                                        <div class="file-size">{{ message.document_size|filesizeformat }}</div>
+                                                    </div>
+                                                    <a href="{{ message.document.url }}" download class="file-download">
+                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                                            <polyline points="7 10 12 15 17 10"></polyline>
+                                                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                                                        </svg>
+                                                    </a>
+                                                </div>
+                                            {% elif message.audio %}
+                                                <div class="message-audio">
+                                                    <button class="audio-play" onclick="playAudio('{{ message.audio.url }}')">
+                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                                            <path d="M8 5v14l11-7z"/>
+                                                        </svg>
+                                                    </button>
+                                                    <div class="audio-waveform"></div>
+                                                    <span class="audio-duration">{{ message.audio_duration|default:0 }}s</span>
+                                                </div>
+                                            {% else %}
+                                                <div class="message-text">{{ message.content|linebreaksbr }}</div>
+                                            {% endif %}
+                                            <div class="message-footer">
+                                                <span class="message-time">{{ message.created_at|time:"H:i" }}</span>
+                                                {% if message.sender == user %}
+                                                    {% if message.read %}
+                                                        <span class="message-status read">
+                                                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                                            </svg>
+                                                        </span>
+                                                    {% elif message.delivered %}
+                                                        <span class="message-status delivered">
+                                                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                                            </svg>
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="message-status sent">
+                                                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                                            </svg>
+                                                        </span>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Zone saisie (toujours présente mais masquée si aucune conversation) -->
+                <div class="message-input-area" id="message-input-area" style="display: none;">
+                    <div class="media-preview" id="media-preview" style="display: none;"></div>
+                    <div class="input-wrapper">
+                        <div class="input-toolbar">
+                            <button class="toolbar-btn" onclick="openEmojiPicker()" title="Emoji">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                                    <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                                    <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                                </svg>
+                            </button>
+                            <button class="toolbar-btn" onclick="openGifPicker()" title="GIF">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
+                            </button>
+                            <label class="toolbar-btn" title="Image">
+                                <input type="file" accept="image/*" multiple style="display: none;" onchange="handleImageUpload(event)">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
+                            </label>
+                            <label class="toolbar-btn" title="Fichier">
+                                <input type="file" multiple style="display: none;" onchange="handleFileUpload(event)">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                            </label>
+                        </div>
+                            <textarea id="message-input" 
+                                      class="message-input" 
+                                      placeholder="Envoyer un message..."
+                                      rows="1"
+                                      onkeydown="handleInputKeydown(event)"
+                                      oninput="handleInputChange()"></textarea>
+                        <button class="send-btn" id="send-btn" disabled>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+            
+            <!-- Message vide (affiché quand aucune conversation n'est sélectionnée) -->
+            <div class="chat-empty" id="chat-empty" style="{% if active_conversation_id %}display: none;{% else %}display: flex;{% endif %}">
+                <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <h3>Sélectionnez une conversation</h3>
+                <p>Choisissez une conversation dans la liste pour commencer à discuter</p>
+                <button class="btn-primary" onclick="openNewConversationModal()">Démarrer une conversation</button>
+            </div>
+        </main>
+
+        <!-- COLONNE 3 - DÉTAILS (340px, toggleable) -->
+        <aside class="details-panel" id="details-panel">
+            <div class="details-header">
+                <h3>Détails</h3>
+                <button class="icon-btn" onclick="toggleDetailsPanel()" title="Fermer">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="details-tabs">
+                <button class="details-tab active" data-tab="details" onclick="switchDetailsTab('details')">Détails</button>
+                <button class="details-tab" data-tab="media" onclick="switchDetailsTab('media')">Médias</button>
+                <button class="details-tab" data-tab="files" onclick="switchDetailsTab('files')">Fichiers</button>
+                <button class="details-tab" data-tab="links" onclick="switchDetailsTab('links')">Liens</button>
+            </div>
+
+            <div class="details-content">
+                <div class="details-tab-content active" id="tab-details">
+                    {% if active_conversation %}
+                        {% if active_conversation.participants.count == 2 and active_other_user %}
+                            <div class="participant-profile">
+                                <div class="profile-avatar-large">
+                                    {% if active_other_user.profile_picture or active_other_user.avatar %}
+                                        <img src="{{ active_other_user.profile_picture|default:active_other_user.avatar }}" alt="{{ active_other_user.username }}">
+                                    {% else %}
+                                        <div class="avatar-placeholder large">{{ active_other_user.username|first|upper }}</div>
+                                    {% endif %}
+                                </div>
+                                <h4>{{ active_other_user.get_full_name|default:active_other_user.username }}</h4>
+                                <p class="profile-title">{{ active_other_user.bio|default:"Membre Transpareo" }}</p>
+                                <a href="{% url 'profile-user' active_other_user.id %}" class="btn-secondary full-width">Voir profil complet</a>
+                                <div class="profile-actions">
+                                    <button class="btn-secondary" onclick="startVoiceCall()">Appel vocal</button>
+                                    <button class="btn-secondary" onclick="startVideoCall()">Appel vidéo</button>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <div class="conversation-settings">
+                            <h4>Paramètres</h4>
+                            <div class="setting-item">
+                                <label>
+                                    <input type="checkbox" id="notifications-toggle" checked>
+                                    <span>Notifications</span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <label>
+                                    <input type="checkbox" id="favorite-toggle" onchange="toggleFavorite()">
+                                    <span>Ajouter aux favoris</span>
+                                </label>
+                            </div>
+                            <button class="btn-secondary full-width" onclick="archiveConversation()">Archiver</button>
+                            <button class="btn-danger full-width" onclick="deleteConversation()">Supprimer</button>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="details-tab-content" id="tab-media">
+                    <div class="media-grid" id="media-grid">
+                        <div class="empty-state">Aucun média partagé</div>
+                    </div>
+                </div>
+
+                <div class="details-tab-content" id="tab-files">
+                    <div class="files-list" id="files-list">
+                        <div class="empty-state">Aucun fichier partagé</div>
+                    </div>
+                </div>
+
+                <div class="details-tab-content" id="tab-links">
+                    <div class="links-list" id="links-list">
+                        <div class="empty-state">Aucun lien partagé</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+</div>
+
+<!-- MODAL NOUVELLE CONVERSATION -->
+<div class="modal-overlay" id="new-conversation-modal" style="display: none;">
+    <div class="modal-content new-conversation-modal">
+        <div class="modal-header">
+            <div class="modal-header-content">
+                <h2>Nouvelle conversation</h2>
+                <p class="modal-subtitle">Sélectionnez les personnes avec qui vous souhaitez discuter</p>
+            </div>
+            <button class="modal-close" onclick="closeNewConversationModal()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="modal-body new-conversation-body">
+            <!-- Section Recherche -->
+            <div class="new-conv-section">
+                <label class="section-label">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    Rechercher des utilisateurs
+                </label>
+                <div class="search-input-container">
+                    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <input type="text" 
+                           id="recipients-search" 
+                           class="recipients-search-modern" 
+                           placeholder="Tapez un nom, un email ou un username...">
+                </div>
+            </div>
+
+            <!-- Destinataires sélectionnés -->
+            <div class="new-conv-section" id="selected-recipients-section" style="display: none;">
+                <label class="section-label">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    Destinataires sélectionnés
+                </label>
+                <div class="recipients-tags-modern" id="recipients-tags"></div>
+            </div>
+
+            <!-- Nom du groupe (si plusieurs destinataires) -->
+            <div class="new-conv-section" id="group-name-wrapper" style="display: none;">
+                <label class="section-label">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    Nom du groupe
+                </label>
+                <input type="text" 
+                       id="group-name-input" 
+                       class="group-name-input-modern" 
+                       placeholder="Donnez un nom à votre groupe...">
+            </div>
+                
+            <!-- Suggestions / Résultats -->
+            <div class="new-conv-section">
+                <div class="recipients-suggestions-modern" id="recipients-suggestions">
+                    <div class="suggestions-header">
+                        <span class="suggestions-title">Suggestions</span>
+                    </div>
+                    <div class="suggestions-list" id="suggestions-list">
+                        <!-- Suggestions chargées via JS -->
+                    </div>
+                </div>
+                
+                <div class="recipients-results-modern" id="recipients-results" style="display: none;">
+                    <div class="results-header">
+                        <span class="results-title">Résultats de recherche</span>
+                    </div>
+                    <div class="results-list" id="results-list">
+                        <!-- Résultats recherche chargés via JS -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Message initial (optionnel) -->
+            <div class="new-conv-section">
+                <label class="section-label">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    Message initial (optionnel)
+                </label>
+                <div class="message-input-container">
+                    <textarea id="new-message-input" 
+                              class="new-message-input-modern" 
+                              placeholder="Écrivez un message pour démarrer la conversation..."
+                              rows="4"></textarea>
+                    
+                    <div class="media-preview-modern" id="new-conversation-media-preview" style="display: none;"></div>
+                    
+                    <div class="input-toolbar-modern">
+                        <label class="toolbar-btn-modern" title="Ajouter une image">
+                            <input type="file" accept="image/*" multiple style="display: none;" onchange="handleImageUpload(event)">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                        </label>
+                        <label class="toolbar-btn-modern" title="Ajouter un fichier">
+                            <input type="file" multiple style="display: none;" onchange="handleFileUpload(event)">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer new-conversation-footer">
+            <button class="btn-secondary-modern" onclick="closeNewConversationModal()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                Annuler
+            </button>
+            <button class="btn-primary-modern" id="create-conversation-btn" onclick="createConversation()" disabled>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+                Créer la conversation
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script>
+    window.currentUserId = {{ user.id }};
+    window.activeConversationId = {% if active_conversation_id %}{{ active_conversation_id }}{% else %}null{% endif %};
+    
+    // Fonction helper pour récupérer le CSRF token depuis Django
+    function getCSRFTokenFromDjango() {
+        // Depuis le meta tag
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        if (metaTag) {
+            return metaTag.getAttribute('content');
+        }
+        // Depuis les cookies
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, 10) === 'csrftoken=') {
+                    cookieValue = decodeURIComponent(cookie.substring(10));
+                    break;
+                }
+            }
+        }
+        return cookieValue || '';
+    }
+    
+    // Définir la fonction globale
+    window.getCSRFToken = getCSRFTokenFromDjango;
+    
+    // Log pour debug
+    console.log('CSRF Token from meta:', document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')?.substring(0, 10) + '...');
+    console.log('CSRF Token from cookies:', getCSRFTokenFromDjango() ? 'Found' : 'Not found');
+</script>
+<script src="{% static 'core/connect-home.js' %}"></script>
+<script src="{% static 'core/messages-complete.js' %}"></script>
+
+<!-- MODAL PRÉFÉRENCES MESSAGES -->
+<div class="modal-overlay" id="messages-preferences-modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Préférences de messages</h2>
+            <button class="modal-close" onclick="closeMessagesPreferences()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="preferences-section">
+                <h3>Qui peut m'envoyer un message</h3>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="who-can-message" value="everyone" checked>
+                        <span>Tout le monde</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="who-can-message" value="connections">
+                        <span>Mes connexions uniquement</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="who-can-message" value="verified">
+                        <span>Utilisateurs vérifiés uniquement</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="preferences-section">
+                <h3>Notifications</h3>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="message-notifications-email" checked>
+                        <span>Notifications email pour nouveaux messages</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="message-notifications-push" checked>
+                        <span>Notifications push pour nouveaux messages</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="preferences-section">
+                <h3>Autres paramètres</h3>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="read-receipts" checked>
+                        <span>Accusés de lecture</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="auto-download-media">
+                        <span>Téléchargement automatique des médias</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeMessagesPreferences()">Annuler</button>
+            <button class="btn-primary" onclick="saveMessagesPreferences()">Enregistrer</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL PARAMÈTRES NOTIFICATIONS -->
+<div class="modal-overlay" id="notification-settings-modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Paramètres de notifications</h2>
+            <button class="modal-close" onclick="closeNotificationSettings()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="preferences-section">
+                <h3>Types de notifications</h3>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="notification-email" checked>
+                        <span>Notifications par email</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="notification-push" checked>
+                        <span>Notifications push</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="notification-in-app" checked>
+                        <span>Notifications dans l'application</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="preferences-section">
+                <h3>Fréquence des emails</h3>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="email-frequency" value="immediate" checked>
+                        <span>Immédiate</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="email-frequency" value="daily">
+                        <span>Résumé quotidien</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="email-frequency" value="weekly">
+                        <span>Résumé hebdomadaire</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeNotificationSettings()">Annuler</button>
+            <button class="btn-primary" onclick="saveNotificationSettings()">Enregistrer</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
