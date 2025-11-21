@@ -1,0 +1,309 @@
+{% load humanize %}
+<!-- Filtres simplifiés -->
+<div class="filters-section">
+    <div class="filters-header">
+        <h3>Filtres</h3>
+    </div>
+    <div class="filters-content">
+        <form method="GET" action="{% url 'admin-avis' %}">
+            <input type="hidden" name="view" value="moderation">
+            <div class="filter-row">
+                <div class="filter-field filter-search">
+                    <label>Recherche</label>
+                    <div class="search-input-wrapper">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        <input type="text" name="search" value="{{ filters.search }}" 
+                               placeholder="Auteur, logement, contenu..." class="filter-input">
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn-primary">Rechercher</button>
+                    <button type="button" class="btn-secondary" onclick="resetFilters()">Réinitialiser</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tableau Modération -->
+<div class="table-section">
+    <div class="table-header">
+        <h3>Avis en attente de modération</h3>
+    </div>
+
+    <!-- Actions bulk -->
+    <div class="bulk-actions-bar" id="bulk-actions-bar" style="display: none;">
+        <span class="bulk-count"><span id="bulk-count">0</span> avis sélectionnés</span>
+        <div class="bulk-buttons">
+            <button class="btn-primary btn-small" onclick="bulkApprouver()">Approuver tous</button>
+            <button class="btn-danger btn-small" onclick="bulkRejeter()">Rejeter tous</button>
+            <button class="btn-secondary btn-small" onclick="bulkMarquerSpam()">Marquer spam</button>
+            <button class="btn-ghost btn-small" onclick="clearSelection()">Désélectionner tout</button>
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="col-checkbox sticky-left">
+                        <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
+                    </th>
+                    <th class="col-auteur sticky-left-after-checkbox">Auteur</th>
+                    <th class="col-note">Note</th>
+                    <th class="col-logement">Logement</th>
+                    <th class="col-contenu">Contenu aperçu</th>
+                    <th class="col-date">Date soumission</th>
+                    <th class="col-actions sticky-right">Actions rapides</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for avis in avis %}
+                <tr class="table-row" data-avis-id="{{ avis.id }}">
+                    <td class="col-checkbox sticky-left">
+                        <input type="checkbox" class="avis-checkbox" value="{{ avis.id }}" 
+                               onchange="updateBulkActions()">
+                    </td>
+                    <td class="col-auteur sticky-left-after-checkbox">
+                        <div class="auteur-cell">
+                            <div class="avatar-small">
+                                {% if avis.locataire.avatar %}
+                                <img src="{{ avis.locataire.avatar.url }}" alt="{{ avis.locataire.username }}">
+                                {% else %}
+                                <div class="avatar-placeholder">{{ avis.locataire.username|first|upper }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="auteur-info">
+                                <strong>{{ avis.locataire.username }}</strong>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="col-note">
+                        <div class="note-display">
+                            {% for i in "12345" %}
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="{% if forloop.counter <= avis.note %}currentColor{% else %}none{% endif %}" 
+                                 stroke="currentColor" stroke-width="2">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td class="col-logement">
+                        <a href="/connect-admin/logements/{{ avis.logement.id }}/">{{ avis.logement.titre|truncatewords:5 }}</a>
+                    </td>
+                    <td class="col-contenu">
+                        <div class="contenu-apercu" title="{{ avis.commentaire }}">
+                            {{ avis.commentaire|truncatewords:20 }}
+                        </div>
+                    </td>
+                    <td class="col-date">{{ avis.date_avis|timesince }}</td>
+                    <td class="col-actions sticky-right">
+                        <div class="actions-inline">
+                            <button class="btn-icon btn-success" onclick="approuverAvis({{ avis.id }})" title="Approuver">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </button>
+                            <button class="btn-icon btn-danger" onclick="rejeterAvis({{ avis.id }})" title="Rejeter">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                            <button class="btn-icon btn-secondary" onclick="openAvisDetail({{ avis.id }})" title="Voir détail">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="empty-state">
+                        <p>Aucun avis en attente de modération</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if avis.has_other_pages %}
+    <div class="pagination-wrapper">
+        <div class="pagination-info">
+            <span class="pagination-text">
+                Affichage {{ avis.start_index }}-{{ avis.end_index }} sur {{ avis.paginator.count|intcomma }} avis
+            </span>
+        </div>
+        <div class="pagination-controls">
+            {% if avis.has_previous %}
+            <a href="?page={{ avis.previous_page_number }}&view=moderation" class="page-link">Précédent</a>
+            {% endif %}
+            {% if avis.has_next %}
+            <a href="?page={{ avis.next_page_number }}&view=moderation" class="page-link">Suivant</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Filtres simplifiés -->
+<div class="filters-section">
+    <div class="filters-header">
+        <h3>Filtres</h3>
+    </div>
+    <div class="filters-content">
+        <form method="GET" action="{% url 'admin-avis' %}">
+            <input type="hidden" name="view" value="moderation">
+            <div class="filter-row">
+                <div class="filter-field filter-search">
+                    <label>Recherche</label>
+                    <div class="search-input-wrapper">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        <input type="text" name="search" value="{{ filters.search }}" 
+                               placeholder="Auteur, logement, contenu..." class="filter-input">
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn-primary">Rechercher</button>
+                    <button type="button" class="btn-secondary" onclick="resetFilters()">Réinitialiser</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tableau Modération -->
+<div class="table-section">
+    <div class="table-header">
+        <h3>Avis en attente de modération</h3>
+    </div>
+
+    <!-- Actions bulk -->
+    <div class="bulk-actions-bar" id="bulk-actions-bar" style="display: none;">
+        <span class="bulk-count"><span id="bulk-count">0</span> avis sélectionnés</span>
+        <div class="bulk-buttons">
+            <button class="btn-primary btn-small" onclick="bulkApprouver()">Approuver tous</button>
+            <button class="btn-danger btn-small" onclick="bulkRejeter()">Rejeter tous</button>
+            <button class="btn-secondary btn-small" onclick="bulkMarquerSpam()">Marquer spam</button>
+            <button class="btn-ghost btn-small" onclick="clearSelection()">Désélectionner tout</button>
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="col-checkbox sticky-left">
+                        <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
+                    </th>
+                    <th class="col-auteur sticky-left-after-checkbox">Auteur</th>
+                    <th class="col-note">Note</th>
+                    <th class="col-logement">Logement</th>
+                    <th class="col-contenu">Contenu aperçu</th>
+                    <th class="col-date">Date soumission</th>
+                    <th class="col-actions sticky-right">Actions rapides</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for avis in avis %}
+                <tr class="table-row" data-avis-id="{{ avis.id }}">
+                    <td class="col-checkbox sticky-left">
+                        <input type="checkbox" class="avis-checkbox" value="{{ avis.id }}" 
+                               onchange="updateBulkActions()">
+                    </td>
+                    <td class="col-auteur sticky-left-after-checkbox">
+                        <div class="auteur-cell">
+                            <div class="avatar-small">
+                                {% if avis.locataire.avatar %}
+                                <img src="{{ avis.locataire.avatar.url }}" alt="{{ avis.locataire.username }}">
+                                {% else %}
+                                <div class="avatar-placeholder">{{ avis.locataire.username|first|upper }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="auteur-info">
+                                <strong>{{ avis.locataire.username }}</strong>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="col-note">
+                        <div class="note-display">
+                            {% for i in "12345" %}
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="{% if forloop.counter <= avis.note %}currentColor{% else %}none{% endif %}" 
+                                 stroke="currentColor" stroke-width="2">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td class="col-logement">
+                        <a href="/connect-admin/logements/{{ avis.logement.id }}/">{{ avis.logement.titre|truncatewords:5 }}</a>
+                    </td>
+                    <td class="col-contenu">
+                        <div class="contenu-apercu" title="{{ avis.commentaire }}">
+                            {{ avis.commentaire|truncatewords:20 }}
+                        </div>
+                    </td>
+                    <td class="col-date">{{ avis.date_avis|timesince }}</td>
+                    <td class="col-actions sticky-right">
+                        <div class="actions-inline">
+                            <button class="btn-icon btn-success" onclick="approuverAvis({{ avis.id }})" title="Approuver">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </button>
+                            <button class="btn-icon btn-danger" onclick="rejeterAvis({{ avis.id }})" title="Rejeter">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                            <button class="btn-icon btn-secondary" onclick="openAvisDetail({{ avis.id }})" title="Voir détail">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="empty-state">
+                        <p>Aucun avis en attente de modération</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if avis.has_other_pages %}
+    <div class="pagination-wrapper">
+        <div class="pagination-info">
+            <span class="pagination-text">
+                Affichage {{ avis.start_index }}-{{ avis.end_index }} sur {{ avis.paginator.count|intcomma }} avis
+            </span>
+        </div>
+        <div class="pagination-controls">
+            {% if avis.has_previous %}
+            <a href="?page={{ avis.previous_page_number }}&view=moderation" class="page-link">Précédent</a>
+            {% endif %}
+            {% if avis.has_next %}
+            <a href="?page={{ avis.next_page_number }}&view=moderation" class="page-link">Suivant</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+

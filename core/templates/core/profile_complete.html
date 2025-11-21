@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil - {{ user.username }} - Transpareo</title>
+    <meta name="description" content="Profil de {{ user.username }} sur Transpareo">
+    <meta property="og:title" content="Profil - {{ user.username }}">
+    <meta property="og:description" content="{{ user.bio|default:'Profil Transpareo' }}">
+    {% if user.avatar %}
+    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ user.avatar.url }}">
+    {% endif %}
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --color-primary: #D3580B;
+            --color-text: #181818;
+            --color-text-secondary: #666666;
+            --color-border: #E0E0E0;
+            --color-success: #4CAF50;
+            --color-warning: #FFA500;
+            --color-error: #F44336;
+            --color-bg: #F7F7F7;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.6;
+        }
+        
+        /* Header avec couverture */
+        .profile-header-cover {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            background: linear-gradient(135deg, #D3580B 0%, #FF8C42 100%);
+            overflow: hidden;
+        }
+        
+        .profile-header-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .profile-header-cover .cover-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.1);
+        }
+        
+        .cover-edit-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.9);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--color-text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        
+        .cover-edit-btn:hover {
+            background: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Avatar */
+        .profile-avatar-container {
+            position: relative;
+            margin-top: -80px;
+            margin-left: 40px;
+            z-index: 10;
+        }
+        
+        .profile-avatar {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            border: 6px solid white;
+            object-fit: cover;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .avatar-placeholder {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            border: 6px solid white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 64px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .avatar-edit-overlay {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 48px;
+            height: 48px;
+            background: var(--color-primary);
+            border-radius: 50%;
+            border: 4px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .avatar-edit-overlay:hover {
+            transform: scale(1.1);
+        }
+        
+        .status-indicator {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 4px solid white;
+        }
+        
+        .status-online { background: var(--color-success); }
+        .status-offline { background: #999; }
+        .status-inactive { background: var(--color-warning); }
+        
+        /* Container principal */
+        .profile-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px 40px;
+        }
+        
+        /* Header info */
+        .profile-header-info {
+            background: white;
+            border-radius: 12px;
+            padding: 120px 40px 40px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+        
+        .profile-name-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .profile-name {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--color-text);
+        }
+        
+        .verification-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .verification-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .badge-email { background: #E3F2FD; color: #1976D2; }
+        .badge-phone { background: #E3F2FD; color: #1976D2; }
+        .badge-identity { background: #FFF8E1; color: #F57C00; }
+        .badge-proprietaire { background: #FFF8E1; color: #F57C00; }
+        
+        .profile-role {
+            font-size: 16px;
+            color: var(--color-text-secondary);
+            margin-bottom: 12px;
+        }
+        
+        .profile-bio {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            margin-bottom: 24px;
+            max-width: 600px;
+        }
+        
+        .profile-location {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--color-text-secondary);
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        
+        .profile-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #B84909;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: var(--color-text);
+            border: 2px solid var(--color-border);
+        }
+        
+        .btn-secondary:hover {
+            border-color: var(--color-text);
+        }
+        
+        /* Tabs */
+        .profile-tabs {
+            display: flex;
+            gap: 8px;
+            border-bottom: 2px solid var(--color-border);
+            margin-bottom: 24px;
+            overflow-x: auto;
+        }
+        
+        .profile-tab {
+            padding: 16px 24px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+            transition: all 0.2s;
+            white-space: nowrap;
+            margin-bottom: -2px;
+        }
+        
+        .profile-tab:hover {
+            color: var(--color-text);
+        }
+        
+        .profile-tab.active {
+            color: var(--color-text);
+            border-bottom-color: var(--color-primary);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Layout 3 colonnes */
+        .profile-layout {
+            display: grid;
+            grid-template-columns: 30% 55% 15%;
+            gap: 24px;
+        }
+        
+        @media (max-width: 1199px) {
+            .profile-layout {
+                grid-template-columns: 35% 65%;
+            }
+            .sidebar-right {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 767px) {
+            .profile-layout {
+                grid-template-columns: 100%;
+            }
+            .sidebar-left {
+                order: 2;
+            }
+            .main-content {
+                order: 1;
+            }
+        }
+        
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--color-text);
+        }
+        
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--color-primary);
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+        }
+        
+        /* Rating */
+        .rating-display {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .rating-stars {
+            display: flex;
+            gap: 4px;
+            font-size: 24px;
+        }
+        
+        .rating-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--color-text);
+        }
+        
+        .rating-count {
+            color: var(--color-text-secondary);
+            font-size: 14px;
+        }
+        
+        /* Repartition notes */
+        .rating-breakdown {
+            margin-top: 16px;
+        }
+        
+        .rating-bar-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .rating-bar-label {
+            width: 80px;
+            font-size: 14px;
+        }
+        
+        .rating-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--color-border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .rating-bar-fill {
+            height: 100%;
+            background: var(--color-primary);
+            transition: width 0.3s;
+        }
+        
+        .rating-bar-count {
+            width: 60px;
+            text-align: right;
+            font-size: 12px;
+            color: var(--color-text-secondary);
+        }
+        
+        /* Avis */
+        .avis-item {
+            padding: 20px;
+            border-bottom: 1px solid var(--color-border);
+        }
+        
+        .avis-item:last-child {
+            border-bottom: none;
+        }
+        
+        .avis-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .avis-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        .avis-author {
+            flex: 1;
+        }
+        
+        .avis-author-name {
+            font-weight: 600;
+            font-size: 15px;
+        }
+        
+        .avis-date {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+        }
+        
+        .avis-stars {
+            color: #FFC107;
+            font-size: 18px;
+        }
+        
+        .avis-text {
+            color: var(--color-text-secondary);
+            font-size: 14px;
+            line-height: 1.6;
+            margin-top: 8px;
+        }
+        
+        /* Logements grid */
+        .logements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        
+        .logement-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        
+        .logement-card:hover {
+            transform: translateY(-4px);
+        }
+        
+        .logement-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .logement-info {
+            padding: 16px;
+        }
+        
+        .logement-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .logement-price {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--color-primary);
+            margin-bottom: 4px;
+        }
+        
+        .logement-location {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+        }
+        
+        /* Social links */
+        .social-links {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .social-link {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--color-border);
+            color: var(--color-text);
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        
+        .social-link:hover {
+            background: var(--color-primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Responsive */
+        @media (max-width: 767px) {
+            .profile-header-cover {
+                height: 200px;
+            }
+            
+            .profile-avatar-container {
+                margin-left: 20px;
+                margin-top: -60px;
+            }
+            
+            .profile-avatar, .avatar-placeholder {
+                width: 120px;
+                height: 120px;
+            }
+            
+            .profile-header-info {
+                padding: 80px 20px 20px;
+            }
+            
+            .profile-name {
+                font-size: 24px;
+            }
+            
+            .profile-layout {
+                padding: 0 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- SECTION 1: HEADER AVEC COUVERTURE -->
+    <div class="profile-header-cover">
+        {% if user.cover_image %}
+            <img src="{{ user.cover_image.url }}" alt="Couverture {{ user.username }}">
+        {% endif %}
+        <div class="cover-overlay"></div>
+        {% if is_own_profile %}
+        <button class="cover-edit-btn" onclick="editCover()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            Modifier la couverture
+        </button>
+        {% endif %}
+    </div>
+    
+    <div class="profile-container">
+        <!-- Avatar avec statut -->
+        <div class="profile-avatar-container">
+            {% if user.avatar %}
+                <img src="{{ user.avatar.url }}" alt="{{ user.username }}" class="profile-avatar">
+            {% else %}
+                <div class="avatar-placeholder">{{ user.username.0|upper }}</div>
+            {% endif %}
+            
+            {% if user.afficher_statut_online %}
+            <div class="status-indicator {% if is_online %}status-online{% else %}status-offline{% endif %}"></div>
+            {% endif %}
+            
+            {% if is_own_profile %}
+            <div class="avatar-edit-overlay" onclick="editAvatar()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Informations de base -->
+        <div class="profile-header-info">
+            <div class="profile-name-section">
+                <h1 class="profile-name">{{ user.get_full_name|default:user.username }}</h1>
+                <div class="verification-badges">
+                    {% if user.email_verified %}
+                    <span class="verification-badge badge-email">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </svg>
+                        Email vérifié
+                    </span>
+                    {% endif %}
+                    {% if user.phone_verified %}
+                    <span class="verification-badge badge-phone">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </svg>
+                        Téléphone vérifié
+                    </span>
+                    {% endif %}
+                    {% if user.identity_verified %}
+                    <span class="verification-badge badge-identity">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </svg>
+                        Identité vérifiée
+                    </span>
+                    {% endif %}
+                    {% if user.proprietaire_verified %}
+                    <span class="verification-badge badge-proprietaire">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </svg>
+                        Propriétaire vérifié
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="profile-role">
+                {% if user.is_proprietaire %}
+                    Je suis propriétaire
+                    {% if user.is_professionnel %} • Professionnel{% endif %}
+                {% else %}
+                    Je suis locataire
+                {% endif %}
+            </div>
+            
+            {% if user.bio %}
+            <div class="profile-bio">{{ user.bio }}</div>
+            {% endif %}
+            
+            {% if user.ville %}
+            <div class="profile-location">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                {{ user.ville }}{% if user.region %}, {{ user.region }}{% endif %}
+            </div>
+            {% endif %}
+            
+            <!-- Réseaux sociaux -->
+            {% if user.linkedin_url or user.facebook_url or user.instagram_url %}
+            <div class="social-links">
+                {% if user.linkedin_url %}
+                <a href="{{ user.linkedin_url }}" target="_blank" class="social-link" title="LinkedIn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                    </svg>
+                </a>
+                {% endif %}
+                {% if user.facebook_url %}
+                <a href="{{ user.facebook_url }}" target="_blank" class="social-link" title="Facebook">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                    </svg>
+                </a>
+                {% endif %}
+                {% if user.instagram_url %}
+                <a href="{{ user.instagram_url }}" target="_blank" class="social-link" title="Instagram">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                    </svg>
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <!-- Boutons d'action -->
+            <div class="profile-actions">
+                {% if is_own_profile %}
+                    <a href="{% url 'profile-edit' %}" class="btn btn-primary">Éditer le profil</a>
+                    <a href="{% url 'security-settings' %}" class="btn btn-secondary">Paramètres</a>
+                    <button class="btn btn-secondary" onclick="shareProfile()">Partager</button>
+                {% else %}
+                    <button class="btn btn-primary" onclick="contactUser()">Contacter</button>
+                    <button class="btn btn-secondary" onclick="followUser()">Suivre</button>
+                    <button class="btn btn-secondary" onclick="shareProfile()">Partager</button>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- SECTION 3: RÉPUTATION & CONFIANCE -->
+        {% if user.is_proprietaire and nombre_avis_proprietaire > 0 %}
+        <div class="card">
+            <h2 class="card-title">Réputation & Confiance</h2>
+            <div class="rating-display">
+                <div class="rating-stars">
+                    {% for i in "12345" %}
+                        {% if forloop.counter <= note_moyenne_proprietaire %}
+                            <span style="color: #FFC107;">★</span>
+                        {% else %}
+                            <span style="color: #E0E0E0;">★</span>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <div class="rating-value">{{ note_moyenne_proprietaire }}</div>
+                <div class="rating-count">({{ nombre_avis_proprietaire }} avis)</div>
+            </div>
+            
+            {% if note_moyenne_proprietaire >= 4.5 %}
+            <div style="display: inline-block; padding: 8px 16px; background: #FFF8E1; color: #F57C00; border-radius: 20px; font-size: 14px; font-weight: 600; margin-bottom: 16px;">
+                ✓ Propriétaire de confiance
+            </div>
+            {% endif %}
+            
+            <div style="margin-bottom: 16px;">
+                <strong>Score de confiance :</strong> {{ score_confiance }}%
+            </div>
+            
+            <!-- Répartition des notes -->
+            <div class="rating-breakdown">
+                {% for note, count in repartition_notes.items %}
+                <div class="rating-bar-item">
+                    <div class="rating-bar-label">{{ note }}★</div>
+                    <div class="rating-bar">
+                        <div class="rating-bar-fill" style="width: {% widthratio count nombre_avis_proprietaire 100 %}%"></div>
+                    </div>
+                    <div class="rating-bar-count">{{ count }} avis</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- TABS -->
+        <div class="profile-tabs">
+            <button class="profile-tab active" onclick="switchTab('overview')">Aperçu</button>
+            <button class="profile-tab" onclick="switchTab('avis')">Avis ({{ nombre_avis_proprietaire|default:mes_avis.count }})</button>
+            {% if user.is_proprietaire %}
+            <button class="profile-tab" onclick="switchTab('annonces')">Annonces ({{ logements_count }})</button>
+            {% endif %}
+            <button class="profile-tab" onclick="switchTab('activite')">Activité</button>
+            <button class="profile-tab" onclick="switchTab('about')">À propos</button>
+        </div>
+        
+        <!-- Layout 3 colonnes -->
+        <div class="profile-layout">
+            <!-- Sidebar gauche -->
+            <div class="sidebar-left">
+                <!-- Statistiques -->
+                <div class="card">
+                    <h3 class="card-title">Statistiques</h3>
+                    <div class="stats-grid">
+                        {% if user.is_proprietaire %}
+                        <div class="stat-item">
+                            <div class="stat-value">{{ logements_count }}</div>
+                            <div class="stat-label">Logements</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">{{ logements_actifs }}</div>
+                            <div class="stat-label">Actifs</div>
+                        </div>
+                        {% else %}
+                        <div class="stat-item">
+                            <div class="stat-value">{{ favoris_count }}</div>
+                            <div class="stat-label">Favoris</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">{{ mes_avis.count }}</div>
+                            <div class="stat-label">Avis donnés</div>
+                        </div>
+                        {% endif %}
+                        <div class="stat-item">
+                            <div class="stat-value">{{ user_badges|length }}</div>
+                            <div class="stat-label">Badges</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Badges -->
+                {% if user_badges %}
+                <div class="card">
+                    <h3 class="card-title">Badges obtenus</h3>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        {% for user_badge in user_badges|slice:":5" %}
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="font-size: 32px;">{{ user_badge.badge.icon }}</div>
+                            <div>
+                                <div style="font-weight: 600; font-size: 14px;">{{ user_badge.badge.name }}</div>
+                                <div style="font-size: 12px; color: var(--color-text-secondary);">{{ user_badge.badge.description }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Contenu principal -->
+            <div class="main-content">
+                <!-- Onglet Aperçu -->
+                <div id="overview" class="tab-content active">
+                    {% if user.is_proprietaire and mes_logements %}
+                    <div class="card">
+                        <h2 class="card-title">Mes logements</h2>
+                        <div class="logements-grid">
+                            {% for logement in mes_logements|slice:":6" %}
+                            <div class="logement-card">
+                                {% with logement.images.all|first as first_image %}
+                                {% if first_image %}
+                                <img src="{{ first_image.image.url }}" alt="{{ logement.titre }}" class="logement-image">
+                                {% else %}
+                                <div style="width: 100%; height: 200px; background: var(--color-border);"></div>
+                                {% endif %}
+                                {% endwith %}
+                                <div class="logement-info">
+                                    <div class="logement-title">{{ logement.titre }}</div>
+                                    <div class="logement-price">{{ logement.prix }}€/mois</div>
+                                    <div class="logement-location">{{ logement.adresse }}</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if logements_count > 6 %}
+                        <a href="#" onclick="switchTab('annonces'); return false;" style="display: inline-block; margin-top: 16px; color: var(--color-primary); font-weight: 600;">Voir tous les logements →</a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Avis récents -->
+                    {% if avis_recus %}
+                    <div class="card">
+                        <h2 class="card-title">Avis récents</h2>
+                        {% for avis in avis_recus|slice:":5" %}
+                        <div class="avis-item">
+                            <div class="avis-header">
+                                <div class="avis-author">
+                                    <div class="avis-author-name">{{ avis.locataire.get_full_name|default:avis.locataire.username }}</div>
+                                    <div class="avis-date">{{ avis.date_avis|date:"d/m/Y" }}</div>
+                                </div>
+                                <div class="avis-stars">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= avis.note %}
+                                            ★
+                                        {% else %}
+                                            ☆
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="avis-text">{{ avis.commentaire|truncatewords:30 }}</div>
+                        </div>
+                        {% endfor %}
+                        <a href="#" onclick="switchTab('avis'); return false;" style="display: inline-block; margin-top: 16px; color: var(--color-primary); font-weight: 600;">Voir tous les avis →</a>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Onglet Avis -->
+                <div id="avis" class="tab-content">
+                    <div class="card">
+                        <h2 class="card-title">Tous les avis</h2>
+                        {% if avis_recus %}
+                            {% for avis in avis_recus %}
+                            <div class="avis-item">
+                                <div class="avis-header">
+                                    <div class="avis-author">
+                                        <div class="avis-author-name">{{ avis.locataire.get_full_name|default:avis.locataire.username }}</div>
+                                        <div class="avis-date">{{ avis.date_avis|date:"d/m/Y H:i" }}</div>
+                                    </div>
+                                    <div class="avis-stars">
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= avis.note %}
+                                                ★
+                                            {% else %}
+                                                ☆
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="avis-text">{{ avis.commentaire }}</div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p style="text-align: center; color: var(--color-text-secondary); padding: 40px;">Aucun avis pour le moment</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Onglet Annonces (propriétaire) -->
+                {% if user.is_proprietaire %}
+                <div id="annonces" class="tab-content">
+                    <div class="card">
+                        <h2 class="card-title">Mes annonces</h2>
+                        <div class="logements-grid">
+                            {% for logement in mes_logements %}
+                            <div class="logement-card">
+                                {% with logement.images.all|first as first_image %}
+                                {% if first_image %}
+                                <img src="{{ first_image.image.url }}" alt="{{ logement.titre }}" class="logement-image">
+                                {% else %}
+                                <div style="width: 100%; height: 200px; background: var(--color-border);"></div>
+                                {% endif %}
+                                {% endwith %}
+                                <div class="logement-info">
+                                    <div class="logement-title">{{ logement.titre }}</div>
+                                    <div class="logement-price">{{ logement.prix }}€/mois</div>
+                                    <div class="logement-location">{{ logement.adresse }}</div>
+                                    <div style="margin-top: 8px; font-size: 14px; color: var(--color-text-secondary);">
+                                        Statut: {{ logement.get_statut_display }}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Onglet Activité -->
+                <div id="activite" class="tab-content">
+                    <div class="card">
+                        <h2 class="card-title">Activité récente</h2>
+                        <div style="display: flex; flex-direction: column; gap: 16px;">
+                            {% for login in recent_logins|slice:":10" %}
+                            <div style="padding: 16px; background: var(--color-bg); border-radius: 8px;">
+                                <div style="display: flex; justify-content: space-between; align-items: start;">
+                                    <div>
+                                        <div style="font-weight: 600; margin-bottom: 4px;">Connexion</div>
+                                        <div style="font-size: 14px; color: var(--color-text-secondary);">
+                                            {{ login.device_type }} • {{ login.ip_address }}
+                                            {% if login.location %} • {{ login.location }}{% endif %}
+                                        </div>
+                                    </div>
+                                    <div style="font-size: 12px; color: var(--color-text-secondary);">
+                                        {{ login.timestamp|date:"d/m/Y H:i" }}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Onglet À propos -->
+                <div id="about" class="tab-content">
+                    <div class="card">
+                        <h2 class="card-title">À propos</h2>
+                        {% if user.bio %}
+                        <div style="margin-bottom: 24px;">
+                            <h3 style="font-size: 16px; margin-bottom: 8px;">Biographie</h3>
+                            <p style="color: var(--color-text-secondary);">{{ user.bio }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if user.profession or user.employeur %}
+                        <div style="margin-bottom: 24px;">
+                            <h3 style="font-size: 16px; margin-bottom: 8px;">Informations professionnelles</h3>
+                            {% if user.profession %}
+                            <p><strong>Profession :</strong> {{ user.profession }}</p>
+                            {% endif %}
+                            {% if user.employeur %}
+                            <p><strong>Employeur :</strong> {{ user.employeur }}</p>
+                            {% endif %}
+                            {% if user.situation_professionnelle %}
+                            <p><strong>Situation :</strong> {{ user.get_situation_professionnelle_display }}</p>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        {% if user.is_professionnel %}
+                        <div style="margin-bottom: 24px;">
+                            <h3 style="font-size: 16px; margin-bottom: 8px;">Informations professionnelles</h3>
+                            {% if user.siret %}
+                            <p><strong>SIRET :</strong> {{ user.siret }}</p>
+                            {% endif %}
+                            {% if user.site_web %}
+                            <p><strong>Site web :</strong> <a href="{{ user.site_web }}" target="_blank">{{ user.site_web }}</a></p>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        <div>
+                            <h3 style="font-size: 16px; margin-bottom: 8px;">Membre depuis</h3>
+                            <p style="color: var(--color-text-secondary);">{{ user.date_joined|date:"F Y" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sidebar droite -->
+            <div class="sidebar-right">
+                <!-- Widget vérification -->
+                {% if is_own_profile and score_confiance < 100 %}
+                <div class="card">
+                    <h3 class="card-title" style="font-size: 14px;">Vérification</h3>
+                    <div style="font-size: 12px; color: var(--color-text-secondary); margin-bottom: 12px;">
+                        Complétez votre profil pour augmenter votre confiance
+                    </div>
+                    <div style="height: 8px; background: var(--color-border); border-radius: 4px; margin-bottom: 12px;">
+                        <div style="height: 100%; background: var(--color-primary); width: {{ score_confiance }}%; border-radius: 4px;"></div>
+                    </div>
+                    <div style="font-size: 12px; color: var(--color-text-secondary);">
+                        Score: {{ score_confiance }}%
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function switchTab(tabName) {
+            // Masquer tous les onglets
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.profile-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Afficher l'onglet sélectionné
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        function editCover() {
+            alert('Fonctionnalité d\'édition de couverture à venir');
+        }
+        
+        function editAvatar() {
+            alert('Fonctionnalité d\'édition d\'avatar à venir');
+        }
+        
+        function contactUser() {
+            alert('Fonctionnalité de contact à venir');
+        }
+        
+        function followUser() {
+            alert('Fonctionnalité de suivi à venir');
+        }
+        
+        function shareProfile() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Profil - {{ user.username }}',
+                    text: '{{ user.bio|default:"Découvrez ce profil sur Transpareo" }}',
+                    url: window.location.href
+                });
+            } else {
+                navigator.clipboard.writeText(window.location.href);
+                alert('Lien copié dans le presse-papiers !');
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+</body>
+</html>
+

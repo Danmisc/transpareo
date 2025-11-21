@@ -1,0 +1,1710 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="connect-lease-page">
+    <div class="lease-container">
+        <!-- En-tête -->
+        <div class="lease-header">
+            <h1>Gérer mon bail</h1>
+            {% if bail %}
+            <div class="lease-status-badge status-{{ bail.statut }}">
+                {% if bail.statut == 'actif' %}
+                    <span class="status-dot"></span>
+                    Bail actif
+                {% elif bail.statut == 'resiliation_en_cours' %}
+                    <span class="status-dot"></span>
+                    Résiliation en cours
+                {% else %}
+                    <span class="status-dot"></span>
+                    Bail résilié
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        {% if no_bail %}
+        <!-- Message si pas de bail actif -->
+        <div class="no-bail-message">
+            <div class="no-bail-icon">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+            </div>
+            <h2>Vous n'avez pas de bail actif</h2>
+            <p>Pour gérer un bail, vous devez d'abord avoir un contrat de location actif.</p>
+            <div class="no-bail-actions">
+                <a href="{% url 'liste' %}" class="btn-primary">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    Rechercher un logement
+                </a>
+            </div>
+        </div>
+        {% else %}
+
+        <!-- Alertes par priorité -->
+        {% if alertes %}
+        <div class="lease-alerts-section">
+            {% for alerte in alertes %}
+            <div class="alert-card" style="border-left-color: {{ alerte.couleur }};">
+                <div class="alert-icon" style="color: {{ alerte.couleur }};">
+                    {% if alerte.priorite == 'critique' %}⚠️{% elif alerte.priorite == 'haute' %}🔴{% else %}ℹ️{% endif %}
+                </div>
+                <div class="alert-content">
+                    <h3 class="alert-title">{{ alerte.titre }}</h3>
+                    <p class="alert-message">{{ alerte.message }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Vue d'ensemble (si onglet overview ou dashboard) -->
+        {% if active_tab == 'overview' or active_tab == 'dashboard' %}
+        <div class="lease-overview">
+            <!-- Visu "Contrat Intelligent" - Timeline -->
+            {% if tab_data.timeline_events %}
+            <div class="contract-timeline-card">
+                <div class="timeline-header">
+                    <h2>📅 Timeline du contrat</h2>
+                    {% if jours_restants is not None %}
+                    <div class="days-remaining-badge {% if jours_restants <= 30 %}warning{% endif %}">
+                        <span class="days-number">{{ jours_restants }}</span>
+                        <span class="days-label">jour{{ jours_restants|pluralize }} restant{{ jours_restants|pluralize }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="timeline-container">
+                    {% for event in tab_data.timeline_events %}
+                    <div class="timeline-item {% if event.passe %}past{% else %}upcoming{% endif %}">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-date">{{ event.date|date:"d/m/Y" }}</div>
+                            <div class="timeline-title">{{ event.titre }}</div>
+                            <div class="timeline-description">{{ event.description }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Carte résumé du logement -->
+            <div class="property-summary-card">
+                <div class="property-image-section">
+                    {% if bail.logement.images.first %}
+                        <img src="{{ bail.logement.images.first.image.url }}" alt="{{ bail.logement.titre }}" class="property-image">
+                    {% else %}
+                        <div class="property-image-placeholder">
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                            </svg>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="property-info-section">
+                    <h2 class="property-title">{{ bail.logement.titre }}</h2>
+                    <p class="property-address">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"></path>
+                            <circle cx="12" cy="9" r="3"></circle>
+                        </svg>
+                        {{ bail.logement.adresse }}
+                    </p>
+                    
+                    <div class="property-owner-info">
+                        <span class="info-label">Propriétaire :</span>
+                        <a href="{% url 'profile-user' bail.proprietaire.id %}" class="owner-link">
+                            {{ bail.proprietaire.get_full_name|default:bail.proprietaire.username }}
+                        </a>
+                    </div>
+
+                    <div class="lease-dates-info">
+                        <div class="date-info-item">
+                            <span class="date-label">Début du bail</span>
+                            <span class="date-value">{{ bail.date_debut|date:"d/m/Y" }}</span>
+                        </div>
+                        {% if bail.date_fin %}
+                        <div class="date-info-item">
+                            <span class="date-label">Fin du bail</span>
+                            <span class="date-value">{{ bail.date_fin|date:"d/m/Y" }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="lease-amount-info">
+                        <span class="amount-label">Loyer mensuel</span>
+                        <span class="amount-value">{{ bail.get_montant_total_mensuel }}€ / mois</span>
+                        <span class="amount-details">({{ bail.loyer_mensuel }}€ + {{ bail.charges_mensuelles }}€ de charges)</span>
+                    </div>
+                </div>
+
+                <div class="property-actions">
+                    <a href="{% url 'logement-detail' bail.logement.id %}" class="btn-view-property">
+                        Voir le logement
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Tableaux de bord centralisé avec analytics -->
+            {% if tab_data.analytics %}
+            <div class="analytics-dashboard">
+                <h2 class="dashboard-title">📊 Analytics</h2>
+                <div class="analytics-grid">
+                    <!-- Analytics Paiements -->
+                    <div class="analytics-card payments">
+                        <h3>💳 Paiements</h3>
+                        <div class="analytics-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Payés</span>
+                                <span class="stat-value success">{{ tab_data.analytics.paiements_payes }}</span>
+                    </div>
+                            <div class="stat-item">
+                                <span class="stat-label">En retard</span>
+                                <span class="stat-value error">{{ tab_data.analytics.paiements_en_retard }}</span>
+                </div>
+                            <div class="stat-item">
+                                <span class="stat-label">En attente</span>
+                                <span class="stat-value warning">{{ tab_data.analytics.paiements_en_attente }}</span>
+                    </div>
+                            {% if is_proprietaire %}
+                            <div class="stat-item">
+                                <span class="stat-label">Revenus totaux</span>
+                                <span class="stat-value">{{ tab_data.analytics.revenus_totaux|floatformat:2 }}€</span>
+                </div>
+                            {% endif %}
+                    </div>
+                </div>
+
+                    <!-- Analytics Incidents -->
+                    <div class="analytics-card incidents">
+                        <h3>🔧 Incidents & Entretien</h3>
+                        <div class="analytics-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">En attente</span>
+                                <span class="stat-value warning">{{ tab_data.analytics.demandes_en_attente }}</span>
+                    </div>
+                            <div class="stat-item">
+                                <span class="stat-label">En cours</span>
+                                <span class="stat-value info">{{ tab_data.analytics.demandes_en_cours }}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Résolus</span>
+                                <span class="stat-value success">{{ tab_data.analytics.demandes_resolues }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analytics Tickets -->
+                    <div class="analytics-card tickets">
+                        <h3>🎫 Tickets/Interventions</h3>
+                        <div class="analytics-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Nouveaux</span>
+                                <span class="stat-value warning">{{ tab_data.analytics.tickets_nouveaux }}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">En cours</span>
+                                <span class="stat-value info">{{ tab_data.analytics.tickets_en_cours }}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Escaladés</span>
+                                <span class="stat-value error">{{ tab_data.analytics.tickets_escalades }}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Résolus</span>
+                                <span class="stat-value success">{{ tab_data.analytics.tickets_resolus }}</span>
+                            </div>
+                        </div>
+                </div>
+            </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Onglets -->
+        <div class="lease-tabs">
+            <a href="?tab=dashboard" class="tab-item {% if active_tab == 'dashboard' or active_tab == 'overview' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="3" y1="9" x2="21" y2="9"></line>
+                    <line x1="9" y1="21" x2="9" y2="9"></line>
+                </svg>
+                Tableau de bord
+            </a>
+            <a href="?tab=contract" class="tab-item {% if active_tab == 'contract' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                Contrat
+            </a>
+            <a href="?tab=payments" class="tab-item {% if active_tab == 'payments' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+                Paiements
+            </a>
+            <a href="?tab=maintenance" class="tab-item {% if active_tab == 'maintenance' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                </svg>
+                Entretien & Travaux
+            </a>
+            <a href="?tab=messages" class="tab-item {% if active_tab == 'messages' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                Messages
+            </a>
+            <a href="?tab=documents" class="tab-item {% if active_tab == 'documents' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                Documents
+            </a>
+            <a href="?tab=files" class="tab-item {% if active_tab == 'files' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                Fichiers partagés
+            </a>
+            <a href="?tab=checklist" class="tab-item {% if active_tab == 'checklist' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 11 12 14 22 4"></polyline>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                </svg>
+                État des lieux
+            </a>
+            <a href="?tab=tickets" class="tab-item {% if active_tab == 'tickets' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                Tickets
+            </a>
+            <a href="?tab=history" class="tab-item {% if active_tab == 'history' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                Historique
+            </a>
+            <a href="?tab=reminders" class="tab-item {% if active_tab == 'reminders' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                Rappels
+            </a>
+            <a href="?tab=termination" class="tab-item {% if active_tab == 'termination' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+                Résiliation
+            </a>
+        </div>
+
+        <!-- Contenu des onglets -->
+        <div class="lease-tab-content">
+            {% if active_tab == 'contract' %}
+                <!-- ONGLET CONTRAT -->
+                {% include 'core/connect/lease_contract.html' with bail=bail %}
+            
+            {% elif active_tab == 'payments' %}
+                <!-- ONGLET PAIEMENTS -->
+                {% include 'core/connect/lease_payments.html' with bail=bail tab_data=tab_data %}
+            
+            {% elif active_tab == 'maintenance' %}
+                <!-- ONGLET ENTRETIEN & TRAVAUX -->
+                {% include 'core/connect/lease_maintenance.html' with bail=bail tab_data=tab_data %}
+            
+            {% elif active_tab == 'messages' %}
+                <!-- ONGLET MESSAGES -->
+                {% include 'core/connect/lease_messages.html' with bail=bail tab_data=tab_data %}
+            
+            {% elif active_tab == 'documents' %}
+                <!-- ONGLET DOCUMENTS -->
+                <div class="documents-tab-content">
+                    <h2>📄 Documents</h2>
+                    {% if tab_data.documents %}
+                    <div class="documents-list">
+                        {% for doc in tab_data.documents %}
+                        <div class="document-card">
+                            <div class="document-icon">📄</div>
+                            <div class="document-info">
+                                <h3>{{ doc.titre|default:doc.get_type_document_display }}</h3>
+                                <p class="document-type">{{ doc.get_type_document_display }}</p>
+                                <p class="document-meta">Uploadé par {{ doc.uploaded_by.username }} le {{ doc.created_at|date:"d/m/Y" }}</p>
+                            </div>
+                            <div class="document-actions">
+                                <a href="{{ doc.document.url }}" target="_blank" class="btn-view">Voir</a>
+                                {% if tab_data.signatures %}
+                                    {% for sig in tab_data.signatures %}
+                                        {% if sig.document.id == doc.id %}
+                                            {% if sig.statut == 'signe_complet' %}
+                                                <span class="signature-badge signed">✓ Signé par les deux parties</span>
+                                            {% elif sig.statut == 'signe_locataire' %}
+                                                <span class="signature-badge pending">En attente signature propriétaire</span>
+                                                {% if is_proprietaire %}
+                                                    <button class="btn-sign" onclick="signDocument({{ doc.id }})">Signer</button>
+                                                {% endif %}
+                                            {% elif sig.statut == 'signe_proprietaire' %}
+                                                <span class="signature-badge pending">En attente signature locataire</span>
+                                                {% if is_locataire %}
+                                                    <button class="btn-sign" onclick="signDocument({{ doc.id }})">Signer</button>
+                                                {% endif %}
+                                            {% else %}
+                                                <button class="btn-sign" onclick="signDocument({{ doc.id }})">Signer</button>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    <button class="btn-sign" onclick="signDocument({{ doc.id }})">Signer</button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="empty-state">Aucun document disponible.</p>
+                    {% endif %}
+                </div>
+            
+            {% elif active_tab == 'files' %}
+                <!-- ONGLET FICHIERS PARTAGÉS -->
+                <div class="files-tab-content">
+                    <div class="files-header">
+                        <h2>📁 Fichiers partagés</h2>
+                        <button class="btn-upload" onclick="uploadSharedFile()">+ Uploader un fichier</button>
+                    </div>
+                    {% if tab_data.fichiers %}
+                    <div class="files-grid">
+                        {% for file_data in tab_data.fichiers %}
+                        <div class="file-card">
+                            <div class="file-icon">📄</div>
+                            <div class="file-info">
+                                <h3>{{ file_data.fichier.nom }}</h3>
+                                <p class="file-description">{{ file_data.fichier.description|default:"Aucune description" }}</p>
+                                <div class="file-meta">
+                                    <span>Uploadé par {{ file_data.fichier.uploaded_by.username }}</span>
+                                    <span>{{ file_data.fichier.created_at|date:"d/m/Y" }}</span>
+                                </div>
+                                {% if file_data.logs_recent %}
+                                <div class="file-logs">
+                                    <small>Derniers accès:</small>
+                                    {% for log in file_data.logs_recent|slice:":3" %}
+                                    <span class="log-item">{{ log.get_action_display }} - {{ log.created_at|date:"d/m/Y H:i" }}</span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="file-actions">
+                                <a href="{{ file_data.fichier.fichier.url }}" target="_blank" class="btn-download">Télécharger</a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="empty-state">Aucun fichier partagé pour le moment.</p>
+                    {% endif %}
+                </div>
+            
+            {% elif active_tab == 'checklist' %}
+                <!-- ONGLET ÉTAT DES LIEUX -->
+                <div class="checklist-tab-content">
+                    <h2>✅ Checklist État des lieux</h2>
+                    <div class="checklist-tabs">
+                        <button class="checklist-tab-btn active" onclick="showChecklist('entree')">Entrée</button>
+                        <button class="checklist-tab-btn" onclick="showChecklist('sortie')">Sortie</button>
+                    </div>
+                    <div id="checklist-entree" class="checklist-content active">
+                        {% if tab_data.checklist_entree %}
+                        <div class="checklist-items">
+                            {% for item in tab_data.checklist_entree.items.all %}
+                            <div class="checklist-item">
+                                <div class="item-header">
+                                    <h4>{{ item.piece }} - {{ item.element }}</h4>
+                                    <span class="item-state state-{{ item.etat_entree }}">{{ item.get_etat_entree_display|default:"Non renseigné" }}</span>
+                                </div>
+                                {% if item.photo_entree %}
+                                <img src="{{ item.photo_entree.url }}" alt="{{ item.element }}" class="item-photo">
+                                {% endif %}
+                                {% if item.notes_locataire or item.notes_proprietaire %}
+                                <div class="item-notes">
+                                    {% if item.notes_locataire %}<p><strong>Locataire:</strong> {{ item.notes_locataire }}</p>{% endif %}
+                                    {% if item.notes_proprietaire %}<p><strong>Propriétaire:</strong> {{ item.notes_proprietaire }}</p>{% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="empty-state">Aucune checklist d'entrée disponible.</p>
+                        {% endif %}
+                    </div>
+                    <div id="checklist-sortie" class="checklist-content">
+                        {% if tab_data.checklist_sortie %}
+                        <div class="checklist-items">
+                            {% for item in tab_data.checklist_sortie.items.all %}
+                            <div class="checklist-item">
+                                <div class="item-header">
+                                    <h4>{{ item.piece }} - {{ item.element }}</h4>
+                                    <span class="item-state state-{{ item.etat_sortie }}">{{ item.get_etat_sortie_display|default:"Non renseigné" }}</span>
+                                </div>
+                                {% if item.photo_sortie %}
+                                <img src="{{ item.photo_sortie.url }}" alt="{{ item.element }}" class="item-photo">
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="empty-state">Aucune checklist de sortie disponible.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            
+            {% elif active_tab == 'tickets' %}
+                <!-- ONGLET TICKETS/INTERVENTIONS -->
+                <div class="tickets-tab-content">
+                    <div class="tickets-header">
+                        <h2>🎫 Tickets & Interventions</h2>
+                        <button class="btn-create-ticket" onclick="createTicket()">+ Créer un ticket</button>
+                    </div>
+                    {% if tab_data.tickets %}
+                    <div class="tickets-list">
+                        {% for ticket in tab_data.tickets %}
+                        <div class="ticket-card priority-{{ ticket.priorite }}">
+                            <div class="ticket-header">
+                                <h3>{{ ticket.titre }}</h3>
+                                <span class="ticket-status status-{{ ticket.statut }}">{{ ticket.get_statut_display }}</span>
+                            </div>
+                            <p class="ticket-description">{{ ticket.description }}</p>
+                            <div class="ticket-meta">
+                                <span>Créé par {{ ticket.cree_par.username }}</span>
+                                <span>{{ ticket.date_creation|date:"d/m/Y H:i" }}</span>
+                                {% if ticket.escalade_auto %}<span class="escalade-badge">Escaladé automatiquement</span>{% endif %}
+                            </div>
+                            {% if ticket.commentaires.exists %}
+                            <div class="ticket-comments">
+                                <strong>Commentaires ({{ ticket.commentaires.count }}):</strong>
+                                {% for comment in ticket.commentaires.all|slice:":3" %}
+                                <div class="comment-item">
+                                    <span>{{ comment.auteur.username }}:</span> {{ comment.contenu|truncatechars:100 }}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="empty-state">Aucun ticket pour le moment.</p>
+                    {% endif %}
+                </div>
+            
+            {% elif active_tab == 'history' %}
+                <!-- ONGLET HISTORIQUE -->
+                <div class="history-tab-content">
+                    <div class="history-header">
+                        <h2>📜 Historique complet</h2>
+                        <a href="{% url 'api-export-history' bail_id=bail.id %}" class="btn-export" download>📥 Exporter l'historique (CSV)</a>
+                    </div>
+                    {% if tab_data.historique %}
+                    <div class="history-timeline">
+                        {% for item in tab_data.historique %}
+                        <div class="history-item type-{{ item.type }}">
+                            <div class="history-date">{{ item.date|date:"d/m/Y" }}</div>
+                            <div class="history-content">
+                                <h4>{{ item.titre }}</h4>
+                                <p>{{ item.description }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="empty-state">Aucun historique disponible.</p>
+                    {% endif %}
+                </div>
+            
+            {% elif active_tab == 'reminders' %}
+                <!-- ONGLET RAPPELS -->
+                <div class="reminders-tab-content">
+                    <div class="reminders-header">
+                        <h2>🔔 Rappels automatisés</h2>
+                        <button class="btn-create-reminder" onclick="createReminder()">+ Créer un rappel</button>
+                    </div>
+                    {% if tab_data.rappels %}
+                    <div class="reminders-list">
+                        {% for rappel in tab_data.rappels %}
+                        <div class="reminder-card {% if rappel.envoye %}sent{% else %}pending{% endif %}">
+                            <div class="reminder-header">
+                                <h3>{{ rappel.titre }}</h3>
+                                <span class="reminder-status">{{ rappel.get_type_rappel_display }}</span>
+                            </div>
+                            <p>{{ rappel.message }}</p>
+                            <div class="reminder-meta">
+                                <span>Date: {{ rappel.date_rappel|date:"d/m/Y H:i" }}</span>
+                                <span>Canaux: {% if rappel.envoyer_email %}Email{% endif %} {% if rappel.envoyer_sms %}SMS{% endif %} {% if rappel.envoyer_push %}Push{% endif %}</span>
+                                {% if rappel.envoye %}<span class="sent-badge">Envoyé le {{ rappel.date_envoi|date:"d/m/Y H:i" }}</span>{% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="empty-state">Aucun rappel configuré.</p>
+                    {% endif %}
+                </div>
+            
+            {% elif active_tab == 'termination' %}
+                <!-- ONGLET RÉSILIATION -->
+                {% include 'core/connect/lease_termination.html' with bail=bail tab_data=tab_data %}
+            
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .connect-lease-page {
+        min-height: calc(100vh - 70px);
+        background: #f5f5f5;
+        padding-top: 70px;
+    }
+
+    .lease-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 32px 24px;
+    }
+
+    /* En-tête */
+    .lease-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+    }
+
+    .lease-header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0;
+    }
+
+    .lease-status-badge {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .lease-status-badge.status-actif {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .lease-status-badge.status-resiliation_en_cours {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    /* Vue d'ensemble */
+    .lease-overview {
+        margin-bottom: 32px;
+    }
+
+    .property-summary-card {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        margin-bottom: 24px;
+        display: grid;
+        grid-template-columns: 200px 1fr auto;
+        gap: 24px;
+        align-items: start;
+    }
+
+    .property-image-section {
+        flex-shrink: 0;
+    }
+
+    .property-image {
+        width: 200px;
+        height: 150px;
+        border-radius: 8px;
+        object-fit: cover;
+    }
+
+    .property-image-placeholder {
+        width: 200px;
+        height: 150px;
+        background: #f5f5f5;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #999;
+    }
+
+    .property-info-section {
+        flex: 1;
+    }
+
+    .property-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0 0 12px 0;
+    }
+
+    .property-address {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #666;
+        margin-bottom: 16px;
+    }
+
+    .property-owner-info {
+        margin-bottom: 16px;
+    }
+
+    .info-label {
+        color: #666;
+        margin-right: 8px;
+    }
+
+    .owner-link {
+        color: #D3580B;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .lease-dates-info {
+        display: flex;
+        gap: 24px;
+        margin-bottom: 16px;
+    }
+
+    .date-info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .date-label {
+        font-size: 12px;
+        color: #999;
+        text-transform: uppercase;
+    }
+
+    .date-value {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1a1a1a;
+    }
+
+    .lease-amount-info {
+        margin-bottom: 16px;
+    }
+
+    .amount-label {
+        display: block;
+        font-size: 12px;
+        color: #999;
+        margin-bottom: 4px;
+    }
+
+    .amount-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #D3580B;
+    }
+
+    .amount-details {
+        display: block;
+        font-size: 13px;
+        color: #666;
+        margin-top: 4px;
+    }
+
+    .property-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .btn-view-property {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        background: #D3580B;
+        color: white;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .btn-view-property:hover {
+        background: #c4510a;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(211, 88, 11, 0.3);
+    }
+
+    /* Statistiques */
+    .lease-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        display: flex;
+        gap: 16px;
+        align-items: center;
+    }
+
+    .stat-card.warning {
+        border-left: 4px solid #ffc107;
+    }
+
+    .stat-icon {
+        font-size: 32px;
+    }
+
+    .stat-info {
+        flex: 1;
+    }
+
+    .stat-label {
+        display: block;
+        font-size: 12px;
+        color: #999;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    .stat-value {
+        display: block;
+        font-size: 24px;
+        font-weight: 700;
+        color: #1a1a1a;
+    }
+
+    /* Onglets */
+    .lease-tabs {
+        display: flex;
+        gap: 8px;
+        padding: 16px;
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        overflow-x: auto;
+    }
+
+    .tab-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #666;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .tab-item:hover {
+        background: #f5f5f5;
+        color: #333;
+    }
+
+    .tab-item.active {
+        background: #D3580B;
+        color: white;
+    }
+
+    /* Contenu des onglets */
+    .lease-tab-content {
+        background: white;
+        border-radius: 12px;
+        padding: 32px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        min-height: 400px;
+    }
+
+    /* Message pas de bail */
+    .no-bail-message {
+        text-align: center;
+        padding: 80px 24px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        margin-top: 32px;
+    }
+
+    .no-bail-icon {
+        margin-bottom: 24px;
+        color: #999;
+    }
+
+    .no-bail-icon svg {
+        opacity: 0.5;
+    }
+
+    .no-bail-message h2 {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0 0 12px 0;
+    }
+
+    .no-bail-message p {
+        font-size: 16px;
+        color: #666;
+        margin: 0 0 32px 0;
+        line-height: 1.6;
+    }
+
+    .no-bail-actions {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+    }
+
+    .btn-primary {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: #D3580B;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+        background: #c4510a;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(211, 88, 11, 0.3);
+    }
+
+    /* Alertes */
+    .lease-alerts-section {
+        margin-bottom: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .alert-card {
+        display: flex;
+        gap: 16px;
+        padding: 16px;
+        background: white;
+        border-radius: 8px;
+        border-left: 4px solid;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .alert-icon {
+        font-size: 24px;
+    }
+
+    .alert-content {
+        flex: 1;
+    }
+
+    .alert-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0 0 4px 0;
+        color: #1a1a1a;
+    }
+
+    .alert-message {
+        font-size: 14px;
+        color: #666;
+        margin: 0;
+    }
+
+    /* Timeline Contrat Intelligent */
+    .contract-timeline-card {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        margin-bottom: 24px;
+    }
+
+    .timeline-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .timeline-header h2 {
+        font-size: 20px;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .days-remaining-badge {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 12px 20px;
+        background: #e3f2fd;
+        border-radius: 8px;
+    }
+
+    .days-remaining-badge.warning {
+        background: #fff3cd;
+    }
+
+    .days-number {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1976d2;
+    }
+
+    .days-remaining-badge.warning .days-number {
+        color: #f57c00;
+    }
+
+    .days-label {
+        font-size: 12px;
+        color: #666;
+        text-transform: uppercase;
+    }
+
+    .timeline-container {
+        position: relative;
+        padding-left: 32px;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-bottom: 24px;
+        padding-left: 24px;
+    }
+
+    .timeline-item:not(:last-child)::before {
+        content: '';
+        position: absolute;
+        left: -8px;
+        top: 24px;
+        bottom: -24px;
+        width: 2px;
+        background: #e0e0e0;
+    }
+
+    .timeline-marker {
+        position: absolute;
+        left: -16px;
+        top: 4px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #e0e0e0;
+        border: 3px solid white;
+    }
+
+    .timeline-item.past .timeline-marker {
+        background: #4caf50;
+    }
+
+    .timeline-item.upcoming .timeline-marker {
+        background: #2196f3;
+    }
+
+    .timeline-date {
+        font-size: 12px;
+        color: #999;
+        margin-bottom: 4px;
+    }
+
+    .timeline-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 4px;
+    }
+
+    .timeline-description {
+        font-size: 14px;
+        color: #666;
+    }
+
+    /* Analytics Dashboard */
+    .analytics-dashboard {
+        margin-bottom: 24px;
+    }
+
+    .dashboard-title {
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0 0 20px 0;
+    }
+
+    .analytics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+    }
+
+    .analytics-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .analytics-card h3 {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0 0 16px 0;
+    }
+
+    .analytics-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .stat-label {
+        font-size: 14px;
+        color: #666;
+    }
+
+    .stat-value {
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    .stat-value.success { color: #4caf50; }
+    .stat-value.error { color: #f44336; }
+    .stat-value.warning { color: #ff9800; }
+    .stat-value.info { color: #2196f3; }
+
+    /* Fichiers partagés */
+    .files-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .file-card {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 16px;
+        display: flex;
+        gap: 12px;
+    }
+
+    .file-icon {
+        font-size: 32px;
+    }
+
+    .file-info {
+        flex: 1;
+    }
+
+    .file-info h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+    }
+
+    .file-description {
+        font-size: 14px;
+        color: #666;
+        margin: 0 0 8px 0;
+    }
+
+    .file-meta {
+        font-size: 12px;
+        color: #999;
+        display: flex;
+        gap: 12px;
+    }
+
+    .file-logs {
+        margin-top: 8px;
+        font-size: 11px;
+        color: #999;
+    }
+
+    .log-item {
+        display: block;
+        margin-top: 4px;
+    }
+
+    .btn-download {
+        padding: 8px 16px;
+        background: #D3580B;
+        color: white;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    /* Checklist */
+    .checklist-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+    }
+
+    .checklist-tab-btn {
+        padding: 10px 20px;
+        background: #f5f5f5;
+        border: none;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+    .checklist-tab-btn.active {
+        background: #D3580B;
+        color: white;
+    }
+
+    .checklist-content {
+        display: none;
+    }
+
+    .checklist-content.active {
+        display: block;
+    }
+
+    .checklist-item {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 12px;
+    }
+
+    .item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .item-state {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .item-photo {
+        max-width: 200px;
+        border-radius: 6px;
+        margin-top: 12px;
+    }
+
+    /* Tickets */
+    .ticket-card {
+        background: white;
+        border-left: 4px solid;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .ticket-card.priority-critique { border-left-color: #f44336; }
+    .ticket-card.priority-haute { border-left-color: #ff9800; }
+    .ticket-card.priority-normale { border-left-color: #2196f3; }
+    .ticket-card.priority-basse { border-left-color: #9e9e9e; }
+
+    .ticket-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .ticket-status {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .escalade-badge {
+        background: #ff5722;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+    }
+
+    /* Historique */
+    .history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .btn-export, .btn-upload, .btn-create-ticket, .btn-create-reminder {
+        padding: 10px 20px;
+        background: #D3580B;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-export:hover, .btn-upload:hover, .btn-create-ticket:hover, .btn-create-reminder:hover {
+        background: #c4510a;
+    }
+
+    .files-header, .tickets-header, .reminders-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .document-card {
+        display: flex;
+        gap: 16px;
+        padding: 16px;
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        margin-bottom: 12px;
+    }
+
+    .document-icon {
+        font-size: 32px;
+    }
+
+    .document-info {
+        flex: 1;
+    }
+
+    .document-info h3 {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+    }
+
+    .document-type {
+        font-size: 14px;
+        color: #666;
+        margin: 0 0 4px 0;
+    }
+
+    .document-meta {
+        font-size: 12px;
+        color: #999;
+        margin: 0;
+    }
+
+    .document-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .btn-view, .btn-sign {
+        padding: 8px 16px;
+        background: #D3580B;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .signature-badge {
+        padding: 6px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .signature-badge.signed {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .signature-badge.pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .history-timeline {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .history-item {
+        display: flex;
+        gap: 20px;
+        padding: 16px;
+        background: white;
+        border-radius: 8px;
+        border-left: 4px solid;
+    }
+
+    .history-item.type-paiement { border-left-color: #4caf50; }
+    .history-item.type-entretien { border-left-color: #ff9800; }
+    .history-item.type-ticket { border-left-color: #2196f3; }
+    .history-item.type-message { border-left-color: #9c27b0; }
+
+    .history-date {
+        font-size: 14px;
+        font-weight: 600;
+        color: #666;
+        min-width: 100px;
+    }
+
+    /* Rappels */
+    .reminder-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 16px;
+        border-left: 4px solid #2196f3;
+    }
+
+    .reminder-card.sent {
+        opacity: 0.7;
+        border-left-color: #4caf50;
+    }
+
+    .reminder-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .sent-badge {
+        background: #4caf50;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #999;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .lease-container {
+            padding: 16px;
+        }
+
+        .property-summary-card {
+            grid-template-columns: 1fr;
+        }
+
+        .property-image {
+            width: 100%;
+            height: 200px;
+        }
+
+        .lease-tabs {
+            flex-wrap: wrap;
+        }
+
+        .lease-tab-content {
+            padding: 20px;
+        }
+
+        .analytics-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .files-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+    function showChecklist(type) {
+        document.querySelectorAll('.checklist-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.checklist-tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById('checklist-' + type).classList.add('active');
+        event.target.classList.add('active');
+    }
+
+    {% if bail %}
+    function exportHistory() {
+        const bailId = {{ bail.id }};
+        window.location.href = `{% url 'api-export-history' bail_id=0 %}`.replace('0', bailId);
+    }
+
+    // Signature électronique
+    function signDocument(documentId) {
+        // TODO: Intégrer un canvas de signature (ex: signature_pad)
+        // Pour l'instant, simulation avec prompt
+        if (confirm('Voulez-vous signer ce document ?\n\nNote: Une vraie interface de signature sera implémentée avec un canvas.')) {
+            // Simulation d'une signature base64 (en production, utiliser signature_pad)
+            const signature = btoa('Signature de ' + new Date().toISOString());
+            
+            fetch(`{% url 'api-sign-document' bail_id=0 %}`.replace('0', {{ bail.id }}), {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    document_id: documentId,
+                    signature: signature
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Document signé avec succès !');
+                    location.reload();
+                } else {
+                    alert('Erreur: ' + data.error);
+                }
+            })
+            .catch(err => {
+                console.error('Erreur:', err);
+                alert('Une erreur est survenue lors de la signature.');
+            });
+        }
+    }
+
+    // Upload fichier partagé
+    function uploadSharedFile() {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.6);';
+        modal.innerHTML = `
+            <div style="background: white; border-radius: 16px; padding: 24px; width: 90%; max-width: 500px; z-index: 1;">
+                <h3 style="margin: 0 0 20px 0;">Uploader un fichier</h3>
+                <form id="upload-file-form" enctype="multipart/form-data">
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Nom du fichier</label>
+                        <input type="text" name="nom" required style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px;">
+                    </div>
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Description</label>
+                        <textarea name="description" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; min-height: 80px;"></textarea>
+                    </div>
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Fichier</label>
+                        <input type="file" name="fichier" required style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px;">
+                    </div>
+                    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                        <button type="button" onclick="closeUploadModal()" style="padding: 10px 20px; background: #f5f5f5; border: none; border-radius: 6px; cursor: pointer;">Annuler</button>
+                        <button type="submit" style="padding: 10px 20px; background: #D3580B; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Uploader</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        document.getElementById('upload-file-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            formData.append('visible_locataire', 'true');
+            formData.append('visible_proprietaire', 'true');
+            
+            fetch(`{% url 'api-upload-shared-file' bail_id=0 %}`.replace('0', {{ bail.id }}), {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Fichier uploadé avec succès !');
+                    location.reload();
+                } else {
+                    alert('Erreur: ' + data.error);
+                }
+            });
+        });
+        
+        window.closeUploadModal = function() {
+            modal.remove();
+            delete window.closeUploadModal;
+        };
+    }
+
+    // Créer ticket
+    function createTicket() {
+        const titre = prompt('Titre du ticket:');
+        if (!titre) return;
+        
+        const description = prompt('Description:');
+        if (!description) return;
+        
+        fetch(`{% url 'api-create-ticket' bail_id=0 %}`.replace('0', {{ bail.id }}), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                titre: titre,
+                description: description,
+                priorite: 'normale'
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert('Ticket créé avec succès !');
+                location.reload();
+            } else {
+                alert('Erreur: ' + data.error);
+            }
+        })
+        .catch(err => {
+            console.error('Erreur:', err);
+            alert('Une erreur est survenue lors de la création du ticket.');
+        });
+    }
+
+    // Créer rappel
+    function createReminder() {
+        const type = prompt('Type de rappel (paiement, echeance, entretien, document, visite, autre):');
+        if (!type) return;
+        
+        const titre = prompt('Titre du rappel:');
+        if (!titre) return;
+        
+        const message = prompt('Message:');
+        if (!message) return;
+        
+        const dateRappel = prompt('Date du rappel (YYYY-MM-DD HH:mm):');
+        if (!dateRappel) return;
+        
+        fetch(`{% url 'api-create-reminder' bail_id=0 %}`.replace('0', {{ bail.id }}), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                type_rappel: type,
+                titre: titre,
+                message: message,
+                date_rappel: new Date(dateRappel).toISOString(),
+                envoyer_email: true,
+                envoyer_push: true,
+                envoyer_in_app: true
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert('Rappel créé avec succès !');
+                location.reload();
+            } else {
+                alert('Erreur: ' + data.error);
+            }
+        })
+        .catch(err => {
+            console.error('Erreur:', err);
+            alert('Une erreur est survenue lors de la création du rappel.');
+        });
+    }
+
+    // Helper pour récupérer le cookie CSRF
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    {% endif %}
+</script>
+{% endblock %}
+

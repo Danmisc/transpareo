@@ -1,0 +1,574 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="notification-settings-page">
+    <div class="settings-container">
+        <!-- En-tête -->
+        <div class="settings-header">
+            <div>
+                <h1>Paramètres de notifications</h1>
+                <p class="settings-subtitle">Configurez comment et quand vous souhaitez recevoir vos notifications</p>
+            </div>
+            <a href="{% url 'connect-notifications' %}" class="btn-back">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+                Retour aux notifications
+            </a>
+        </div>
+
+        <form method="post" id="notification-settings-form" class="settings-form">
+            {% csrf_token %}
+            
+            <!-- Fréquence des emails -->
+            <div class="settings-section">
+                <div class="section-header">
+                    <h2>Fréquence des emails</h2>
+                    <p class="section-description">Choisissez à quelle fréquence vous souhaitez recevoir un résumé par email</p>
+                </div>
+                <div class="settings-options">
+                    <label class="radio-option">
+                        <input type="radio" name="email_frequency" value="immediate" {% if defaults.email_frequency == 'immediate' %}checked{% endif %}>
+                        <div class="radio-content">
+                            <div class="radio-title">Immédiate</div>
+                            <div class="radio-description">Recevez un email pour chaque notification dès qu'elle arrive</div>
+                        </div>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="email_frequency" value="daily" {% if defaults.email_frequency == 'daily' %}checked{% endif %}>
+                        <div class="radio-content">
+                            <div class="radio-title">Résumé quotidien</div>
+                            <div class="radio-description">Recevez un email une fois par jour avec toutes vos notifications</div>
+                        </div>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="email_frequency" value="weekly" {% if defaults.email_frequency == 'weekly' %}checked{% endif %}>
+                        <div class="radio-content">
+                            <div class="radio-title">Résumé hebdomadaire</div>
+                            <div class="radio-description">Recevez un email une fois par semaine avec toutes vos notifications</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Paramètres par type de notification -->
+            <div class="settings-section">
+                <div class="section-header">
+                    <h2>Types de notifications</h2>
+                    <p class="section-description">Choisissez pour chaque type de notification comment vous souhaitez être notifié</p>
+                </div>
+
+                <div class="notification-types-list">
+                    {% for notification_type, type_label in notification_types %}
+                    <div class="notification-type-card">
+                        <div class="type-header">
+                            <h3 class="type-title">{{ type_label }}</h3>
+                            <div class="type-toggle-all">
+                                <button type="button" class="btn-toggle-all" onclick="toggleAllForType('{{ notification_type }}', true)">
+                                    Tout activer
+                                </button>
+                                <button type="button" class="btn-toggle-all" onclick="toggleAllForType('{{ notification_type }}', false)">
+                                    Tout désactiver
+                                </button>
+                            </div>
+                        </div>
+                        <div class="type-options">
+                            <label class="toggle-option">
+                                <div class="toggle-info">
+                                    <span class="toggle-label">Dans l'application</span>
+                                    <span class="toggle-description">Notifications affichées dans Transpareo Connect</span>
+                                </div>
+                                <div class="toggle-switch">
+                                    <input type="checkbox" 
+                                           name="{{ notification_type }}_in_app" 
+                                           id="{{ notification_type }}_in_app"
+                                           value="true"
+                                           class="notification-toggle"
+                                           data-key="{{ notification_type }}_in_app">
+                                    <span class="toggle-slider"></span>
+                                </div>
+                            </label>
+                            <label class="toggle-option">
+                                <div class="toggle-info">
+                                    <span class="toggle-label">Email</span>
+                                    <span class="toggle-description">Recevoir un email (selon la fréquence choisie)</span>
+                                </div>
+                                <div class="toggle-switch">
+                                    <input type="checkbox" 
+                                           name="{{ notification_type }}_email" 
+                                           id="{{ notification_type }}_email"
+                                           value="true"
+                                           class="notification-toggle"
+                                           data-key="{{ notification_type }}_email">
+                                    <span class="toggle-slider"></span>
+                                </div>
+                            </label>
+                            <label class="toggle-option">
+                                <div class="toggle-info">
+                                    <span class="toggle-label">Notification push navigateur</span>
+                                    <span class="toggle-description">Notifications push sur votre navigateur (si autorisées)</span>
+                                </div>
+                                <div class="toggle-switch">
+                                    <input type="checkbox" 
+                                           name="{{ notification_type }}_push" 
+                                           id="{{ notification_type }}_push"
+                                           value="true"
+                                           class="notification-toggle"
+                                           data-key="{{ notification_type }}_push">
+                                    <span class="toggle-slider"></span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="settings-actions">
+                <button type="submit" class="btn-primary">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Enregistrer les paramètres
+                </button>
+                <a href="{% url 'connect-notifications' %}" class="btn-secondary">Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .notification-settings-page {
+        min-height: calc(100vh - 70px);
+        background: #f5f5f5;
+        padding-top: 70px;
+    }
+
+    .settings-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 32px 24px;
+    }
+
+    /* En-tête */
+    .settings-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 32px;
+    }
+
+    .settings-header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0 0 8px 0;
+    }
+
+    .settings-subtitle {
+        font-size: 15px;
+        color: #666;
+        margin: 0;
+    }
+
+    .btn-back {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        background: white;
+        color: #333;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .btn-back:hover {
+        background: #f5f5f5;
+        border-color: #ddd;
+    }
+
+    /* Formulaire */
+    .settings-form {
+        background: white;
+        border-radius: 12px;
+        padding: 32px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Sections */
+    .settings-section {
+        margin-bottom: 48px;
+    }
+
+    .settings-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .section-header {
+        margin-bottom: 24px;
+    }
+
+    .section-header h2 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0 0 8px 0;
+    }
+
+    .section-description {
+        font-size: 14px;
+        color: #666;
+        margin: 0;
+    }
+
+    /* Options radio */
+    .settings-options {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .radio-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 16px;
+        border: 2px solid #e5e5e5;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .radio-option:hover {
+        border-color: #D3580B;
+        background: rgba(211, 88, 11, 0.02);
+    }
+
+    .radio-option input[type="radio"] {
+        margin-top: 4px;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: #D3580B;
+    }
+
+    .radio-option input[type="radio"]:checked + .radio-content .radio-title {
+        color: #D3580B;
+    }
+
+    .radio-content {
+        flex: 1;
+    }
+
+    .radio-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 4px;
+    }
+
+    .radio-description {
+        font-size: 14px;
+        color: #666;
+        line-height: 1.5;
+    }
+
+    /* Liste des types de notifications */
+    .notification-types-list {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .notification-type-card {
+        padding: 24px;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        background: #fafafa;
+        transition: all 0.2s ease;
+    }
+
+    .notification-type-card:hover {
+        border-color: #D3580B;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .type-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .type-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0;
+    }
+
+    .type-toggle-all {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-toggle-all {
+        padding: 6px 12px;
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        color: #666;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-toggle-all:hover {
+        background: #f5f5f5;
+        border-color: #ddd;
+    }
+
+    .type-options {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    /* Toggle switch */
+    .toggle-option {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px;
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .toggle-option:hover {
+        border-color: #D3580B;
+        background: rgba(211, 88, 11, 0.02);
+    }
+
+    .toggle-info {
+        flex: 1;
+        margin-right: 16px;
+    }
+
+    .toggle-label {
+        display: block;
+        font-size: 15px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 4px;
+    }
+
+    .toggle-description {
+        display: block;
+        font-size: 13px;
+        color: #666;
+        line-height: 1.4;
+    }
+
+    .toggle-switch {
+        position: relative;
+        width: 52px;
+        height: 28px;
+        flex-shrink: 0;
+    }
+
+    .toggle-switch input[type="checkbox"] {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.3s;
+        border-radius: 28px;
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 22px;
+        width: 22px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.3s;
+        border-radius: 50%;
+    }
+
+    .toggle-switch input:checked + .toggle-slider {
+        background-color: #D3580B;
+    }
+
+    .toggle-switch input:checked + .toggle-slider:before {
+        transform: translateX(24px);
+    }
+
+    .toggle-switch input:focus + .toggle-slider {
+        box-shadow: 0 0 0 3px rgba(211, 88, 11, 0.2);
+    }
+
+    /* Actions */
+    .settings-actions {
+        display: flex;
+        gap: 12px;
+        padding-top: 32px;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .btn-primary {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: #D3580B;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+        background: #c4510a;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(211, 88, 11, 0.3);
+    }
+
+    .btn-secondary {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: white;
+        color: #333;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+        background: #f5f5f5;
+        border-color: #ddd;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .settings-container {
+            padding: 16px;
+        }
+
+        .settings-header {
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .settings-form {
+            padding: 20px;
+        }
+
+        .type-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .type-toggle-all {
+            width: 100%;
+            justify-content: flex-end;
+        }
+
+        .toggle-option {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .toggle-switch {
+            align-self: flex-end;
+        }
+
+        .settings-actions {
+            flex-direction: column;
+        }
+
+        .btn-primary,
+        .btn-secondary {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+
+<script>
+    // Initialiser les états des toggles depuis les données du serveur
+    document.addEventListener('DOMContentLoaded', function() {
+        const notificationSettings = {{ notification_settings|safe|default:"{}" }};
+        
+        // Fonction pour obtenir la valeur d'un paramètre
+        function getSettingValue(key) {
+            if (!notificationSettings || Object.keys(notificationSettings).length === 0) {
+                return true; // Par défaut activé si aucun paramètre
+            }
+            // Si la clé n'existe pas, retourner true (par défaut)
+            if (!(key in notificationSettings)) {
+                return true;
+            }
+            // Retourner la valeur (true ou false)
+            return notificationSettings[key] !== false;
+        }
+
+        // Initialiser tous les toggles
+        document.querySelectorAll('.notification-toggle').forEach(input => {
+            const key = input.getAttribute('data-key');
+            const value = getSettingValue(key);
+            input.checked = value;
+        });
+    });
+
+    // Fonction pour activer/désactiver tous les paramètres d'un type
+    function toggleAllForType(notificationType, enable) {
+        const card = event.target.closest('.notification-type-card');
+        const checkboxes = card.querySelectorAll(`input[name^="${notificationType}_"]`);
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = enable;
+        });
+    }
+
+    // Soumission du formulaire
+    document.getElementById('notification-settings-form').addEventListener('submit', function(e) {
+        // Le formulaire sera soumis normalement avec toutes les valeurs des checkboxes
+        // Les checkboxes non cochées ne seront pas envoyées, donc nous devons les gérer côté serveur
+    });
+</script>
+
+{% endblock %}
+

@@ -1,0 +1,870 @@
+{% extends 'core/admin/base_admin.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block page_title %}Analyse Concurrentielle{% endblock %}
+
+{% block content %}
+<div class="competitive-analysis-page">
+    <!-- Header -->
+    <div class="analysis-header">
+        <div class="header-left">
+            <h1 class="page-title-main">Analyse Concurrentielle</h1>
+            <p class="page-subtitle">Comparez Transpareo avec vos concurrents directs et indirects</p>
+        </div>
+        <div class="header-actions">
+            <button type="button" class="btn-secondary" onclick="openAddCompetitorModal()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Ajouter concurrent
+            </button>
+            <a href="{% url 'admin-competitive-analysis-export' %}" class="btn-primary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Exporter analyse
+            </a>
+        </div>
+    </div>
+
+    <!-- Tableau comparatif -->
+    <div class="comparison-table-container">
+        <div class="comparison-table-wrapper">
+            <table class="comparison-table" id="comparison-table">
+                <thead class="sticky-header">
+                    <tr>
+                        <th class="sticky-column criteria-column">Critère</th>
+                        <th class="our-column">
+                            <div class="column-header">
+                                <div class="logo-placeholder">T</div>
+                                <div class="column-info">
+                                    <div class="column-name">Transpareo</div>
+                                    <div class="column-subtitle">Notre solution</div>
+                                </div>
+                            </div>
+                        </th>
+                        {% for competitor in competitors %}
+                        <th class="competitor-column">
+                            <div class="column-header">
+                                {% if competitor.logo %}
+                                <img src="{{ competitor.logo.url }}" alt="{{ competitor.name }}" class="competitor-logo">
+                                {% else %}
+                                <div class="logo-placeholder">{{ competitor.name|first|upper }}</div>
+                                {% endif %}
+                                <div class="column-info">
+                                    <div class="column-name">{{ competitor.name }}</div>
+                                    <div class="column-actions">
+                                        <button type="button" class="btn-edit-competitor" onclick="openEditCompetitorModal({{ competitor.id }})" title="Éditer">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                            </svg>
+                                        </button>
+                                        <button type="button" class="btn-delete-competitor" onclick="deleteCompetitor({{ competitor.id }})" title="Supprimer">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Section Général -->
+                    <tr class="section-header">
+                        <td class="sticky-column section-title" colspan="{{ competitors|length|add:2 }}">GÉNÉRAL</td>
+                    </tr>
+                    <tr class="data-row">
+                        <td class="sticky-column criteria-cell">Logo</td>
+                        <td class="our-column data-cell">
+                            <div class="logo-placeholder">T</div>
+                        </td>
+                        {% for competitor in competitors %}
+                        <td class="competitor-column data-cell">
+                            {% if competitor.logo %}
+                            <img src="{{ competitor.logo.url }}" alt="{{ competitor.name }}" class="competitor-logo-small">
+                            {% else %}
+                            <div class="logo-placeholder-small">{{ competitor.name|first|upper }}</div>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="data-row">
+                        <td class="sticky-column criteria-cell">Nom</td>
+                        <td class="our-column data-cell"><strong>Transpareo</strong></td>
+                        {% for competitor in competitors %}
+                        <td class="competitor-column data-cell">{{ competitor.name }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="data-row">
+                        <td class="sticky-column criteria-cell">Site web</td>
+                        <td class="our-column data-cell">
+                            <a href="https://transpareo.fr" target="_blank" class="link">transpareo.fr</a>
+                        </td>
+                        {% for competitor in competitors %}
+                        <td class="competitor-column data-cell">
+                            {% if competitor.website %}
+                            <a href="{{ competitor.website }}" target="_blank" class="link">{{ competitor.website|truncatechars:30 }}</a>
+                            {% else %}
+                            <span class="empty-value">-</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="data-row">
+                        <td class="sticky-column criteria-cell">Année création</td>
+                        <td class="our-column data-cell">2024</td>
+                        {% for competitor in competitors %}
+                        <td class="competitor-column data-cell">{{ competitor.year_founded|default:"-" }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="data-row">
+                        <td class="sticky-column criteria-cell">Levée de fonds</td>
+                        <td class="our-column data-cell">-</td>
+                        {% for competitor in competitors %}
+                        <td class="competitor-column data-cell">{{ competitor.get_funding_display }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="data-row">
+                        <td class="sticky-column criteria-cell">Nombre utilisateurs</td>
+                        <td class="our-column data-cell">-</td>
+                        {% for competitor in competitors %}
+                        <td class="competitor-column data-cell">
+                            {% if competitor.estimated_users %}
+                            {{ competitor.estimated_users|intcomma }}
+                            {% else %}
+                            <span class="empty-value">-</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+
+                    <!-- Section Fonctionnalités -->
+                    <tr class="section-header">
+                        <td class="sticky-column section-title" colspan="{{ competitors|length|add:2 }}">FONCTIONNALITÉS</td>
+                    </tr>
+                    <tr class="data-row">
+                        <td class="sticky-column criteria-cell">Recherche logements</td>
+                        <td class="our-column data-cell">
+                            <span class="feature-badge feature-yes">Oui</span>
+                        </td>
+                        {% for competitor in competitors %}
+                        <td class="competitor-column data-cell">
+                            {% if competitor.feature_search == 'yes' %}
+                            <span class="feature-badge feature-yes">Oui</span>
+                            {% elif competitor.feature_search == 'partial' %}
+                            <span class="feature-badge feature-partial">Partiel</span>
+                            {% else %}
+                            <span class="feature-badge feature-no">Non</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="data-row">
+                        <td class="sticky-column criteria-cell">Avis vérifiés</td>
+                        <td class="our-column data-cell">
+                            <span class="feature-badge feature-yes">Oui</span>
+                        </td>
+                        {% for competitor in competitors %}
+                        <td class="competitor-column data-cell">
+                            {% if competitor.feature_verified_reviews %}
+                            <span class="feature-badge feature-yes">Oui</span>
+                            {% else %}
+                            <span class="feature-badge feature-no">Non</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="data-row">
+                        <td class="sticky-column criteria-cell">Réseau social</td>
+                        <td class="our-column data-cell">
+                            <span class="feature-badge feature-yes">Oui</span>
+                        </td>
+                        {% for competitor in competitors %}
+                        <td class="competitor-column data-cell">
+                            {% if competitor.feature_social_network %}
+                            <span class="feature-badge feature-yes">Oui</span>
+                            {% else %}
+                            <span class="feature-badge feature-no">Non</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="data-row">
+                        <td class="sticky-column criteria-cell">Gestion bail</td>
+                        <td class="our-column data-cell">
+                            <span class="feature-badge feature-yes">Oui</span>
+                        </td>
+                        {% for competitor in competitors %}
+                        <td class="competitor-column data-cell">
+                            {% if competitor.feature_lease_management %}
+                            <span class="feature-badge feature-yes">Oui</span>
+                            {% else %}
+                            <span class="feature-badge feature-no">Non</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="data-row">
+                        <td class="sticky-column criteria-cell">Carte interactive</td>
+                        <td class="our-column data-cell">
+                            <span class="feature-badge feature-yes">Oui</span>
+                        </td>
+                        {% for competitor in competitors %}
+                        <td class="competitor-column data-cell">
+                            {% if competitor.feature_interactive_map %}
+                            <span class="feature-badge feature-yes">Oui</span>
+                            {% else %}
+                            <span class="feature-badge feature-no">Non</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="data-row">
+                        <td class="sticky-column criteria-cell">Application mobile</td>
+                        <td class="our-column data-cell">
+                            <span class="feature-badge feature-no">Non</span>
+                        </td>
+                        {% for competitor in competitors %}
+                        <td class="competitor-column data-cell">
+                            {% if competitor.feature_mobile_app %}
+                            <span class="feature-badge feature-yes">Oui</span>
+                            {% else %}
+                            <span class="feature-badge feature-no">Non</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+
+                    <!-- Section Tarification -->
+                    <tr class="section-header">
+                        <td class="sticky-column section-title" colspan="{{ competitors|length|add:2 }}">TARIFICATION</td>
+                    </tr>
+                    <tr class="data-row">
+                        <td class="sticky-column criteria-cell">Modèle</td>
+                        <td class="our-column data-cell">Freemium</td>
+                        {% for competitor in competitors %}
+                        <td class="competitor-column data-cell">{{ competitor.get_pricing_model_display }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="data-row">
+                        <td class="sticky-column criteria-cell">Prix moyen</td>
+                        <td class="our-column data-cell">-</td>
+                        {% for competitor in competitors %}
+                        <td class="competitor-column data-cell">
+                            {% if competitor.average_price %}
+                            {{ competitor.average_price }} €
+                            {% else %}
+                            <span class="empty-value">-</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="data-row">
+                        <td class="sticky-column criteria-cell">Commission (%)</td>
+                        <td class="our-column data-cell">-</td>
+                        {% for competitor in competitors %}
+                        <td class="competitor-column data-cell">
+                            {% if competitor.commission_rate %}
+                            {{ competitor.commission_rate }}%
+                            {% else %}
+                            <span class="empty-value">-</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+
+                    <!-- Section UX/UI -->
+                    <tr class="section-header">
+                        <td class="sticky-column section-title" colspan="{{ competitors|length|add:2 }}">UX/UI</td>
+                    </tr>
+                    <tr class="data-row">
+                        <td class="sticky-column criteria-cell">Note design (/10)</td>
+                        <td class="our-column data-cell">-</td>
+                        {% for competitor in competitors %}
+                        <td class="competitor-column data-cell">
+                            {% if competitor.design_score %}
+                            <div class="score-value">{{ competitor.design_score }}/10</div>
+                            {% else %}
+                            <span class="empty-value">-</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="data-row">
+                        <td class="sticky-column criteria-cell">Mobile-friendly</td>
+                        <td class="our-column data-cell">
+                            <span class="feature-badge feature-yes">Oui</span>
+                        </td>
+                        {% for competitor in competitors %}
+                        <td class="competitor-column data-cell">
+                            {% if competitor.mobile_friendly %}
+                            <span class="feature-badge feature-yes">Oui</span>
+                            {% else %}
+                            <span class="feature-badge feature-no">Non</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="data-row">
+                        <td class="sticky-column criteria-cell">Note rapidité (/10)</td>
+                        <td class="our-column data-cell">-</td>
+                        {% for competitor in competitors %}
+                        <td class="competitor-column data-cell">
+                            {% if competitor.speed_score %}
+                            <div class="score-value">{{ competitor.speed_score }}/10</div>
+                            {% else %}
+                            <span class="empty-value">-</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+
+                    <!-- Section Marketing -->
+                    <tr class="section-header">
+                        <td class="sticky-column section-title" colspan="{{ competitors|length|add:2 }}">MARKETING</td>
+                    </tr>
+                    <tr class="data-row">
+                        <td class="sticky-column criteria-cell">Réseaux sociaux (/10)</td>
+                        <td class="our-column data-cell">-</td>
+                        {% for competitor in competitors %}
+                        <td class="competitor-column data-cell">
+                            {% if competitor.social_media_score %}
+                            <div class="score-value">{{ competitor.social_media_score }}/10</div>
+                            {% else %}
+                            <span class="empty-value">-</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="data-row">
+                        <td class="sticky-column criteria-cell">SEO (/10)</td>
+                        <td class="our-column data-cell">-</td>
+                        {% for competitor in competitors %}
+                        <td class="competitor-column data-cell">
+                            {% if competitor.seo_score %}
+                            <div class="score-value">{{ competitor.seo_score }}/10</div>
+                            {% else %}
+                            <span class="empty-value">-</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="data-row">
+                        <td class="sticky-column criteria-cell">Type de publicité</td>
+                        <td class="our-column data-cell">-</td>
+                        {% for competitor in competitors %}
+                        <td class="competitor-column data-cell">
+                            {% if competitor.advertising_type %}
+                            {{ competitor.advertising_type }}
+                            {% else %}
+                            <span class="empty-value">-</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+
+                    <!-- Section Points forts/faibles -->
+                    <tr class="section-header">
+                        <td class="sticky-column section-title" colspan="{{ competitors|length|add:2 }}">ANALYSE</td>
+                    </tr>
+                    <tr class="data-row">
+                        <td class="sticky-column criteria-cell">Points forts</td>
+                        <td class="our-column data-cell">-</td>
+                        {% for competitor in competitors %}
+                        <td class="competitor-column data-cell">
+                            {% if competitor.strengths %}
+                            <div class="text-content">{{ competitor.strengths|truncatewords:10 }}</div>
+                            {% else %}
+                            <span class="empty-value">-</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="data-row">
+                        <td class="sticky-column criteria-cell">Points faibles</td>
+                        <td class="our-column data-cell">-</td>
+                        {% for competitor in competitors %}
+                        <td class="competitor-column data-cell">
+                            {% if competitor.weaknesses %}
+                            <div class="text-content">{{ competitor.weaknesses|truncatewords:10 }}</div>
+                            {% else %}
+                            <span class="empty-value">-</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if not competitors %}
+    <div class="empty-state">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="empty-icon">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <h3>Aucun concurrent ajouté</h3>
+        <p>Commencez par ajouter vos concurrents pour comparer Transpareo avec eux.</p>
+        <button type="button" class="btn-primary" onclick="openAddCompetitorModal()">
+            Ajouter un concurrent
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- Graphiques Comparatifs -->
+    {% if competitors %}
+    <div class="charts-section">
+        <h2 class="section-title">Graphiques Comparatifs</h2>
+        
+        <div class="charts-grid">
+            <!-- Radar Chart -->
+            <div class="chart-card">
+                <h3 class="chart-title">Analyse Comparative - Radar Chart</h3>
+                <div class="chart-container">
+                    <canvas id="radar-chart" width="400" height="400"></canvas>
+                </div>
+            </div>
+
+            <!-- Bar Chart - Utilisateurs -->
+            <div class="chart-card">
+                <h3 class="chart-title">Nombre d'Utilisateurs Estimé</h3>
+                <div class="chart-container">
+                    <canvas id="users-bar-chart" width="400" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Analyse SWOT Comparée -->
+    <div class="swot-section">
+        <h2 class="section-title">Analyse SWOT Comparée</h2>
+        
+        <form id="swot-form" method="POST" action="{% url 'admin-competitive-analysis-save-swot' %}">
+            {% csrf_token %}
+            <div class="swot-grid">
+                <div class="swot-item swot-strengths">
+                    <h3 class="swot-title">Nos forces vs concurrents</h3>
+                    <textarea name="our_strengths_vs_competitors" class="swot-textarea" rows="6" placeholder="Listez les points forts de Transpareo par rapport aux concurrents...">{{ analysis.our_strengths_vs_competitors|default:'' }}</textarea>
+                </div>
+                <div class="swot-item swot-opportunities">
+                    <h3 class="swot-title">Leurs forces à adopter</h3>
+                    <textarea name="their_strengths_to_adopt" class="swot-textarea" rows="6" placeholder="Listez les bonnes pratiques des concurrents à intégrer...">{{ analysis.their_strengths_to_adopt|default:'' }}</textarea>
+                </div>
+                <div class="swot-item swot-opportunities-market">
+                    <h3 class="swot-title">Opportunités marché</h3>
+                    <textarea name="market_opportunities" class="swot-textarea" rows="6" placeholder="Identifiez les opportunités du marché...">{{ analysis.market_opportunities|default:'' }}</textarea>
+                </div>
+                <div class="swot-item swot-threats">
+                    <h3 class="swot-title">Menaces concurrentielles</h3>
+                    <textarea name="competitive_threats" class="swot-textarea" rows="6" placeholder="Listez les menaces représentées par les concurrents...">{{ analysis.competitive_threats|default:'' }}</textarea>
+                </div>
+            </div>
+            <div class="swot-actions">
+                <button type="submit" class="btn-primary">Sauvegarder l'analyse SWOT</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Ajouter Concurrent -->
+<div id="add-competitor-modal" class="modal" style="display: none;">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2>Ajouter un concurrent</h2>
+            <button type="button" class="btn-close-modal" onclick="closeModal('add-competitor-modal')">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <form id="add-competitor-form" method="POST" action="{% url 'admin-competitive-analysis-add-competitor' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="modal-body">
+                <!-- Formulaire concurrent - à compléter avec tous les champs -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Général</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="add_name">Nom *</label>
+                            <input type="text" id="add_name" name="name" class="input-field" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="add_website">Site web</label>
+                            <input type="url" id="add_website" name="website" class="input-field" placeholder="https://...">
+                        </div>
+                        <div class="form-field">
+                            <label for="add_year_founded">Année création</label>
+                            <input type="number" id="add_year_founded" name="year_founded" class="input-field" min="1900" max="2100">
+                        </div>
+                        <div class="form-field">
+                            <label for="add_funding_raised">Levée de fonds (€)</label>
+                            <input type="number" id="add_funding_raised" name="funding_raised" class="input-field" min="0" step="0.01">
+                        </div>
+                        <div class="form-field">
+                            <label for="add_estimated_users">Nombre utilisateurs</label>
+                            <input type="number" id="add_estimated_users" name="estimated_users" class="input-field" min="0">
+                        </div>
+                        <div class="form-field">
+                            <label for="add_logo">Logo</label>
+                            <input type="file" id="add_logo" name="logo" class="input-field" accept="image/*">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fonctionnalités -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Fonctionnalités</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="add_feature_search">Recherche logements</label>
+                            <select id="add_feature_search" name="feature_search" class="input-field">
+                                <option value="no">Non</option>
+                                <option value="yes">Oui</option>
+                                <option value="partial">Partiel</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="add_feature_verified_reviews" name="feature_verified_reviews" value="true">
+                                <span>Avis vérifiés</span>
+                            </label>
+                        </div>
+                        <div class="form-field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="add_feature_social_network" name="feature_social_network" value="true">
+                                <span>Réseau social</span>
+                            </label>
+                        </div>
+                        <div class="form-field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="add_feature_lease_management" name="feature_lease_management" value="true">
+                                <span>Gestion bail</span>
+                            </label>
+                        </div>
+                        <div class="form-field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="add_feature_interactive_map" name="feature_interactive_map" value="true">
+                                <span>Carte interactive</span>
+                            </label>
+                        </div>
+                        <div class="form-field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="add_feature_mobile_app" name="feature_mobile_app" value="true">
+                                <span>Application mobile</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarification -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Tarification</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="add_pricing_model">Modèle tarifaire</label>
+                            <select id="add_pricing_model" name="pricing_model" class="input-field">
+                                <option value="free">Gratuit</option>
+                                <option value="freemium">Freemium</option>
+                                <option value="paid">Payant</option>
+                                <option value="commission">Commission</option>
+                                <option value="mixed">Mixte</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label for="add_average_price">Prix moyen (€)</label>
+                            <input type="number" id="add_average_price" name="average_price" class="input-field" min="0" step="0.01">
+                        </div>
+                        <div class="form-field">
+                            <label for="add_commission_rate">Commission (%)</label>
+                            <input type="number" id="add_commission_rate" name="commission_rate" class="input-field" min="0" max="100" step="0.01">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- UX/UI -->
+                <div class="form-section">
+                    <h3 class="form-section-title">UX/UI</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="add_design_score">Note design (/10)</label>
+                            <input type="number" id="add_design_score" name="design_score" class="input-field" min="0" max="10">
+                        </div>
+                        <div class="form-field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="add_mobile_friendly" name="mobile_friendly" value="true">
+                                <span>Mobile-friendly</span>
+                            </label>
+                        </div>
+                        <div class="form-field">
+                            <label for="add_speed_score">Note rapidité (/10)</label>
+                            <input type="number" id="add_speed_score" name="speed_score" class="input-field" min="0" max="10">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Marketing -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Marketing</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="add_social_media_score">Réseaux sociaux (/10)</label>
+                            <input type="number" id="add_social_media_score" name="social_media_score" class="input-field" min="0" max="10">
+                        </div>
+                        <div class="form-field">
+                            <label for="add_seo_score">SEO (/10)</label>
+                            <input type="number" id="add_seo_score" name="seo_score" class="input-field" min="0" max="10">
+                        </div>
+                        <div class="form-field">
+                            <label for="add_advertising_type">Type de publicité</label>
+                            <input type="text" id="add_advertising_type" name="advertising_type" class="input-field" placeholder="Ex: Google Ads, Facebook Ads...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analyse -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Analyse</h3>
+                    <div class="form-field">
+                        <label for="add_strengths">Points forts</label>
+                        <textarea id="add_strengths" name="strengths" class="textarea-field" rows="4" placeholder="Listez les points forts du concurrent..."></textarea>
+                    </div>
+                    <div class="form-field">
+                        <label for="add_weaknesses">Points faibles</label>
+                        <textarea id="add_weaknesses" name="weaknesses" class="textarea-field" rows="4" placeholder="Listez les points faibles du concurrent..."></textarea>
+                    </div>
+                    <div class="form-field">
+                        <label for="add_notes">Notes libres</label>
+                        <textarea id="add_notes" name="notes" class="textarea-field" rows="4" placeholder="Ajoutez vos observations..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeModal('add-competitor-modal')">Annuler</button>
+                <button type="submit" class="btn-primary">Ajouter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Éditer Concurrent -->
+<div id="edit-competitor-modal" class="modal" style="display: none;">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2>Éditer un concurrent</h2>
+            <button type="button" class="btn-close-modal" onclick="closeModal('edit-competitor-modal')">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <form id="edit-competitor-form" method="POST" action="" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="modal-body">
+                <input type="hidden" id="edit_competitor_id" name="competitor_id">
+                
+                <!-- Formulaire identique à celui d'ajout - sera rempli dynamiquement -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Général</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="edit_name">Nom *</label>
+                            <input type="text" id="edit_name" name="name" class="input-field" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="edit_website">Site web</label>
+                            <input type="url" id="edit_website" name="website" class="input-field" placeholder="https://...">
+                        </div>
+                        <div class="form-field">
+                            <label for="edit_year_founded">Année création</label>
+                            <input type="number" id="edit_year_founded" name="year_founded" class="input-field" min="1900" max="2100">
+                        </div>
+                        <div class="form-field">
+                            <label for="edit_funding_raised">Levée de fonds (€)</label>
+                            <input type="number" id="edit_funding_raised" name="funding_raised" class="input-field" min="0" step="0.01">
+                        </div>
+                        <div class="form-field">
+                            <label for="edit_estimated_users">Nombre utilisateurs</label>
+                            <input type="number" id="edit_estimated_users" name="estimated_users" class="input-field" min="0">
+                        </div>
+                        <div class="form-field">
+                            <label for="edit_logo">Logo</label>
+                            <input type="file" id="edit_logo" name="logo" class="input-field" accept="image/*">
+                            <div id="edit_logo_preview" class="logo-preview"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Copier les autres sections du formulaire d'ajout -->
+                <!-- Fonctionnalités -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Fonctionnalités</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="edit_feature_search">Recherche logements</label>
+                            <select id="edit_feature_search" name="feature_search" class="input-field">
+                                <option value="no">Non</option>
+                                <option value="yes">Oui</option>
+                                <option value="partial">Partiel</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="edit_feature_verified_reviews" name="feature_verified_reviews" value="true">
+                                <span>Avis vérifiés</span>
+                            </label>
+                        </div>
+                        <div class="form-field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="edit_feature_social_network" name="feature_social_network" value="true">
+                                <span>Réseau social</span>
+                            </label>
+                        </div>
+                        <div class="form-field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="edit_feature_lease_management" name="feature_lease_management" value="true">
+                                <span>Gestion bail</span>
+                            </label>
+                        </div>
+                        <div class="form-field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="edit_feature_interactive_map" name="feature_interactive_map" value="true">
+                                <span>Carte interactive</span>
+                            </label>
+                        </div>
+                        <div class="form-field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="edit_feature_mobile_app" name="feature_mobile_app" value="true">
+                                <span>Application mobile</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarification -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Tarification</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="edit_pricing_model">Modèle tarifaire</label>
+                            <select id="edit_pricing_model" name="pricing_model" class="input-field">
+                                <option value="free">Gratuit</option>
+                                <option value="freemium">Freemium</option>
+                                <option value="paid">Payant</option>
+                                <option value="commission">Commission</option>
+                                <option value="mixed">Mixte</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label for="edit_average_price">Prix moyen (€)</label>
+                            <input type="number" id="edit_average_price" name="average_price" class="input-field" min="0" step="0.01">
+                        </div>
+                        <div class="form-field">
+                            <label for="edit_commission_rate">Commission (%)</label>
+                            <input type="number" id="edit_commission_rate" name="commission_rate" class="input-field" min="0" max="100" step="0.01">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- UX/UI -->
+                <div class="form-section">
+                    <h3 class="form-section-title">UX/UI</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="edit_design_score">Note design (/10)</label>
+                            <input type="number" id="edit_design_score" name="design_score" class="input-field" min="0" max="10">
+                        </div>
+                        <div class="form-field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="edit_mobile_friendly" name="mobile_friendly" value="true">
+                                <span>Mobile-friendly</span>
+                            </label>
+                        </div>
+                        <div class="form-field">
+                            <label for="edit_speed_score">Note rapidité (/10)</label>
+                            <input type="number" id="edit_speed_score" name="speed_score" class="input-field" min="0" max="10">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Marketing -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Marketing</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="edit_social_media_score">Réseaux sociaux (/10)</label>
+                            <input type="number" id="edit_social_media_score" name="social_media_score" class="input-field" min="0" max="10">
+                        </div>
+                        <div class="form-field">
+                            <label for="edit_seo_score">SEO (/10)</label>
+                            <input type="number" id="edit_seo_score" name="seo_score" class="input-field" min="0" max="10">
+                        </div>
+                        <div class="form-field">
+                            <label for="edit_advertising_type">Type de publicité</label>
+                            <input type="text" id="edit_advertising_type" name="advertising_type" class="input-field" placeholder="Ex: Google Ads, Facebook Ads...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analyse -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Analyse</h3>
+                    <div class="form-field">
+                        <label for="edit_strengths">Points forts</label>
+                        <textarea id="edit_strengths" name="strengths" class="textarea-field" rows="4" placeholder="Listez les points forts du concurrent..."></textarea>
+                    </div>
+                    <div class="form-field">
+                        <label for="edit_weaknesses">Points faibles</label>
+                        <textarea id="edit_weaknesses" name="weaknesses" class="textarea-field" rows="4" placeholder="Listez les points faibles du concurrent..."></textarea>
+                    </div>
+                    <div class="form-field">
+                        <label for="edit_notes">Notes libres</label>
+                        <textarea id="edit_notes" name="notes" class="textarea-field" rows="4" placeholder="Ajoutez vos observations..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeModal('edit-competitor-modal')">Annuler</button>
+                <button type="submit" class="btn-primary">Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Styles -->
+<link rel="stylesheet" href="{% static 'core/admin/competitive-analysis.css' %}">
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+<!-- JavaScript -->
+<script src="{% static 'core/admin/competitive-analysis.js' %}"></script>
+
+<script>
+    const competitorsData = {{ competitors_json|safe }};
+    const addCompetitorUrl = '{% url "admin-competitive-analysis-add-competitor" %}';
+    const editCompetitorUrl = '{% url "admin-competitive-analysis-edit-competitor" 0 %}'.replace('0/', '');
+    const deleteCompetitorUrl = '{% url "admin-competitive-analysis-delete-competitor" 0 %}'.replace('0/', '');
+    const saveSwotUrl = '{% url "admin-competitive-analysis-save-swot" %}';
+    const csrfToken = '{{ csrf_token }}';
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        initCompetitiveAnalysis();
+    });
+</script>
+{% endblock %}
+

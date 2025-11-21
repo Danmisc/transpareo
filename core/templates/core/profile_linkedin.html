@@ -1,0 +1,1458 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}{{ user.get_full_name|default:user.username }} | Transpareo{% endblock %}
+{% block extra_head %}
+    <meta name="description" content="{{ user.bio|default:'Profil Transpareo' }}">
+    <meta property="og:title" content="{{ user.get_full_name|default:user.username }} | Transpareo">
+    <meta property="og:description" content="{{ user.bio|default:'Profil Transpareo' }}">
+    {% if user.avatar %}
+    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ user.avatar.url }}">
+    {% endif %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --transpareo-orange: #D3580B;
+            --transpareo-orange-dark: #B84909;
+            --transpareo-orange-light: #FFF4E6;
+            --transpareo-orange-hover: #FF8C42;
+            --text-primary: #000000E6;
+            --text-secondary: #00000099;
+            --text-tertiary: #00000075;
+            --border-color: #E0E0E0;
+            --bg-white: #FFFFFF;
+            --bg-gray: #F3F2EF;
+            --bg-hover: #F5F5F5;
+            --success: #057642;
+            --warning: #B24020;
+            --shadow-sm: 0 0 0 1px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.08);
+            --shadow-md: 0 0 0 1px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.16);
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-gray);
+            color: var(--text-primary);
+            line-height: 1.5;
+            font-size: 14px;
+        }
+        
+        /* Container principal */
+        .profile-container {
+            max-width: 1128px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        /* Header avec couverture LinkedIn-style */
+        .profile-header {
+            background: var(--bg-white);
+            border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+        
+        .cover-section {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, var(--transpareo-orange) 0%, var(--transpareo-orange-dark) 100%);
+            overflow: hidden;
+        }
+        
+        .cover-section img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .cover-edit-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(255,255,255,0.9);
+            border: none;
+            padding: 6px 16px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        
+        .cover-edit-btn:hover {
+            background: white;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .profile-info-section {
+            padding: 0 24px 24px;
+            position: relative;
+        }
+        
+        .avatar-wrapper {
+            position: relative;
+            margin-top: -72px;
+            margin-bottom: 16px;
+        }
+        
+        .profile-avatar {
+            width: 152px;
+            height: 152px;
+            border-radius: 50%;
+            border: 4px solid white;
+            object-fit: cover;
+            background: var(--transpareo-orange);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .avatar-placeholder {
+            width: 152px;
+            height: 152px;
+            border-radius: 50%;
+            border: 4px solid white;
+            background: var(--transpareo-orange);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 60px;
+            font-weight: 600;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .avatar-edit-btn {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            width: 36px;
+            height: 36px;
+            background: var(--bg-white);
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .avatar-edit-btn:hover {
+            border-color: var(--transpareo-orange);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .status-indicator {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 3px solid white;
+            background: var(--success);
+        }
+        
+        .status-offline {
+            background: #999;
+        }
+        
+        .profile-name-section {
+            margin-bottom: 16px;
+        }
+        
+        .profile-name {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        
+        .profile-headline {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .profile-location {
+            font-size: 14px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 16px;
+        }
+        
+        .verification-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        
+        .verification-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            background: var(--transpareo-orange-light);
+            color: var(--transpareo-orange);
+        }
+        
+        .verification-badge.gold {
+            background: #FFF8E1;
+            color: #F57C00;
+        }
+        
+        .profile-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 6px 16px;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .btn-primary {
+            background: var(--transpareo-orange);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--transpareo-orange-dark);
+        }
+        
+        .btn-secondary {
+            background: var(--bg-white);
+            color: var(--transpareo-orange);
+            border: 1px solid var(--transpareo-orange);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--transpareo-orange-light);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--text-secondary);
+        }
+        
+        .btn-outline:hover {
+            background: var(--bg-hover);
+            border-color: var(--text-primary);
+        }
+        
+        /* Layout 2 colonnes */
+        .profile-layout {
+            display: grid;
+            grid-template-columns: 1fr 312px;
+            gap: 24px;
+        }
+        
+        @media (max-width: 991px) {
+            .profile-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Cards */
+        .card {
+            background: var(--bg-white);
+            border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .card-content {
+            padding: 16px 24px;
+        }
+        
+        .edit-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .edit-icon:hover {
+            background: var(--bg-hover);
+        }
+        
+        /* Section À propos */
+        .about-text {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        
+        /* Section Expérience/Logements */
+        .experience-item {
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .experience-item:last-child {
+            border-bottom: none;
+        }
+        
+        .experience-header {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .experience-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 4px;
+            background: var(--transpareo-orange-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .experience-info {
+            flex: 1;
+        }
+        
+        .experience-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+        
+        .experience-company {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 2px;
+        }
+        
+        .experience-date {
+            font-size: 14px;
+            color: var(--text-tertiary);
+        }
+        
+        .experience-description {
+            margin-top: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        
+        /* Section Compétences/Badges */
+        .skills-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .skill-badge {
+            padding: 6px 12px;
+            background: var(--bg-gray);
+            border-radius: 16px;
+            font-size: 14px;
+            color: var(--text-primary);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .skill-badge.verified {
+            background: var(--transpareo-orange-light);
+            color: var(--transpareo-orange);
+        }
+        
+        /* Section Recommandations/Avis */
+        .recommendation-item {
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .recommendation-item:last-child {
+            border-bottom: none;
+        }
+        
+        .recommendation-header {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .recommendation-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        .recommendation-info {
+            flex: 1;
+        }
+        
+        .recommendation-author {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .recommendation-role {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .recommendation-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+        
+        .recommendation-stars {
+            color: #FFC107;
+            font-size: 16px;
+        }
+        
+        /* Sidebar */
+        .sidebar-card {
+            background: var(--bg-white);
+            border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 8px;
+            padding: 16px;
+        }
+        
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .stat-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: var(--bg-white);
+            border-radius: 8px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .modal-close:hover {
+            background: var(--bg-hover);
+        }
+        
+        .modal-body {
+            padding: 24px;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--transpareo-orange);
+            box-shadow: 0 0 0 2px var(--transpareo-orange-light);
+        }
+        
+        .form-actions {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 767px) {
+            .profile-container {
+                padding: 12px;
+            }
+            
+            .cover-section {
+                height: 150px;
+            }
+            
+            .avatar-wrapper {
+                margin-top: -60px;
+            }
+            
+            .profile-avatar, .avatar-placeholder {
+                width: 120px;
+                height: 120px;
+            }
+            
+            .profile-info-section {
+                padding: 0 16px 16px;
+            }
+            
+            .profile-layout {
+                gap: 12px;
+            }
+        }
+        
+        /* Loading state */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        /* Success message */
+        .success-message {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--success);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+            z-index: 1001;
+            display: none;
+        }
+        
+        .success-message.show {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+{% endblock %}
+{% block content %}
+    <div class="profile-container">
+        <!-- Header avec couverture -->
+        <div class="profile-header">
+            <div class="cover-section">
+                {% if user.cover_image %}
+                    <img src="{{ user.cover_image.url }}" alt="Couverture">
+                {% endif %}
+                {% if is_own_profile %}
+                <button class="cover-edit-btn" onclick="openModal('coverModal')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    Modifier
+                </button>
+                {% endif %}
+            </div>
+            
+            <div class="profile-info-section">
+                <div class="avatar-wrapper">
+                    {% if user.avatar %}
+                        <img src="{{ user.avatar.url }}" alt="{{ user.get_full_name|default:user.username }}" class="profile-avatar">
+                    {% else %}
+                        <div class="avatar-placeholder">{{ user.get_full_name.0|default:user.username.0|upper }}</div>
+                    {% endif %}
+                    
+                    {% if user.afficher_statut_online %}
+                    <div class="status-indicator {% if is_online %}status-online{% else %}status-offline{% endif %}"></div>
+                    {% endif %}
+                    
+                    {% if is_own_profile %}
+                    <div class="avatar-edit-btn" onclick="openModal('avatarModal')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="profile-name-section">
+                    <h1 class="profile-name">{{ user.get_full_name|default:user.username }}</h1>
+                    <div class="profile-headline">
+                        {% if user.is_proprietaire %}
+                            Propriétaire{% if user.is_professionnel %} professionnel{% endif %}
+                            {% if user.profession %} • {{ user.profession }}{% endif %}
+                        {% else %}
+                            Locataire{% if user.profession %} • {{ user.profession }}{% endif %}
+                        {% endif %}
+                    </div>
+                    {% if user.ville %}
+                    <div class="profile-location">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        {{ user.ville }}{% if user.region %}, {{ user.region }}{% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="verification-badges">
+                        {% if user.email_verified %}
+                        <span class="verification-badge">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                            </svg>
+                            Email vérifié
+                        </span>
+                        {% endif %}
+                        {% if user.phone_verified %}
+                        <span class="verification-badge">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                            </svg>
+                            Téléphone vérifié
+                        </span>
+                        {% endif %}
+                        {% if user.identity_verified %}
+                        <span class="verification-badge gold">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                            </svg>
+                            Identité vérifiée
+                        </span>
+                        {% endif %}
+                        {% if user.proprietaire_verified %}
+                        <span class="verification-badge gold">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                            </svg>
+                            Propriétaire vérifié
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="profile-actions">
+                        {% if is_own_profile %}
+                            <button class="btn btn-primary" onclick="openModal('editAboutModal')">Ajouter une section</button>
+                            <button class="btn btn-outline" onclick="openModal('settingsModal')">Paramètres</button>
+                        {% else %}
+                            <button class="btn btn-primary" onclick="contactUser()">Contacter</button>
+                            <button class="btn btn-secondary" onclick="followUser()">Suivre</button>
+                            <button class="btn btn-outline" onclick="shareProfile()">Partager</button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Layout 2 colonnes -->
+        <div class="profile-layout">
+            <!-- Colonne principale -->
+            <div class="main-column">
+                <!-- Section À propos -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">À propos</h2>
+                        {% if is_own_profile %}
+                        <div class="edit-icon" onclick="openModal('editAboutModal')">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-content">
+                        {% if user.bio %}
+                            <div class="about-text">{{ user.bio }}</div>
+                        {% else %}
+                            <div class="about-text" style="color: var(--text-tertiary); font-style: italic;">
+                                {% if is_own_profile %}
+                                    Ajoutez une description pour que les autres utilisateurs en apprennent plus sur vous.
+                                {% else %}
+                                    Aucune description disponible.
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Section Expérience/Logements -->
+                {% if user.is_proprietaire and mes_logements %}
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Logements</h2>
+                        {% if is_own_profile %}
+                        <a href="{% url 'landing-page' %}" class="edit-icon" title="Ajouter un logement">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </a>
+                        {% endif %}
+                    </div>
+                    <div class="card-content">
+                        {% for logement in mes_logements|slice:":5" %}
+                        <div class="experience-item">
+                            <div class="experience-header">
+                                <div class="experience-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--transpareo-orange)" stroke-width="2">
+                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="experience-info">
+                                    <div class="experience-title">{{ logement.titre }}</div>
+                                    <div class="experience-company">{{ logement.adresse }}</div>
+                                    <div class="experience-date">{{ logement.prix }}€/mois • {{ logement.get_statut_display }}</div>
+                                    {% if logement.note_moyenne > 0 %}
+                                    <div style="margin-top: 8px;">
+                                        <span class="recommendation-stars">
+                                            {% for i in "12345" %}
+                                                {% if forloop.counter <= logement.note_moyenne %}
+                                                    ★
+                                                {% else %}
+                                                    ☆
+                                                {% endif %}
+                                            {% endfor %}
+                                        </span>
+                                        <span style="font-size: 14px; color: var(--text-secondary); margin-left: 8px;">
+                                            {{ logement.note_moyenne|floatformat:1 }} ({{ logement.nombre_avis }} avis)
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% if logements_count > 5 %}
+                        <div style="text-align: center; padding-top: 16px;">
+                            <a href="{% url 'mes-biens' %}" style="color: var(--transpareo-orange); font-weight: 600; text-decoration: none;">
+                                Voir tous les logements ({{ logements_count }}) →
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Section Compétences/Badges -->
+                {% if user_badges %}
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Badges & Compétences</h2>
+                        {% if is_own_profile %}
+                        <div class="edit-icon" onclick="checkAndAwardBadges()" title="Vérifier les badges disponibles">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-content">
+                        <div class="skills-list">
+                            {% for user_badge in user_badges %}
+                            <div class="skill-badge {% if user_badge.badge.rarity != 'common' %}verified{% endif %}">
+                                <span style="font-size: 18px;">{{ user_badge.badge.icon }}</span>
+                                {{ user_badge.badge.name }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Section Recommandations/Avis -->
+                {% if avis_recus %}
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Recommandations</h2>
+                    </div>
+                    <div class="card-content">
+                        {% for avis in avis_recus|slice:":5" %}
+                        <div class="recommendation-item">
+                            <div class="recommendation-header">
+                                {% if avis.locataire.avatar %}
+                                    <img src="{{ avis.locataire.avatar.url }}" alt="{{ avis.locataire.get_full_name|default:avis.locataire.username }}" class="recommendation-avatar">
+                                {% else %}
+                                    <div class="recommendation-avatar" style="background: var(--transpareo-orange); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+                                        {{ avis.locataire.get_full_name.0|default:avis.locataire.username.0|upper }}
+                                    </div>
+                                {% endif %}
+                                <div class="recommendation-info">
+                                    <div class="recommendation-author">{{ avis.locataire.get_full_name|default:avis.locataire.username }}</div>
+                                    <div class="recommendation-role">Locataire</div>
+                                </div>
+                            </div>
+                            <div class="recommendation-stars" style="margin-bottom: 8px;">
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= avis.note %}
+                                        ★
+                                    {% else %}
+                                        ☆
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <div class="recommendation-text">{{ avis.commentaire|truncatewords:50 }}</div>
+                            <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 8px;">
+                                {{ avis.date_avis|date:"d M Y" }}
+                                {% if avis.verifie %}
+                                <span style="margin-left: 8px; color: var(--success);">✓ Vérifié</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% if nombre_avis_proprietaire > 5 %}
+                        <div style="text-align: center; padding-top: 16px;">
+                            <a href="#" onclick="showAllRecommendations(); return false;" style="color: var(--transpareo-orange); font-weight: 600; text-decoration: none;">
+                                Voir toutes les recommandations ({{ nombre_avis_proprietaire }}) →
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Section Activité récente -->
+                {% if is_own_profile %}
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Activité récente</h2>
+                    </div>
+                    <div class="card-content">
+                        {% if recent_logins %}
+                            {% for login in recent_logins|slice:":10" %}
+                            <div class="experience-item">
+                                <div class="experience-header">
+                                    <div class="experience-icon" style="background: {% if login.success %}var(--transpareo-orange-light){% else %}#FFEBEE{% endif %};">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{% if login.success %}var(--transpareo-orange){% else %}#F44336{% endif %}" stroke-width="2">
+                                            {% if login.success %}
+                                            <path d="M20 6L9 17l-5-5"></path>
+                                            {% else %}
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                            {% endif %}
+                                        </svg>
+                                    </div>
+                                    <div class="experience-info">
+                                        <div class="experience-title">
+                                            {% if login.success %}Connexion réussie{% else %}Tentative de connexion échouée{% endif %}
+                                        </div>
+                                        <div class="experience-company">{{ login.device_type }} • {{ login.browser }}</div>
+                                        <div class="experience-date">
+                                            {{ login.ip_address }}{% if login.location %} • {{ login.location }}{% endif %}
+                                        </div>
+                                        <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 4px;">
+                                            {{ login.timestamp|date:"d M Y à H:i" }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p style="text-align: center; color: var(--text-tertiary); padding: 20px;">Aucune activité récente</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Sidebar -->
+            <div class="sidebar-column">
+                <!-- Statistiques -->
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title">Statistiques</h3>
+                    {% if user.is_proprietaire %}
+                    <div class="stat-item">
+                        <span class="stat-label">Logements</span>
+                        <span class="stat-value">{{ logements_count }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Actifs</span>
+                        <span class="stat-value">{{ logements_actifs }}</span>
+                    </div>
+                    {% if note_moyenne_proprietaire > 0 %}
+                    <div class="stat-item">
+                        <span class="stat-label">Note moyenne</span>
+                        <span class="stat-value">{{ note_moyenne_proprietaire }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Avis reçus</span>
+                        <span class="stat-value">{{ nombre_avis_proprietaire }}</span>
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <div class="stat-item">
+                        <span class="stat-label">Favoris</span>
+                        <span class="stat-value">{{ favoris_count }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Avis donnés</span>
+                        <span class="stat-value">{{ mes_avis.count }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="stat-item">
+                        <span class="stat-label">Badges</span>
+                        <span class="stat-value">{{ user_badges|length }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Score confiance</span>
+                        <span class="stat-value">{{ score_confiance }}%</span>
+                    </div>
+                </div>
+                
+                <!-- Informations de contact (si public) -->
+                {% if is_own_profile or user.profil_public %}
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title">Informations</h3>
+                    {% if user.profession %}
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-size: 12px; color: var(--text-tertiary); margin-bottom: 4px;">Profession</div>
+                        <div style="font-size: 14px; color: var(--text-primary);">{{ user.profession }}</div>
+                    </div>
+                    {% endif %}
+                    {% if user.employeur %}
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-size: 12px; color: var(--text-tertiary); margin-bottom: 4px;">Employeur</div>
+                        <div style="font-size: 14px; color: var(--text-primary);">{{ user.employeur }}</div>
+                    </div>
+                    {% endif %}
+                    {% if user.situation_professionnelle %}
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-size: 12px; color: var(--text-tertiary); margin-bottom: 4px;">Situation</div>
+                        <div style="font-size: 14px; color: var(--text-primary);">{{ user.get_situation_professionnelle_display }}</div>
+                    </div>
+                    {% endif %}
+                    {% if user.heures_disponibilite %}
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-size: 12px; color: var(--text-tertiary); margin-bottom: 4px;">Disponibilité</div>
+                        <div style="font-size: 14px; color: var(--text-primary);">{{ user.heures_disponibilite }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <!-- Réseaux sociaux -->
+                {% if user.linkedin_url or user.facebook_url or user.instagram_url %}
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title">Réseaux sociaux</h3>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        {% if user.linkedin_url %}
+                        <a href="{{ user.linkedin_url }}" target="_blank" style="display: flex; align-items: center; gap: 8px; color: var(--transpareo-orange); text-decoration: none; font-size: 14px; padding: 8px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                            </svg>
+                            LinkedIn
+                        </a>
+                        {% endif %}
+                        {% if user.facebook_url %}
+                        <a href="{{ user.facebook_url }}" target="_blank" style="display: flex; align-items: center; gap: 8px; color: var(--transpareo-orange); text-decoration: none; font-size: 14px; padding: 8px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                            </svg>
+                            Facebook
+                        </a>
+                        {% endif %}
+                        {% if user.instagram_url %}
+                        <a href="{{ user.instagram_url }}" target="_blank" style="display: flex; align-items: center; gap: 8px; color: var(--transpareo-orange); text-decoration: none; font-size: 14px; padding: 8px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                            </svg>
+                            Instagram
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Widget Suggestions (si visiteur externe) -->
+                {% if not is_own_profile %}
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title">Suggestions</h3>
+                    <div style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">
+                        <p style="margin-bottom: 12px;">Découvrez d'autres profils similaires dans votre région.</p>
+                        <a href="{% url 'landing-page' %}" style="color: var(--transpareo-orange); font-weight: 600; text-decoration: none;">
+                            Explorer les logements →
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Widget Vérification (si propre profil) -->
+                {% if is_own_profile and score_confiance < 100 %}
+                <div class="sidebar-card" style="background: var(--transpareo-orange-light); border: 1px solid var(--transpareo-orange);">
+                    <h3 class="sidebar-title" style="color: var(--transpareo-orange);">Complétez votre profil</h3>
+                    <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">
+                        Augmentez votre score de confiance pour plus de visibilité
+                    </div>
+                    <div style="height: 8px; background: white; border-radius: 4px; margin-bottom: 12px; overflow: hidden;">
+                        <div style="height: 100%; background: var(--transpareo-orange); width: {{ score_confiance }}%; border-radius: 4px; transition: width 0.3s;"></div>
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">
+                        Score actuel: <strong style="color: var(--transpareo-orange);">{{ score_confiance }}%</strong>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        {% if not user.email_verified %}
+                        <a href="{% url 'profile-edit' %}" style="font-size: 13px; color: var(--transpareo-orange); text-decoration: none; display: flex; align-items: center; gap: 6px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            Vérifier votre email
+                        </a>
+                        {% endif %}
+                        {% if not user.phone_verified %}
+                        <a href="{% url 'profile-edit' %}" style="font-size: 13px; color: var(--transpareo-orange); text-decoration: none; display: flex; align-items: center; gap: 6px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            Vérifier votre téléphone
+                        </a>
+                        {% endif %}
+                        {% if not user.bio %}
+                        <a href="#" onclick="openModal('editAboutModal'); return false;" style="font-size: 13px; color: var(--transpareo-orange); text-decoration: none; display: flex; align-items: center; gap: 6px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            Ajouter une description
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modals -->
+    <!-- Modal Édition À propos -->
+    <div id="editAboutModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Modifier la section À propos</h3>
+                <button class="modal-close" onclick="closeModal('editAboutModal')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <form method="post" action="{% url 'profile-edit' %}" enctype="multipart/form-data" id="editAboutForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea name="bio" class="form-control" rows="6" maxlength="500" placeholder="Parlez de vous..." oninput="updateBioCount(this)">{{ user.bio|default:'' }}</textarea>
+                        <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 4px;">
+                            <span id="bioCount">{{ user.bio|length|default:0 }}</span>/500 caractères
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('editAboutModal')">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal Édition Avatar -->
+    <div id="avatarModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Modifier la photo de profil</h3>
+                <button class="modal-close" onclick="closeModal('avatarModal')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <form method="post" action="{% url 'profile-edit' %}" enctype="multipart/form-data" id="avatarForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Photo de profil</label>
+                        <input type="file" name="avatar" class="form-control" accept="image/*" onchange="previewAvatar(this)">
+                        <div id="avatarPreview" style="margin-top: 16px; text-align: center;"></div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('avatarModal')">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal Édition Couverture -->
+    <div id="coverModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Modifier la photo de couverture</h3>
+                <button class="modal-close" onclick="closeModal('coverModal')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <form method="post" action="{% url 'profile-edit' %}" enctype="multipart/form-data" id="coverForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Photo de couverture (1200x300px recommandé)</label>
+                        <input type="file" name="cover_image" class="form-control" accept="image/*" onchange="previewCover(this)">
+                        <div id="coverPreview" style="margin-top: 16px; text-align: center;"></div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('coverModal')">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal Paramètres -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Paramètres du profil</h3>
+                <button class="modal-close" onclick="closeModal('settingsModal')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <form method="post" action="{% url 'profile-edit' %}" id="settingsForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Visibilité du profil</label>
+                        <select name="profil_public" class="form-control">
+                            <option value="true" {% if user.profil_public %}selected{% endif %}>Public</option>
+                            <option value="false" {% if not user.profil_public %}selected{% endif %}>Privé</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" name="afficher_statut_online" {% if user.afficher_statut_online %}checked{% endif %}>
+                            <span>Afficher mon statut en ligne</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" name="afficher_derniere_visite" {% if user.afficher_derniere_visite %}checked{% endif %}>
+                            <span>Afficher ma dernière visite</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <a href="{% url 'profile-edit' %}" class="btn btn-outline">Édition complète</a>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Message de succès -->
+    <div id="successMessage" class="success-message">
+        Modifications enregistrées avec succès !
+    </div>
+    
+    <script>
+        // Gestion des modals
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        
+        // Fermer modal en cliquant à l'extérieur
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        });
+        
+        // Compteur de caractères pour bio
+        function updateBioCount(textarea) {
+            const bioCount = document.getElementById('bioCount');
+            if (bioCount) {
+                bioCount.textContent = textarea.value.length;
+            }
+        }
+        
+        const bioTextarea = document.querySelector('#editAboutModal textarea[name="bio"]');
+        if (bioTextarea) {
+            updateBioCount(bioTextarea);
+        }
+        
+        // Preview avatar
+        function previewAvatar(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('avatarPreview');
+                    preview.innerHTML = `<img src="${e.target.result}" style="width: 152px; height: 152px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: var(--shadow-md);">`;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        
+        // Preview couverture
+        function previewCover(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('coverPreview');
+                    preview.innerHTML = `<img src="${e.target.result}" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px;">`;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        
+        // Soumission des formulaires avec feedback
+        document.querySelectorAll('#editAboutForm, #avatarForm, #coverForm, #settingsForm').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                const submitBtn = this.querySelector('button[type="submit"]');
+                
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Enregistrement...';
+                }
+                
+                fetch(this.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                    }
+                })
+                .then(response => {
+                    if (response.ok || response.redirected) {
+                        showSuccessMessage();
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        return response.text().then(html => {
+                            // Afficher les erreurs si nécessaire
+                            alert('Erreur lors de l\'enregistrement. Veuillez réessayer.');
+                            if (submitBtn) {
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = 'Enregistrer';
+                            }
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Erreur lors de l\'enregistrement');
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Enregistrer';
+                    }
+                });
+            });
+        });
+        
+        function showSuccessMessage() {
+            const message = document.getElementById('successMessage');
+            message.classList.add('show');
+            setTimeout(() => {
+                message.classList.remove('show');
+            }, 3000);
+        }
+        
+        function contactUser() {
+            alert('Fonctionnalité de contact à venir');
+        }
+        
+        function followUser() {
+            alert('Fonctionnalité de suivi à venir');
+        }
+        
+        function shareProfile() {
+            if (navigator.share) {
+                navigator.share({
+                    title: '{{ user.get_full_name|default:user.username }} | Transpareo',
+                    text: '{{ user.bio|default:"Découvrez ce profil sur Transpareo" }}',
+                    url: window.location.href
+                });
+            } else {
+                navigator.clipboard.writeText(window.location.href);
+                alert('Lien copié dans le presse-papiers !');
+            }
+        }
+        
+        function showAllRecommendations() {
+            // Scroll vers la section recommandations ou ouvrir modal
+            document.querySelector('.card:has(.recommendation-item)').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function checkAndAwardBadges() {
+            fetch('{% url "check-badges" %}', {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => {
+                if (response.ok || response.redirected) {
+                    location.reload();
+                } else {
+                    alert('Erreur lors de la vérification des badges');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Erreur lors de la vérification des badges');
+            });
+        }
+    </script>
+{% endblock %}
+

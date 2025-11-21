@@ -1,0 +1,51 @@
+{% load static %}
+{% load humanize %}
+
+<div class="post-card" data-quick-actions='[{"icon": "💬", "label": "Commenter", "action": "focusCommentInput"}, {"icon": "🔗", "label": "Partager", "action": "sharePost"}, {"icon": "⚠️", "label": "Signaler", "action": "reportPost"}]'>
+    <div style="display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-4);">
+        {% if post.author.profile_picture %}
+            <img src="{{ post.author.profile_picture.url }}" alt="{{ post.author.get_full_name|default:post.author.username }}" 
+                 class="user-card-avatar" style="width: 40px; height: 40px;">
+        {% else %}
+            <div class="user-card-avatar" style="width: 40px; height: 40px; background: var(--color-accent-light); display: flex; align-items: center; justify-content: center; color: var(--color-accent); font-weight: 600;">
+                {{ post.author.username|first|upper }}
+            </div>
+        {% endif %}
+        <div style="flex: 1;">
+            <div style="font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-1);">
+                <a href="{% url 'profile-user' post.author.id %}" style="text-decoration: none; color: inherit;">
+                    {{ post.author.get_full_name|default:post.author.username }}
+                </a>
+            </div>
+            <div style="font-size: var(--font-size-sm); color: var(--color-text-secondary);">
+                {{ post.created_at|naturaltime }}
+            </div>
+        </div>
+        {% if post.content_type %}
+            <span class="tag tag-accent">{{ post.get_content_type_display }}</span>
+        {% endif %}
+    </div>
+    
+    <div style="margin-bottom: var(--space-4); line-height: var(--line-height-relaxed);">
+        {{ post.content|linebreaks }}
+    </div>
+    
+    {% if post.hashtags %}
+        <div style="margin-bottom: var(--space-4);">
+            {% include "core/components/tags.html" with tags=post.hashtags_list %}
+        </div>
+    {% endif %}
+    
+    <div style="display: flex; gap: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--color-border);">
+        <button class="btn btn-ghost btn-sm" onclick="likePost({{ post.id }})" aria-label="Aimer ce post">
+            👍 <span id="likes-count-{{ post.id }}">{{ post.likes_count|default:0 }}</span>
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="focusCommentInput({{ post.id }})" aria-label="Commenter">
+            💬 Commenter
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="sharePost({{ post.id }})" aria-label="Partager">
+            🔗 Partager
+        </button>
+    </div>
+</div>
+

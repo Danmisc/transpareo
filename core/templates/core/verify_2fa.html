@@ -1,0 +1,183 @@
+{% extends 'core/auth_base.html' %}
+
+{% block title %}Vérification 2FA - Transpareo{% endblock %}
+
+{% block extra_css %}
+<style>
+    .code-input {
+        text-align: center;
+        font-size: 32px;
+        letter-spacing: 8px;
+        font-weight: 600;
+        padding: 16px;
+        border: 2px solid #e5e5e5;
+        border-radius: 10px;
+        width: 100%;
+        margin-bottom: 16px;
+        background: #fafafa;
+        transition: all 0.2s ease;
+    }
+    
+    .code-input:focus {
+        outline: none;
+        border-color: #D3580B;
+        background: #ffffff;
+        box-shadow: 0 0 0 4px rgba(211, 88, 11, 0.1);
+    }
+    
+    .backup-code-link {
+        text-align: center;
+        margin-top: 24px;
+    }
+    
+    .backup-code-link a {
+        color: #D3580B;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        transition: color 0.2s;
+    }
+    
+    .backup-code-link a:hover {
+        color: #c4510a;
+        text-decoration: underline;
+    }
+    
+    .info-box {
+        background: #e3f2fd;
+        border: 1px solid #90caf9;
+        border-radius: 10px;
+        padding: 16px 20px;
+        margin-bottom: 32px;
+        font-size: 14px;
+        color: #1565c0;
+        line-height: 1.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-form">
+    <h1>Vérification en deux étapes</h1>
+    <p class="subtitle">Entrez le code à 6 chiffres depuis votre application d'authentification</p>
+
+    <div class="info-box">
+        <strong>💡 Conseil :</strong> Si vous n'avez pas accès à votre application d'authentification, vous pouvez utiliser un code de récupération.
+    </div>
+
+    <form method="post" id="2fa-form">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="code">Code d'authentification</label>
+            <input 
+                type="text" 
+                id="code" 
+                name="code" 
+                class="code-input" 
+                maxlength="6" 
+                pattern="[0-9]{6}" 
+                placeholder="000000"
+                autocomplete="off"
+                autofocus
+                required
+            >
+            <div class="help-text" style="text-align: center;">
+                Code à 6 chiffres
+            </div>
+        </div>
+        
+        <button type="submit" class="btn" id="submit-btn">
+            <span id="submit-text">Vérifier et se connecter</span>
+            <div class="loading-spinner" id="loading-spinner" style="display: none;"></div>
+        </button>
+    </form>
+
+    <div class="backup-code-link">
+        <a href="#" onclick="showBackupCodeInput(); return false;">Utiliser un code de récupération</a>
+    </div>
+
+    <div id="backup-code-section" style="display: none; margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e5e5;">
+        <form method="post" id="backup-form">
+            {% csrf_token %}
+            <input type="hidden" name="use_backup" value="true">
+            <div class="form-group">
+                <label for="backup-code">Code de récupération</label>
+                <div class="input-wrapper">
+                    <input 
+                        type="text" 
+                        id="backup-code" 
+                        name="code" 
+                        class="form-control" 
+                        placeholder="XXXXXXXX"
+                        style="text-transform: uppercase; letter-spacing: 2px; text-align: center; font-weight: 600;"
+                        autocomplete="off"
+                        required
+                    >
+                </div>
+                <div class="help-text" style="text-align: center;">
+                    Entrez un de vos codes de récupération à 8 caractères
+                </div>
+            </div>
+            <button type="submit" class="btn">
+                Utiliser ce code
+            </button>
+        </form>
+    </div>
+
+    <div class="auth-links" style="margin-top: 32px;">
+        <a href="{% url 'login' %}">← Retour à la connexion</a>
+    </div>
+</div>
+
+<script>
+// Auto-format code input (6 digits)
+document.getElementById('code').addEventListener('input', function(e) {
+    this.value = this.value.replace(/\D/g, '').slice(0, 6);
+    
+    // Auto-submit when 6 digits entered
+    if (this.value.length === 6) {
+        setTimeout(() => {
+            document.getElementById('2fa-form').submit();
+        }, 300);
+    }
+});
+
+// Format backup code input (uppercase, alphanumeric)
+const backupCodeInput = document.getElementById('backup-code');
+if (backupCodeInput) {
+    backupCodeInput.addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^A-Z0-9]/g, '').toUpperCase().slice(0, 8);
+    });
+}
+
+function showBackupCodeInput() {
+    document.getElementById('backup-code-section').style.display = 'block';
+    setTimeout(() => {
+        document.getElementById('backup-code').focus();
+    }, 100);
+}
+
+// Loading state
+document.getElementById('2fa-form').addEventListener('submit', function() {
+    const btn = document.getElementById('submit-btn');
+    const text = document.getElementById('submit-text');
+    const spinner = document.getElementById('loading-spinner');
+    
+    btn.disabled = true;
+    text.style.display = 'none';
+    spinner.style.display = 'inline-block';
+});
+
+if (document.getElementById('backup-form')) {
+    document.getElementById('backup-form').addEventListener('submit', function() {
+        const btn = this.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.textContent = 'Vérification...';
+    });
+}
+
+// Focus on code input
+document.getElementById('code').focus();
+</script>
+{% endblock %}

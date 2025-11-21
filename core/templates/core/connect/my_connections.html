@@ -1,0 +1,774 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="connect-my-connections-page">
+    <div class="my-connections-container">
+        <!-- En-tête -->
+        <div class="page-header">
+            <h1>Mes connexions</h1>
+            <p class="page-subtitle">Gérez vos connexions et demandes en attente</p>
+        </div>
+
+        <!-- Onglets -->
+        <div class="connections-tabs">
+            <a href="?tab=all" class="tab-item {% if active_tab == 'all' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                Toutes mes connexions
+                {% if connections.paginator.count %}
+                <span class="tab-badge">{{ connections.paginator.count }}</span>
+                {% endif %}
+            </a>
+            <a href="?tab=pending" class="tab-item {% if active_tab == 'pending' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                Demandes en attente
+                {% if pending_requests_received.count %}
+                <span class="tab-badge">{{ pending_requests_received.count }}</span>
+                {% endif %}
+            </a>
+        </div>
+
+        <!-- Contenu des onglets -->
+        <div class="connections-content">
+            {% if active_tab == 'all' or not active_tab %}
+                <!-- Toutes mes connexions -->
+                <div class="connections-tab">
+                    {% if connections %}
+                    <!-- Barre de recherche -->
+                    <div class="search-bar">
+                        <input 
+                            type="text" 
+                            id="connections-search" 
+                            class="search-input" 
+                            placeholder="Rechercher dans mes connexions..."
+                            onkeyup="filterConnections(this.value)"
+                        >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="M21 21l-4.35-4.35"></path>
+                        </svg>
+                    </div>
+
+                    <!-- Liste des connexions -->
+                    <div class="connections-list" id="connections-list">
+                        {% for item in connections %}
+                            {% with connection=item.connection other_user=item.other_user %}
+                            <div class="connection-card" data-name="{{ other_user.get_full_name|default:other_user.username|lower }}">
+                                <div class="connection-avatar">
+                                    <a href="{% url 'profile-user' other_user.id %}">
+                                        {% if other_user.avatar %}
+                                            <img src="{{ other_user.avatar.url }}" alt="{{ other_user.username }}">
+                                        {% else %}
+                                            <div class="avatar-placeholder">{{ other_user.username|first|upper }}</div>
+                                        {% endif %}
+                                    </a>
+                                </div>
+
+                                <div class="connection-info">
+                                    <div class="connection-header">
+                                        <a href="{% url 'profile-user' other_user.id %}" class="connection-name">
+                                            {{ other_user.get_full_name|default:other_user.username }}
+                                        </a>
+                                        <div class="connection-badges">
+                                            {% if other_user.is_locataire %}
+                                            <span class="user-badge locataire">Locataire</span>
+                                            {% endif %}
+                                            {% if other_user.is_proprietaire %}
+                                            <span class="user-badge proprietaire">Propriétaire</span>
+                                            {% endif %}
+                                            {% if other_user.identity_verified %}
+                                            <span class="verification-badge" title="Identité vérifiée">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                                </svg>
+                                            </span>
+                                            {% endif %}
+                                            {% if other_user.proprietaire_verified %}
+                                            <span class="verification-badge owner" title="Propriétaire vérifié">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                                </svg>
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    {% if other_user.ville %}
+                                    <div class="connection-location">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"></path>
+                                            <circle cx="12" cy="9" r="3"></circle>
+                                        </svg>
+                                        {{ other_user.ville }}{% if other_user.region %}, {{ other_user.region }}{% endif %}
+                                    </div>
+                                    {% endif %}
+
+                                    <div class="connection-meta">
+                                        <span class="connection-date">Connecté depuis {{ item.accepted_at|date:"M Y" }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="connection-actions">
+                                    <a href="{% url 'connect-messages' %}?user={{ other_user.id }}" class="btn-secondary">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                        </svg>
+                                        Message
+                                    </a>
+                                    <button class="btn-danger-sm" onclick="removeConnection({{ other_user.id }})">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                        Retirer
+                                    </button>
+                                </div>
+                            </div>
+                            {% endwith %}
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="empty-icon">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <h3>Aucune connexion</h3>
+                        <p>Vous n'avez pas encore de connexions. Trouvez des utilisateurs pour vous connecter !</p>
+                        <a href="{% url 'connect-search-users' %}" class="btn-primary">Rechercher des utilisateurs</a>
+                    </div>
+                    {% endif %}
+                </div>
+
+            {% elif active_tab == 'pending' %}
+                <!-- Demandes en attente -->
+                <div class="pending-tab">
+                    {% if pending_requests_received %}
+                    <div class="pending-requests-list">
+                        {% for request in pending_requests_received %}
+                            {% with sender=request.user_from %}
+                            <div class="pending-request-card">
+                                <div class="request-avatar">
+                                    <a href="{% url 'profile-user' sender.id %}">
+                                        {% if sender.avatar %}
+                                            <img src="{{ sender.avatar.url }}" alt="{{ sender.username }}">
+                                        {% else %}
+                                            <div class="avatar-placeholder">{{ sender.username|first|upper }}</div>
+                                        {% endif %}
+                                    </a>
+                                </div>
+
+                                <div class="request-info">
+                                    <div class="request-header">
+                                        <a href="{% url 'profile-user' sender.id %}" class="request-name">
+                                            {{ sender.get_full_name|default:sender.username }}
+                                        </a>
+                                        <div class="request-badges">
+                                            {% if sender.is_locataire %}
+                                            <span class="user-badge locataire">Locataire</span>
+                                            {% endif %}
+                                            {% if sender.is_proprietaire %}
+                                            <span class="user-badge proprietaire">Propriétaire</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    {% if sender.ville %}
+                                    <div class="request-location">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"></path>
+                                            <circle cx="12" cy="9" r="3"></circle>
+                                        </svg>
+                                        {{ sender.ville }}
+                                    </div>
+                                    {% endif %}
+
+                                    <div class="request-meta">
+                                        <span class="request-date">Demande reçue le {{ request.created_at|date:"d/m/Y" }}</span>
+                                        {% if request.message %}
+                                        <div class="request-message">
+                                            <strong>Message :</strong> {{ request.message }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="request-actions">
+                                    <button class="btn-primary" onclick="handleConnectionRequest({{ request.id }}, 'accept')">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                        Accepter
+                                    </button>
+                                    <button class="btn-secondary" onclick="handleConnectionRequest({{ request.id }}, 'reject')">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                        Ignorer
+                                    </button>
+                                </div>
+                            </div>
+                            {% endwith %}
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="empty-icon">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        <h3>Aucune demande en attente</h3>
+                        <p>Vous n'avez pas de demandes de connexion en attente.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .connect-my-connections-page {
+        min-height: calc(100vh - 70px);
+        background: #f5f5f5;
+        padding-top: 70px;
+    }
+
+    .my-connections-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 32px 24px;
+    }
+
+    .page-header {
+        margin-bottom: 32px;
+        text-align: center;
+    }
+
+    .page-header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0 0 8px 0;
+    }
+
+    .page-subtitle {
+        font-size: 15px;
+        color: #666;
+        margin: 0;
+    }
+
+    /* Onglets */
+    .connections-tabs {
+        display: flex;
+        gap: 8px;
+        padding: 16px;
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .tab-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 500;
+        color: #666;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+    .tab-item:hover {
+        background: #f5f5f5;
+        color: #333;
+    }
+
+    .tab-item.active {
+        background: #D3580B;
+        color: white;
+    }
+
+    .tab-badge {
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-left: 4px;
+    }
+
+    .tab-item.active .tab-badge {
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    .tab-item:not(.active) .tab-badge {
+        background: #e5e5e5;
+        color: #666;
+    }
+
+    /* Contenu */
+    .connections-content {
+        background: white;
+        border-radius: 12px;
+        padding: 32px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Barre de recherche */
+    .search-bar {
+        position: relative;
+        margin-bottom: 24px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 12px 16px 12px 48px;
+        border: 2px solid #e5e5e5;
+        border-radius: 8px;
+        font-size: 15px;
+        font-family: inherit;
+        transition: all 0.2s ease;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: #D3580B;
+        box-shadow: 0 0 0 3px rgba(211, 88, 11, 0.1);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #999;
+        pointer-events: none;
+    }
+
+    /* Liste des connexions */
+    .connections-list {
+        display: grid;
+        gap: 16px;
+    }
+
+    .connection-card {
+        display: flex;
+        gap: 20px;
+        padding: 20px;
+        background: #fafafa;
+        border-radius: 12px;
+        border: 1px solid #e5e5e5;
+        transition: all 0.2s ease;
+    }
+
+    .connection-card:hover {
+        background: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .connection-avatar a {
+        display: block;
+    }
+
+    .connection-avatar img,
+    .avatar-placeholder {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .avatar-placeholder {
+        background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 24px;
+    }
+
+    .connection-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .connection-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .connection-name {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1a1a1a;
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .connection-name:hover {
+        color: #D3580B;
+    }
+
+    .connection-badges {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .user-badge {
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .user-badge.locataire {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+
+    .user-badge.proprietaire {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .verification-badge {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        color: #0066cc;
+    }
+
+    .verification-badge.owner {
+        color: #D3580B;
+    }
+
+    .connection-location {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        color: #666;
+    }
+
+    .connection-meta {
+        display: flex;
+        gap: 16px;
+        font-size: 13px;
+        color: #999;
+    }
+
+    .connection-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    /* Boutons */
+    .btn-primary,
+    .btn-secondary,
+    .btn-danger-sm {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: none;
+    }
+
+    .btn-primary {
+        background: #D3580B;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #c4510a;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(211, 88, 11, 0.3);
+    }
+
+    .btn-secondary {
+        background: white;
+        color: #333;
+        border: 1px solid #e5e5e5;
+    }
+
+    .btn-secondary:hover {
+        background: #f5f5f5;
+        border-color: #ddd;
+    }
+
+    .btn-danger-sm {
+        padding: 8px 16px;
+        background: white;
+        color: #dc3545;
+        border: 1px solid #e5e5e5;
+        font-size: 13px;
+    }
+
+    .btn-danger-sm:hover {
+        background: #f8d7da;
+        border-color: #dc3545;
+    }
+
+    /* Demandes en attente */
+    .pending-requests-list {
+        display: grid;
+        gap: 20px;
+    }
+
+    .pending-request-card {
+        display: flex;
+        gap: 20px;
+        padding: 24px;
+        background: #fafafa;
+        border-radius: 12px;
+        border: 2px solid #fff3cd;
+        border-left: 4px solid #ffc107;
+    }
+
+    .request-avatar a {
+        display: block;
+    }
+
+    .request-avatar img,
+    .request-avatar .avatar-placeholder {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .request-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .request-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .request-name {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1a1a1a;
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .request-name:hover {
+        color: #D3580B;
+    }
+
+    .request-badges {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .request-location {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        color: #666;
+    }
+
+    .request-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        font-size: 13px;
+        color: #999;
+    }
+
+    .request-date {
+        font-size: 13px;
+        color: #999;
+    }
+
+    .request-message {
+        padding: 12px;
+        background: white;
+        border-radius: 8px;
+        border-left: 3px solid #D3580B;
+        font-size: 14px;
+        color: #333;
+        line-height: 1.5;
+    }
+
+    .request-actions {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 80px 24px;
+    }
+
+    .empty-icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 16px;
+        color: #ddd;
+    }
+
+    .empty-state h3 {
+        font-size: 20px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0 0 8px 0;
+    }
+
+    .empty-state p {
+        color: #999;
+        margin: 0 0 24px 0;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .my-connections-container {
+            padding: 16px;
+        }
+
+        .connections-content {
+            padding: 20px;
+        }
+
+        .connections-tabs {
+            flex-direction: column;
+        }
+
+        .connection-card,
+        .pending-request-card {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .connection-actions,
+        .request-actions {
+            justify-content: center;
+            width: 100%;
+        }
+
+        .btn-primary,
+        .btn-secondary,
+        .btn-danger-sm {
+            flex: 1;
+            justify-content: center;
+        }
+    }
+</style>
+
+<script>
+    // Filtrer les connexions par recherche
+    function filterConnections(query) {
+        const cards = document.querySelectorAll('.connection-card');
+        const searchQuery = query.toLowerCase().trim();
+
+        cards.forEach(card => {
+            const name = card.getAttribute('data-name') || '';
+            if (name.includes(searchQuery)) {
+                card.style.display = 'flex';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    // Gérer demande de connexion
+    function handleConnectionRequest(requestId, action) {
+        const url = action === 'accept' 
+            ? `{% url 'accept-connection-request' 0 %}`.replace('0', requestId)
+            : `{% url 'reject-connection-request' 0 %}`.replace('0', requestId);
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.error || 'Erreur lors du traitement de la demande');
+            }
+        });
+    }
+
+    // Retirer une connexion
+    function removeConnection(userId) {
+        if (!confirm('Êtes-vous sûr de vouloir retirer cette connexion ?')) return;
+
+        fetch(`{% url 'remove-connection' 0 %}`.replace('0', userId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.error || 'Erreur lors de la suppression de la connexion');
+            }
+        });
+    }
+</script>
+{% endblock %}
+

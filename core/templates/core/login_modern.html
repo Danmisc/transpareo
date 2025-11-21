@@ -1,0 +1,250 @@
+{% extends 'core/auth_base.html' %}
+{% load socialaccount %}
+
+{% block title %}Connexion - Transpareo{% endblock %}
+
+{% block extra_css %}
+<style>
+    .password-strength {
+        margin-top: 6px;
+        height: 3px;
+        background: #e5e5e5;
+        border-radius: 2px;
+        overflow: hidden;
+        display: none;
+    }
+    
+    .password-strength-bar {
+        height: 100%;
+        width: 0%;
+        transition: all 0.3s;
+        border-radius: 2px;
+    }
+    
+    .strength-weak { background: #dc3545; width: 33%; }
+    .strength-medium { background: #ffc107; width: 66%; }
+    .strength-strong { background: #28a745; width: 100%; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-form">
+    <h1>Bienvenue sur Transpareo</h1>
+    <p class="subtitle">Connectez-vous pour accéder à votre espace personnel</p>
+
+    {% if magic_link_sent %}
+    <div class="magic-link-sent">
+        <strong>Lien envoyé !</strong><br>
+        Vérifiez votre email pour vous connecter sans mot de passe.
+    </div>
+    {% endif %}
+
+    {% if rate_limited %}
+    <div class="rate-limited">
+        <strong>⏱️ Trop de tentatives</strong><br>
+        Vous avez effectué trop de tentatives de connexion. Veuillez réessayer dans quelques minutes ou utiliser la réinitialisation de mot de passe.
+    </div>
+    {% endif %}
+
+    <form method="post" novalidate id="login-form">
+        {% csrf_token %}
+        
+        <!-- Email -->
+        <div class="form-group">
+            <label for="{{ form.username.id_for_label }}">Email</label>
+            <div class="input-wrapper">
+                {{ form.username }}
+            </div>
+            <div class="real-time-validation" id="email-validation"></div>
+            {% if form.username.errors %}
+                <ul class="errorlist">
+                    {% for error in form.username.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        
+        <!-- Password -->
+        <div class="form-group">
+            <label for="{{ form.password.id_for_label }}">Mot de passe</label>
+            <div class="input-wrapper">
+                {{ form.password }}
+                <button type="button" class="password-toggle" onclick="togglePassword('{{ form.password.id_for_label }}')">
+                    <svg id="eye-{{ form.password.id_for_label }}" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </button>
+            </div>
+            {% if form.password.errors %}
+                <ul class="errorlist">
+                    {% for error in form.password.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        
+        <!-- Remember me -->
+        <div class="form-check">
+            {{ form.remember_me }}
+            <label for="{{ form.remember_me.id_for_label }}">
+                Se souvenir de moi
+            </label>
+        </div>
+        
+        <!-- Submit -->
+        <button type="submit" class="btn" id="submit-btn">
+            <span id="submit-text">Se connecter</span>
+            <div class="loading-spinner" id="loading-spinner"></div>
+        </button>
+    </form>
+
+    <div class="divider">
+        <span>ou</span>
+    </div>
+
+    <!-- Bouton Google uniquement -->
+    <div class="social-login">
+        <a href="{% provider_login_url 'google' process='login' %}" class="social-btn social-google">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+                <path d="M9 18c2.43 0 4.467-.806 5.965-2.18l-2.908-2.258c-.806.54-1.837.86-3.057.86-2.35 0-4.34-1.587-5.053-3.72H.957v2.332C2.438 15.983 5.482 18 9 18z" fill="#34A853"/>
+                <path d="M3.947 10.702c-.18-.54-.282-1.117-.282-1.702s.102-1.162.282-1.702V4.966H.957C.348 6.175 0 7.55 0 9s.348 2.825.957 4.034l2.99-2.332z" fill="#FBBC05"/>
+                <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.966L3.947 7.3C4.66 5.163 6.65 3.58 9 3.58z" fill="#EA4335"/>
+            </svg>
+            Continuer avec Google
+        </a>
+    </div>
+
+    <div class="auth-links">
+        <a href="{% url 'password-reset-request' %}">Mot de passe oublié ?</a>
+        <br style="display: block; margin: 4px 0;">
+        <span style="color: #666; font-size: 13px;">Pas encore de compte ? </span><a href="{% url 'signup' %}">Créer un compte</a>
+    </div>
+</div>
+
+<script>
+// Validation en temps réel
+document.getElementById('{{ form.username.id_for_label }}').addEventListener('blur', function() {
+    const email = this.value.trim();
+    const validation = document.getElementById('email-validation');
+    
+    if (!email) {
+        validation.innerHTML = '';
+        return;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (emailRegex.test(email)) {
+        validation.innerHTML = '<span class="validation-success">✓ Format email valide</span>';
+    } else {
+        validation.innerHTML = '<span class="validation-error">Format email invalide</span>';
+    }
+});
+
+// Toggle password visibility
+function togglePassword(inputId) {
+    const input = document.getElementById(inputId);
+    const eye = document.getElementById('eye-' + inputId);
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        eye.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+    } else {
+        input.type = 'password';
+        eye.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+    }
+}
+
+// Magic Link (optionnel, peut être masqué si pas nécessaire)
+function requestMagicLink() {
+    const email = document.getElementById('{{ form.username.id_for_label }}').value.trim();
+    
+    if (!email) {
+        alert('Veuillez entrer votre email d\'abord');
+        document.getElementById('{{ form.username.id_for_label }}').focus();
+        return;
+    }
+    
+    const btn = event.target.closest('.magic-link-btn');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<div class="loading-spinner" style="display: inline-block;"></div> Envoi...';
+    
+    fetch('{% url "request-magic-link" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: 'email=' + encodeURIComponent(email)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            btn.innerHTML = '✓ Lien envoyé !';
+            btn.style.background = '#d4edda';
+            btn.style.borderColor = '#c3e6cb';
+            btn.style.color = '#155724';
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            alert(data.error || 'Erreur lors de l\'envoi');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erreur lors de l\'envoi du lien');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
+
+// Loading state on form submit
+document.getElementById('login-form').addEventListener('submit', function(e) {
+    const email = document.getElementById('{{ form.username.id_for_label }}').value.trim();
+    const password = document.getElementById('{{ form.password.id_for_label }}').value;
+    
+    // Validation côté client
+    if (!email || !password) {
+        e.preventDefault();
+        alert('Veuillez remplir tous les champs.');
+        return;
+    }
+    
+    // Validation format email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        e.preventDefault();
+        alert('Format email invalide.');
+        return;
+    }
+    
+    const btn = document.getElementById('submit-btn');
+    const text = document.getElementById('submit-text');
+    const spinner = document.getElementById('loading-spinner');
+    
+    btn.disabled = true;
+    text.style.display = 'none';
+    spinner.style.display = 'inline-block';
+});
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

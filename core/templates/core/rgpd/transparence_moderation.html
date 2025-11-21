@@ -1,0 +1,240 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="rgpd-page">
+    <div class="rgpd-container">
+        <h1>Politique de modération - Transpareo Connect</h1>
+        <p class="rgpd-last-updated">Comment nous modérons le contenu sur la plateforme</p>
+
+        <div class="rgpd-content">
+            <section class="rgpd-section">
+                <h2>1. Introduction</h2>
+                <p>La modération sur Transpareo Connect vise à maintenir un environnement sûr, respectueux et conforme à nos valeurs. Cette page explique comment fonctionne notre système de modération.</p>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>2. Système de Modération</h2>
+                <h3>2.1 Modération Automatique</h3>
+                <p>Nous utilisons des algorithmes de détection automatique pour identifier :</p>
+                <ul>
+                    <li><strong>Spam</strong> : Mots-clés suspects, liens raccourcis, répétition excessive</li>
+                    <li><strong>Arnaques</strong> : Demandes d'argent, mots-clés frauduleux, offres suspectes</li>
+                    <li><strong>Contenus inappropriés</strong> : Insultes, menaces, violence, discours de haine</li>
+                    <li><strong>Bots</strong> : Comptes créés en masse, comportements automatisés</li>
+                </ul>
+
+                <h3>2.2 Quarantaine Automatique</h3>
+                <p>Les contenus détectés comme suspects sont automatiquement mis en quarantaine :</p>
+                <ul>
+                    <li>Ils ne sont pas visibles par les autres utilisateurs</li>
+                    <li>Ils nécessitent une validation manuelle par un administrateur</li>
+                    <li>L'auteur est informé que son contenu est en attente de modération</li>
+                </ul>
+
+                <h3>2.3 Modération Manuelle</h3>
+                <p>Une équipe d'administrateurs modère :</p>
+                <ul>
+                    <li>Les contenus en quarantaine</li>
+                    <li>Les signalements des utilisateurs</li>
+                    <li>Les comptes suspects</li>
+                </ul>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>3. Signalements Utilisateurs</h2>
+                <p>Vous pouvez signaler tout contenu qui viole nos règles :</p>
+                <ul>
+                    <li><strong>Posts</strong> : Spam, harcèlement, arnaque, contenu inapproprié, usurpation d'identité</li>
+                    <li><strong>Commentaires</strong> : Mêmes raisons que pour les posts</li>
+                    <li><strong>Messages privés</strong> : Arnaques, harcèlement, menaces</li>
+                    <li><strong>Profils</strong> : Usurpation d'identité, profils suspects</li>
+                    <li><strong>Groupes</strong> : Contenu inapproprié, spam, discours de haine</li>
+                </ul>
+
+                <h3>3.1 Traitement des Signalements</h3>
+                <p>Quand vous signalez un contenu :</p>
+                <ul>
+                    <li>Le signalement est envoyé immédiatement à notre équipe de modération</li>
+                    <li>Si plusieurs utilisateurs signalent le même contenu (≥3), il devient prioritaire</li>
+                    <li>Un administrateur examine le signalement sous 24-48h</li>
+                    <li>Vous recevez une notification sur la décision prise</li>
+                </ul>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>4. Décisions de Modération</h2>
+                <h3>4.1 Actions Possibles</h3>
+                <p>Selon la gravité de la violation, nous pouvons :</p>
+                <ul>
+                    <li><strong>Avertir</strong> : Message d'avertissement à l'utilisateur</li>
+                    <li><strong>Supprimer le contenu</strong> : Post, commentaire ou message supprimé</li>
+                    <li><strong>Suspendre le compte</strong> : Temporairement (7 jours, 30 jours, ou durée personnalisée)</li>
+                    <li><strong>Bannir le compte</strong> : Exclusion définitive de la plateforme</li>
+                    <li><strong>Révoquer les badges</strong> : Retrait des vérifications (propriétaire, identité)</li>
+                </ul>
+
+                <h3>4.2 Critères de Décision</h3>
+                <p>Les décisions sont prises en fonction de :</p>
+                <ul>
+                    <li>La gravité de la violation</li>
+                    <li>L'historique de l'utilisateur (première infraction ou récidive)</li>
+                    <li>Le contexte et l'intention</li>
+                    <li>L'impact sur la communauté</li>
+                </ul>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>5. Règles de Modération</h2>
+                <h3>5.1 Contenu Interdit</h3>
+                <p>Le contenu suivant est strictement interdit :</p>
+                <ul>
+                    <li><strong>Spam</strong> : Publications répétitives, publicités non autorisées</li>
+                    <li><strong>Harcèlement</strong> : Intimidation, menaces, comportement abusif</li>
+                    <li><strong>Arnaques</strong> : Demandes d'argent, offres frauduleuses</li>
+                    <li><strong>Contenu inapproprié</strong> : Insultes, violence, discours de haine</li>
+                    <li><strong>Usurpation d'identité</strong> : Se faire passer pour quelqu'un d'autre</li>
+                    <li><strong>Fausses informations</strong> : Propagande de désinformation</li>
+                </ul>
+
+                <h3>5.2 Limitations de Comportement</h3>
+                <ul>
+                    <li>Maximum 10 posts par jour</li>
+                    <li>Maximum 20 messages à des inconnus par jour</li>
+                    <li>Maximum 50 demandes de connexion par jour</li>
+                </ul>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>6. Transparence</h2>
+                <p>Nous nous engageons à :</p>
+                <ul>
+                    <li>Expliquer nos décisions de modération (via messages ou commentaires admin)</li>
+                    <li>Permettre la contestation des décisions (via support)</li>
+                    <li>Publier des statistiques de modération (agrégées, anonymisées)</li>
+                </ul>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>7. Recours</h2>
+                <p>Si vous estimez qu'une décision de modération est injuste :</p>
+                <ul>
+                    <li>Contactez le support via les paramètres de votre compte</li>
+                    <li>Expliquez votre situation et fournissez des éléments de contexte</li>
+                    <li>Un administrateur senior examinera votre cas</li>
+                    <li>La décision peut être révisée si nécessaire</li>
+                </ul>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>8. Confidentialité</h2>
+                <p>Les signalements et décisions de modération sont traités de manière confidentielle. Les informations personnelles des utilisateurs signalants ne sont pas communiquées aux utilisateurs signalés.</p>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>9. Contact</h2>
+                <p>Pour toute question sur la modération, contactez-nous via le support de la plateforme.</p>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>10. Évolution</h2>
+                <p>Cette politique de modération évolue avec notre communauté. Nous la mettons à jour régulièrement pour refléter les meilleures pratiques et les besoins de nos utilisateurs.</p>
+            </section>
+        </div>
+    </div>
+</div>
+
+<style>
+    .rgpd-page {
+        min-height: calc(100vh - 70px);
+        background: #f5f5f5;
+        padding: 40px 20px;
+    }
+
+    .rgpd-container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 12px;
+        padding: 40px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .rgpd-page h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 10px;
+    }
+
+    .rgpd-last-updated {
+        color: #666;
+        font-size: 14px;
+        margin-bottom: 40px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #e5e5e5;
+    }
+
+    .rgpd-content {
+        line-height: 1.8;
+        color: #333;
+    }
+
+    .rgpd-section {
+        margin-bottom: 40px;
+    }
+
+    .rgpd-section h2 {
+        font-size: 24px;
+        font-weight: 700;
+        color: #D3580B;
+        margin-bottom: 16px;
+        margin-top: 32px;
+    }
+
+    .rgpd-section h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-top: 24px;
+        margin-bottom: 12px;
+    }
+
+    .rgpd-section p {
+        margin-bottom: 16px;
+        color: #555;
+    }
+
+    .rgpd-section ul {
+        margin-left: 20px;
+        margin-bottom: 16px;
+    }
+
+    .rgpd-section li {
+        margin-bottom: 8px;
+        color: #555;
+    }
+
+    .rgpd-section strong {
+        color: #333;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .rgpd-container {
+            padding: 24px;
+        }
+
+        .rgpd-page h1 {
+            font-size: 24px;
+        }
+
+        .rgpd-section h2 {
+            font-size: 20px;
+        }
+    }
+</style>
+{% endblock %}
+

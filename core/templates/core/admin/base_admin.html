@@ -1,0 +1,606 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Panel Admin - Transpareo{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    {% block extra_head %}{% endblock %}
+    <link rel="stylesheet" href="{% static 'core/admin/admin-panel.css' %}">
+</head>
+<body class="admin-body">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="admin-sidebar">
+        <!-- Section Logo Header (fixe) -->
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <a href="{% url 'admin-dashboard' %}" class="logo-link">
+                    <span class="logo-text">Transpareo</span>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Navigation (scrollable) -->
+        <div class="sidebar-content">
+            <nav class="sidebar-nav">
+                <ul class="nav-list">
+                    <!-- TABLEAU DE BORD -->
+                    <li class="nav-group">
+                        <button class="nav-category-toggle" type="button" data-category="tableau-de-bord">
+                            <span class="category-label">TABLEAU DE BORD</span>
+                            <svg class="category-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <ul class="nav-group-items">
+                            <li class="nav-item">
+                                <a href="{% url 'admin-dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'admin-dashboard' %}active{% endif %}">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="3" y1="9" x2="21" y2="9"></line>
+                                        <line x1="9" y1="21" x2="9" y2="9"></line>
+                                    </svg>
+                                    <span class="nav-text">Vue d'ensemble</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'admin-statistics' %}" class="nav-link {% if request.resolver_match.url_name == 'admin-statistics' %}active{% endif %}">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="20" x2="12" y2="10"></line>
+                                        <line x1="18" y1="20" x2="18" y2="4"></line>
+                                        <line x1="6" y1="20" x2="6" y2="16"></line>
+                                    </svg>
+                                    <span class="nav-text">Analytics</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- GESTION PLATEFORME -->
+                    <li class="nav-group">
+                        <button class="nav-category-toggle" type="button" data-category="gestion-plateforme">
+                            <span class="category-label">GESTION PLATEFORME</span>
+                            <svg class="category-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <ul class="nav-group-items">
+                            <li class="nav-item">
+                                <a href="{% url 'admin-users' %}" class="nav-link {% if 'admin-user' in request.resolver_match.url_name %}active{% endif %}">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="9" cy="7" r="4"></circle>
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                    </svg>
+                                    <span class="nav-text">Utilisateurs</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'admin-logements' %}" class="nav-link {% if request.resolver_match.url_name == 'admin-logements' %}active{% endif %}">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                        <circle cx="12" cy="10" r="3"></circle>
+                                    </svg>
+                                    <span class="nav-text">Logements et annonces</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'admin-candidatures-locations' %}" class="nav-link {% if request.resolver_match.url_name == 'admin-candidatures-locations' %}active{% endif %}">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    </svg>
+                                    <span class="nav-text">Candidatures et locations</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'admin-avis' %}" class="nav-link {% if request.resolver_match.url_name == 'admin-avis' %}active{% endif %}">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                    </svg>
+                                    <span class="nav-text">Avis et évaluations</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'admin-connect' %}" class="nav-link {% if 'admin-connect' in request.resolver_match.url_name or 'admin-group' in request.resolver_match.url_name or 'admin-connect-posts' in request.resolver_match.url_name or 'admin-connect-messages' in request.resolver_match.url_name %}active{% endif %}">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="9" cy="7" r="4"></circle>
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                    </svg>
+                                    <span class="nav-text">Transpareo Connect</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#" class="nav-link">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                        <circle cx="12" cy="10" r="3"></circle>
+                                    </svg>
+                                    <span class="nav-text">Carte interactive</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- MODÉRATION -->
+                    <li class="nav-group">
+                        <button class="nav-category-toggle" type="button" data-category="moderation">
+                            <span class="category-label">MODÉRATION</span>
+                            <svg class="category-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <ul class="nav-group-items">
+                            <li class="nav-item">
+                                <a href="{% url 'admin-moderation' %}" class="nav-link {% if 'admin-moderation' in request.resolver_match.url_name or 'admin-reported-content' in request.resolver_match.url_name or 'admin-user-moderation' in request.resolver_match.url_name or 'admin-verification' in request.resolver_match.url_name or 'admin-property-claim' in request.resolver_match.url_name %}active{% endif %}">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                        <path d="M9 12l2 2 4-4"></path>
+                                    </svg>
+                                    <span class="nav-text">Modération</span>
+                                    {% if signalements_en_attente %}
+                                    <span class="nav-badge">{{ signalements_en_attente }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'admin-support-tickets' %}" class="nav-link {% if 'admin-support-tickets' in request.resolver_match.url_name or 'admin-support-ticket' in request.resolver_match.url_name %}active{% endif %}">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                    </svg>
+                                    <span class="nav-text">Tickets Support</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'admin-users' %}?status=suspended" class="nav-link">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                    </svg>
+                                    <span class="nav-text">Utilisateurs suspendus</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'admin-verifications-identity' %}" class="nav-link {% if 'admin-verification' in request.resolver_match.url_name %}active{% endif %}">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="8.5" cy="7" r="4"></circle>
+                                        <polyline points="17 11 19 13 23 9"></polyline>
+                                    </svg>
+                                    <span class="nav-text">Demandes de vérification</span>
+                                    {% if verifications_en_attente %}
+                                    <span class="nav-badge">{{ verifications_en_attente }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'admin-reclamations' %}" class="nav-link {% if 'admin-reclamation' in request.resolver_match.url_name %}active{% endif %}">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                    </svg>
+                                    <span class="nav-text">Réclamations de logements</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'admin-tickets' %}" class="nav-link {% if 'admin-ticket' in request.resolver_match.url_name %}active{% endif %}">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                        <polyline points="22 6 12 13 2 6"></polyline>
+                                    </svg>
+                                    <span class="nav-text">Tickets support</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- BUSINESS INTELLIGENCE -->
+                    <li class="nav-group">
+                        <button class="nav-category-toggle" type="button" data-category="business-intelligence">
+                            <span class="category-label">BUSINESS INTELLIGENCE</span>
+                            <svg class="category-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <ul class="nav-group-items">
+                            <li class="nav-item">
+                                <a href="{% url 'admin-business-model-canvas' %}" class="nav-link {% if 'admin-business-model-canvas' in request.resolver_match.url_name %}active{% endif %}">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="3" y1="9" x2="21" y2="9"></line>
+                                        <line x1="9" y1="21" x2="9" y2="9"></line>
+                                    </svg>
+                                    <span class="nav-text">Business Model Canvas</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'admin-business-plan' %}" class="nav-link {% if 'admin-business-plan' in request.resolver_match.url_name %}active{% endif %}">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    </svg>
+                                    <span class="nav-text">Business Plan complet</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'admin-market-studies' %}" class="nav-link {% if 'admin-market-studies' in request.resolver_match.url_name or 'admin-market-study' in request.resolver_match.url_name %}active{% endif %}">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="20" x2="12" y2="10"></line>
+                                        <line x1="18" y1="20" x2="18" y2="4"></line>
+                                        <line x1="6" y1="20" x2="6" y2="16"></line>
+                                    </svg>
+                                    <span class="nav-text">Études de marché</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'admin-competitive-analysis' %}" class="nav-link {% if 'admin-competitive-analysis' in request.resolver_match.url_name %}active{% endif %}">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                    <span class="nav-text">Analyse concurrentielle</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'admin-financial-projections' %}" class="nav-link {% if 'admin-financial-projections' in request.resolver_match.url_name or 'admin-financial-projection' in request.resolver_match.url_name or 'admin-cash-flow' in request.resolver_match.url_name or 'admin-balance-sheet' in request.resolver_match.url_name or 'admin-scenario' in request.resolver_match.url_name or 'admin-kpis' in request.resolver_match.url_name %}active{% endif %}">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                    </svg>
+                                    <span class="nav-text">Projections financières</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#" class="nav-link">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M3 3v18h18"></path>
+                                        <path d="M18 7c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3z"></path>
+                                        <path d="M18 17c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3z"></path>
+                                        <path d="M3 7h15"></path>
+                                        <path d="M3 17h15"></path>
+                                    </svg>
+                                    <span class="nav-text">KPIs et métriques</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- FINANCE -->
+                    <li class="nav-group">
+                        <button class="nav-category-toggle" type="button" data-category="finance">
+                            <span class="category-label">FINANCE</span>
+                            <svg class="category-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <ul class="nav-group-items">
+                            <li class="nav-item">
+                                <a href="#" class="nav-link">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                    </svg>
+                                    <span class="nav-text">Transactions et paiements</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#" class="nav-link">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                    </svg>
+                                    <span class="nav-text">Abonnements et tarifs</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#" class="nav-link">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    </svg>
+                                    <span class="nav-text">Facturation</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#" class="nav-link">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="20" x2="12" y2="10"></line>
+                                        <line x1="18" y1="20" x2="18" y2="4"></line>
+                                        <line x1="6" y1="20" x2="6" y2="16"></line>
+                                    </svg>
+                                    <span class="nav-text">Comptabilité</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#" class="nav-link">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                    </svg>
+                                    <span class="nav-text">Budget prévisionnel</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- MARKETING -->
+                    <li class="nav-group">
+                        <button class="nav-category-toggle" type="button" data-category="marketing">
+                            <span class="category-label">MARKETING</span>
+                            <svg class="category-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <ul class="nav-group-items">
+                            <li class="nav-item">
+                                <a href="#" class="nav-link">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                        <polyline points="22 6 12 13 2 6"></polyline>
+                                    </svg>
+                                    <span class="nav-text">Campagnes email</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#" class="nav-link">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                    </svg>
+                                    <span class="nav-text">Notifications push</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#" class="nav-link">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="11" cy="11" r="8"></circle>
+                                        <path d="m21 21-4.35-4.35"></path>
+                                    </svg>
+                                    <span class="nav-text">SEO et contenu</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#" class="nav-link">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                                    </svg>
+                                    <span class="nav-text">Réseaux sociaux</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#" class="nav-link">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="20" x2="12" y2="10"></line>
+                                        <line x1="18" y1="20" x2="18" y2="4"></line>
+                                        <line x1="6" y1="20" x2="6" y2="16"></line>
+                                    </svg>
+                                    <span class="nav-text">Analytics marketing</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- PARAMÈTRES -->
+                    <li class="nav-group">
+                        <button class="nav-category-toggle" type="button" data-category="parametres">
+                            <span class="category-label">PARAMÈTRES</span>
+                            <svg class="category-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <ul class="nav-group-items">
+                            <li class="nav-item">
+                                <a href="{% url 'admin-settings' %}" class="nav-link {% if 'admin-settings' in request.resolver_match.url_name or 'admin-role' in request.resolver_match.url_name or 'admin-invitation' in request.resolver_match.url_name or 'admin-payment-config' in request.resolver_match.url_name or 'admin-notification-config' in request.resolver_match.url_name or 'admin-security-config' in request.resolver_match.url_name or 'admin-integration-config' in request.resolver_match.url_name or 'admin-activity-logs' in request.resolver_match.url_name %}active{% endif %}">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                        <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path>
+                                    </svg>
+                                    <span class="nav-text">Paramètres</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#" class="nav-link">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                        <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1m21.364 8.364l-4.243-4.243m-9.9-9.9l-4.243-4.243m9.9 9.9l-4.243-4.243m9.9 9.9l-4.243-4.243"></path>
+                                    </svg>
+                                    <span class="nav-text">Configuration générale</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#" class="nav-link">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="9" cy="7" r="4"></circle>
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                    </svg>
+                                    <span class="nav-text">Rôles et permissions</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#" class="nav-link">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                    </svg>
+                                    <span class="nav-text">Sécurité et logs</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#" class="nav-link">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                                    </svg>
+                                    <span class="nav-text">Intégrations (API, webhooks)</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#" class="nav-link">
+                                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                    </svg>
+                                    <span class="nav-text">Personnalisation (thème, langue)</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="admin-main-wrapper">
+        <!-- Topbar -->
+        <header class="admin-topbar">
+            <div class="topbar-content">
+                <!-- Page Title -->
+                <div class="topbar-left">
+                    <h1 class="page-title">{% block page_title %}Tableau de bord{% endblock %}</h1>
+                </div>
+
+                <!-- Right Section -->
+                <div class="topbar-right">
+                    <!-- Search Bar -->
+                    <div class="search-wrapper">
+                        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        <input type="text" class="search-input" placeholder="Recherche globale..." id="global-search">
+                    </div>
+
+                    <!-- Notifications -->
+                    <div class="topbar-dropdown">
+                        <button class="topbar-btn notifications-btn" id="notifications-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                            </svg>
+                            {% if signalements_en_attente %}
+                            <span class="notification-badge">{{ signalements_en_attente }}</span>
+                            {% endif %}
+                        </button>
+                        <div class="dropdown-menu notifications-menu" id="notifications-menu">
+                            <div class="dropdown-header">
+                                <h3>Notifications</h3>
+                            </div>
+                            <div class="dropdown-content-list">
+                                <div class="notification-item">
+                                    <div class="notification-content">
+                                        <p class="notification-text">Nouveaux signalements en attente</p>
+                                        <span class="notification-time">Il y a 5 min</span>
+                                    </div>
+                                </div>
+                                <!-- Plus de notifications... -->
+                            </div>
+                            <div class="dropdown-footer">
+                                <a href="#" class="view-all-link">Voir toutes les notifications</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profile Dropdown -->
+                    <div class="topbar-dropdown">
+                        <button class="topbar-btn profile-btn" id="profile-btn">
+                            {% if user.avatar %}
+                            <img src="{{ user.avatar.url }}" alt="{{ user.username }}" class="profile-avatar">
+                            {% else %}
+                            <div class="profile-avatar-placeholder">{{ user.username|first|upper }}</div>
+                            {% endif %}
+                            <span class="profile-name">{{ user.username }}</span>
+                            <svg class="dropdown-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <div class="dropdown-menu profile-menu" id="profile-menu">
+                            <div class="dropdown-content-list">
+                                <a href="#" class="dropdown-item">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                    <span>Mon profil</span>
+                                </a>
+                                <a href="#" class="dropdown-item">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                        <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
+                                    </svg>
+                                    <span>Paramètres</span>
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a href="{% url 'logout' %}" class="dropdown-item logout-item">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                        <polyline points="16 17 21 12 16 7"></polyline>
+                                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                                    </svg>
+                                    <span>Déconnexion</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="admin-main-content">
+            <!-- Breadcrumb -->
+            {% block breadcrumb %}
+            <nav class="breadcrumb-nav">
+                <a href="{% url 'admin-dashboard' %}" class="breadcrumb-link">Tableau de bord</a>
+                {% if breadcrumb_items %}
+                    {% for item in breadcrumb_items %}
+                        <span class="breadcrumb-separator">/</span>
+                        <a href="{{ item.url }}" class="breadcrumb-link">{{ item.label }}</a>
+                    {% endfor %}
+                {% endif %}
+            </nav>
+            {% endblock %}
+
+            <!-- Page Content -->
+            <div class="page-content">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+    </button>
+
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" id="mobile-overlay"></div>
+
+    <script src="{% static 'core/admin/admin-panel.js' %}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

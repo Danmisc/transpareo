@@ -1,0 +1,71 @@
+{% extends 'core/admin/base_admin.html' %}
+{% load static %}
+
+{% block title %}Nouvelle Étude de Marché{% endblock %}
+
+{% block page_title %}Nouvelle Étude de Marché{% endblock %}
+
+{% block content %}
+<div class="market-study-create-page">
+    <div class="create-header">
+        <h1 class="page-title-main">Nouvelle Étude de Marché</h1>
+        <p class="page-subtitle">Configurez votre étude avant de créer le questionnaire</p>
+    </div>
+
+    <form method="POST" class="create-form">
+        {% csrf_token %}
+        
+        <div class="form-section">
+            <h2 class="section-title">Configuration</h2>
+            
+            <div class="form-field">
+                <label for="title">Titre de l'étude *</label>
+                <input type="text" id="title" name="title" class="input-field" required placeholder="Ex: Étude de satisfaction locataires">
+            </div>
+
+            <div class="form-field">
+                <label for="description">Description/contexte</label>
+                <textarea id="description" name="description" class="textarea-field" rows="4" placeholder="Décrivez le contexte et les objectifs de cette étude..."></textarea>
+            </div>
+
+            <div class="form-fields-grid">
+                <div class="form-field">
+                    <label for="date_start">Date de début</label>
+                    <input type="date" id="date_start" name="date_start" class="input-field">
+                </div>
+                <div class="form-field">
+                    <label for="date_end">Date de fin</label>
+                    <input type="date" id="date_end" name="date_end" class="input-field">
+                </div>
+            </div>
+
+            <div class="form-field">
+                <label for="target_type">Cible</label>
+                <select id="target_type" name="target_type" class="input-field">
+                    <option value="public">Public - Accessible à tous</option>
+                    <option value="private">Privé - Lien uniquement</option>
+                    <option value="shareable">Partageable - Lien avec token</option>
+                </select>
+            </div>
+
+            <div class="form-field">
+                <label for="theme_color">Couleur du thème</label>
+                <input type="color" id="theme_color" name="theme_color" class="input-color" value="#D3580B">
+            </div>
+
+            <div class="form-field">
+                <label for="completion_message">Message de fin</label>
+                <textarea id="completion_message" name="completion_message" class="textarea-field" rows="3" placeholder="Merci pour votre participation !">Merci pour votre participation !</textarea>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="{% url 'admin-market-studies' %}" class="btn-secondary">Annuler</a>
+            <button type="submit" class="btn-primary">Créer et passer au questionnaire</button>
+        </div>
+    </form>
+</div>
+
+<link rel="stylesheet" href="{% static 'core/admin/market-studies.css' %}">
+{% endblock %}
+

@@ -1,0 +1,693 @@
+{% load humanize %}
+<!-- Filtres Locations -->
+<div class="filters-section">
+    <div class="filters-header">
+        <h3>Filtres</h3>
+        <button class="btn-ghost btn-small" onclick="toggleFilters()">
+            <span id="filters-toggle-text">Masquer</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        </button>
+    </div>
+    <div class="filters-content" id="filters-content">
+        <form method="GET" action="{% url 'admin-candidatures-locations' %}" id="filters-form">
+            <input type="hidden" name="view" value="locations">
+            
+            <div class="filter-row">
+                <div class="filter-field filter-search">
+                    <label>Recherche</label>
+                    <input type="text" name="search" value="{{ filters.search }}" 
+                           placeholder="Locataire, adresse logement, ID..." class="filter-input">
+                </div>
+                <div class="filter-field">
+                    <label>Statut</label>
+                    <select name="statut" class="filter-select">
+                        <option value="">Tous</option>
+                        <option value="actif" {% if filters.statut == 'actif' %}selected{% endif %}>En cours</option>
+                        <option value="resilie" {% if filters.statut == 'resilie' %}selected{% endif %}>Résiliée</option>
+                        <option value="termine" {% if filters.statut == 'termine' %}selected{% endif %}>Expirée</option>
+                    </select>
+                </div>
+                <div class="filter-field">
+                    <label>Locataire</label>
+                    <input type="text" name="locataire" value="{{ filters.locataire }}" 
+                           placeholder="Rechercher..." class="filter-input autocomplete">
+                </div>
+                <div class="filter-field">
+                    <label>Propriétaire</label>
+                    <input type="text" name="proprietaire" value="{{ filters.proprietaire }}" 
+                           placeholder="Rechercher..." class="filter-input autocomplete">
+                </div>
+            </div>
+            
+            <div class="filter-actions">
+                <button type="submit" class="btn-primary">Appliquer filtres</button>
+                <button type="button" class="btn-secondary" onclick="resetFilters()">Réinitialiser</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tableau Locations -->
+<div class="table-section">
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="col-checkbox sticky-left">
+                        <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
+                    </th>
+                    <th class="col-id">ID contrat</th>
+                    <th class="col-locataire sticky-left-after-checkbox">Locataire</th>
+                    <th class="col-logement">Logement</th>
+                    <th class="col-proprietaire">Propriétaire</th>
+                    <th class="col-date">Date début</th>
+                    <th class="col-date">Date fin</th>
+                    <th class="col-duree">Durée restante</th>
+                    <th class="col-loyer">Loyer</th>
+                    <th class="col-paiement">Statut paiement</th>
+                    <th class="col-statut">Statut</th>
+                    <th class="col-actions sticky-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for location in locations %}
+                <tr class="table-row" data-location-id="{{ location.id }}">
+                    <td class="col-checkbox sticky-left">
+                        <input type="checkbox" class="location-checkbox" value="{{ location.id }}">
+                    </td>
+                    <td class="col-id">
+                        <span class="id-text" onclick="copyToClipboard('{{ location.id }}')">{{ location.id }}</span>
+                    </td>
+                    <td class="col-locataire sticky-left-after-checkbox">
+                        <div class="candidat-cell">
+                            <div class="avatar-small">
+                                {% if location.locataire.avatar %}
+                                <img src="{{ location.locataire.avatar.url }}" alt="{{ location.locataire.username }}">
+                                {% else %}
+                                <div class="avatar-placeholder">{{ location.locataire.username|first|upper }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="candidat-info">
+                                <a href="/connect-admin/users/{{ location.locataire.id }}/" class="candidat-name">
+                                    <strong>{{ location.locataire.username }}</strong>
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="col-logement">
+                        <div class="logement-cell">
+                            <div class="logement-thumbnail">📷</div>
+                            <div class="logement-info">
+                                <a href="/connect-admin/logements/{{ location.logement.id }}/" class="logement-link">
+                                    {{ location.logement.titre|truncatewords:5 }}
+                                </a>
+                                <div class="logement-address">{{ location.logement.adresse|truncatewords:3 }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="col-proprietaire">
+                        <div class="proprietaire-cell">
+                            <div class="avatar-tiny">
+                                {% if location.proprietaire.avatar %}
+                                <img src="{{ location.proprietaire.avatar.url }}" alt="{{ location.proprietaire.username }}">
+                                {% else %}
+                                <div class="avatar-placeholder">{{ location.proprietaire.username|first|upper }}</div>
+                                {% endif %}
+                            </div>
+                            <a href="/connect-admin/users/{{ location.proprietaire.id }}/">{{ location.proprietaire.username }}</a>
+                        </div>
+                    </td>
+                    <td class="col-date">{{ location.date_debut|date:"d/m/Y" }}</td>
+                    <td class="col-date">
+                        {% if location.date_fin %}
+                        {{ location.date_fin|date:"d/m/Y" }}
+                        {% else %}
+                        <span class="no-data">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="col-duree">
+                        {% if location.date_fin %}
+                        <span class="duree-text">8 mois</span>
+                        {% else %}
+                        <span class="duree-text">Indéterminé</span>
+                        {% endif %}
+                    </td>
+                    <td class="col-loyer">
+                        <strong>{{ location.loyer_mensuel|floatformat:0|intcomma }} €</strong>
+                    </td>
+                    <td class="col-paiement">
+                        <span class="statut-badge statut-paiement-ok">À jour</span>
+                    </td>
+                    <td class="col-statut">
+                        <span class="statut-badge statut-{{ location.statut }}">
+                            {{ location.get_statut_display }}
+                        </span>
+                    </td>
+                    <td class="col-actions sticky-right">
+                        <div class="actions-dropdown">
+                            <button class="actions-btn" onclick="toggleActionsDropdown(this)">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="1"></circle>
+                                    <circle cx="12" cy="5" r="1"></circle>
+                                    <circle cx="12" cy="19" r="1"></circle>
+                                </svg>
+                            </button>
+                            <div class="dropdown-menu">
+                                <a href="#" class="dropdown-item" onclick="openLocationDetail({{ location.id }})">
+                                    Voir détails contrat
+                                </a>
+                                <a href="#" class="dropdown-item" onclick="viewPaiements({{ location.id }})">
+                                    Voir historique paiements
+                                </a>
+                                <a href="#" class="dropdown-item" onclick="generateQuittance({{ location.id }})">
+                                    Générer quittance loyer
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a href="#" class="dropdown-item" onclick="downloadContratPDF({{ location.id }})">
+                                    Télécharger contrat PDF
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="12" class="empty-state">
+                        <p>Aucune location trouvée</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if locations.has_other_pages %}
+    <div class="pagination-wrapper">
+        <div class="pagination-info">
+            <select class="per-page-select" onchange="changePerPage(this.value)">
+                <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+                <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+            </select>
+            <span class="pagination-text">
+                Affichage {{ locations.start_index }}-{{ locations.end_index }} sur {{ locations.paginator.count|intcomma }} locations
+            </span>
+        </div>
+        <div class="pagination-controls">
+            {% if locations.has_previous %}
+            <a href="?page={{ locations.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">Précédent</a>
+            {% endif %}
+            {% for num in locations.paginator.page_range %}
+                {% if locations.number == num %}
+                <span class="page-current">{{ num }}</span>
+                {% elif num > locations.number|add:'-3' and num < locations.number|add:'3' %}
+                <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if locations.has_next %}
+            <a href="?page={{ locations.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">Suivant</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal Détail Location -->
+<div class="modal-overlay" id="location-detail-modal" style="display: none;">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2 id="modal-location-title">Détail location</h2>
+            <button class="modal-close" onclick="closeLocationDetailModal()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-detail-layout">
+                <div class="modal-detail-left">
+                    <div class="modal-tabs">
+                        <button class="modal-tab active" data-tab="contrat" onclick="switchLocationTab('contrat')">Informations contrat</button>
+                        <button class="modal-tab" data-tab="paiements" onclick="switchLocationTab('paiements')">Paiements</button>
+                        <button class="modal-tab" data-tab="incidents" onclick="switchLocationTab('incidents')">Incidents</button>
+                        <button class="modal-tab" data-tab="documents" onclick="switchLocationTab('documents')">Documents</button>
+                        <button class="modal-tab" data-tab="historique" onclick="switchLocationTab('historique')">Historique</button>
+                    </div>
+
+                    <div class="modal-tab-content active" id="location-tab-contrat">
+                        <div class="modal-form-section">
+                            <h3>Informations contrat</h3>
+                            <div class="modal-form-grid">
+                                <div class="modal-form-field">
+                                    <label>Date début</label>
+                                    <input type="date" id="location-date-debut" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Date fin</label>
+                                    <input type="date" id="location-date-fin" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Loyer hors charges</label>
+                                    <input type="number" id="location-loyer" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Charges</label>
+                                    <input type="number" id="location-charges" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Dépôt garantie</label>
+                                    <input type="number" id="location-depot" class="modal-input" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-tab-content" id="location-tab-paiements">
+                        <div class="modal-form-section">
+                            <h3>Paiements et quittances</h3>
+                            <div class="paiements-placeholder">
+                                <p>Calendrier paiements - À implémenter</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-tab-content" id="location-tab-incidents">
+                        <div class="modal-form-section">
+                            <h3>Incidents et tickets</h3>
+                            <div class="incidents-placeholder">
+                                <p>Liste incidents - À implémenter</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-tab-content" id="location-tab-documents">
+                        <div class="modal-form-section">
+                            <h3>Documents</h3>
+                            <div class="documents-placeholder">
+                                <p>Documents location - À implémenter</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-tab-content" id="location-tab-historique">
+                        <div class="modal-form-section">
+                            <h3>Historique</h3>
+                            <div class="timeline">
+                                <div class="timeline-item">
+                                    <div class="timeline-dot"></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-date">Date</div>
+                                        <div class="timeline-action">Événement</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-detail-right">
+                    <div class="modal-widget">
+                        <h4>Locataire</h4>
+                        <div class="modal-widget-content" id="location-locataire-info">
+                            <p class="no-data">-</p>
+                        </div>
+                    </div>
+
+                    <div class="modal-widget">
+                        <h4>Logement</h4>
+                        <div class="modal-widget-content" id="location-logement-info">
+                            <p class="no-data">-</p>
+                        </div>
+                    </div>
+
+                    <div class="modal-widget">
+                        <h4>Statut</h4>
+                        <div class="modal-widget-content">
+                            <div id="location-statut-badge" class="statut-badge"></div>
+                        </div>
+                    </div>
+
+                    <div class="modal-widget">
+                        <h4>Actions rapides</h4>
+                        <div class="modal-widget-content">
+                            <button class="btn-secondary btn-small btn-full" onclick="generateQuittance(currentLocationId)">Générer quittance</button>
+                            <button class="btn-secondary btn-small btn-full" onclick="enregistrerPaiement()">Enregistrer paiement</button>
+                            <button class="btn-secondary btn-small btn-full" onclick="creerIncident()">Créer incident</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="filters-section">
+    <div class="filters-header">
+        <h3>Filtres</h3>
+        <button class="btn-ghost btn-small" onclick="toggleFilters()">
+            <span id="filters-toggle-text">Masquer</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        </button>
+    </div>
+    <div class="filters-content" id="filters-content">
+        <form method="GET" action="{% url 'admin-candidatures-locations' %}" id="filters-form">
+            <input type="hidden" name="view" value="locations">
+            
+            <div class="filter-row">
+                <div class="filter-field filter-search">
+                    <label>Recherche</label>
+                    <input type="text" name="search" value="{{ filters.search }}" 
+                           placeholder="Locataire, adresse logement, ID..." class="filter-input">
+                </div>
+                <div class="filter-field">
+                    <label>Statut</label>
+                    <select name="statut" class="filter-select">
+                        <option value="">Tous</option>
+                        <option value="actif" {% if filters.statut == 'actif' %}selected{% endif %}>En cours</option>
+                        <option value="resilie" {% if filters.statut == 'resilie' %}selected{% endif %}>Résiliée</option>
+                        <option value="termine" {% if filters.statut == 'termine' %}selected{% endif %}>Expirée</option>
+                    </select>
+                </div>
+                <div class="filter-field">
+                    <label>Locataire</label>
+                    <input type="text" name="locataire" value="{{ filters.locataire }}" 
+                           placeholder="Rechercher..." class="filter-input autocomplete">
+                </div>
+                <div class="filter-field">
+                    <label>Propriétaire</label>
+                    <input type="text" name="proprietaire" value="{{ filters.proprietaire }}" 
+                           placeholder="Rechercher..." class="filter-input autocomplete">
+                </div>
+            </div>
+            
+            <div class="filter-actions">
+                <button type="submit" class="btn-primary">Appliquer filtres</button>
+                <button type="button" class="btn-secondary" onclick="resetFilters()">Réinitialiser</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tableau Locations -->
+<div class="table-section">
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="col-checkbox sticky-left">
+                        <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
+                    </th>
+                    <th class="col-id">ID contrat</th>
+                    <th class="col-locataire sticky-left-after-checkbox">Locataire</th>
+                    <th class="col-logement">Logement</th>
+                    <th class="col-proprietaire">Propriétaire</th>
+                    <th class="col-date">Date début</th>
+                    <th class="col-date">Date fin</th>
+                    <th class="col-duree">Durée restante</th>
+                    <th class="col-loyer">Loyer</th>
+                    <th class="col-paiement">Statut paiement</th>
+                    <th class="col-statut">Statut</th>
+                    <th class="col-actions sticky-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for location in locations %}
+                <tr class="table-row" data-location-id="{{ location.id }}">
+                    <td class="col-checkbox sticky-left">
+                        <input type="checkbox" class="location-checkbox" value="{{ location.id }}">
+                    </td>
+                    <td class="col-id">
+                        <span class="id-text" onclick="copyToClipboard('{{ location.id }}')">{{ location.id }}</span>
+                    </td>
+                    <td class="col-locataire sticky-left-after-checkbox">
+                        <div class="candidat-cell">
+                            <div class="avatar-small">
+                                {% if location.locataire.avatar %}
+                                <img src="{{ location.locataire.avatar.url }}" alt="{{ location.locataire.username }}">
+                                {% else %}
+                                <div class="avatar-placeholder">{{ location.locataire.username|first|upper }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="candidat-info">
+                                <a href="/connect-admin/users/{{ location.locataire.id }}/" class="candidat-name">
+                                    <strong>{{ location.locataire.username }}</strong>
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="col-logement">
+                        <div class="logement-cell">
+                            <div class="logement-thumbnail">📷</div>
+                            <div class="logement-info">
+                                <a href="/connect-admin/logements/{{ location.logement.id }}/" class="logement-link">
+                                    {{ location.logement.titre|truncatewords:5 }}
+                                </a>
+                                <div class="logement-address">{{ location.logement.adresse|truncatewords:3 }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="col-proprietaire">
+                        <div class="proprietaire-cell">
+                            <div class="avatar-tiny">
+                                {% if location.proprietaire.avatar %}
+                                <img src="{{ location.proprietaire.avatar.url }}" alt="{{ location.proprietaire.username }}">
+                                {% else %}
+                                <div class="avatar-placeholder">{{ location.proprietaire.username|first|upper }}</div>
+                                {% endif %}
+                            </div>
+                            <a href="/connect-admin/users/{{ location.proprietaire.id }}/">{{ location.proprietaire.username }}</a>
+                        </div>
+                    </td>
+                    <td class="col-date">{{ location.date_debut|date:"d/m/Y" }}</td>
+                    <td class="col-date">
+                        {% if location.date_fin %}
+                        {{ location.date_fin|date:"d/m/Y" }}
+                        {% else %}
+                        <span class="no-data">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="col-duree">
+                        {% if location.date_fin %}
+                        <span class="duree-text">8 mois</span>
+                        {% else %}
+                        <span class="duree-text">Indéterminé</span>
+                        {% endif %}
+                    </td>
+                    <td class="col-loyer">
+                        <strong>{{ location.loyer_mensuel|floatformat:0|intcomma }} €</strong>
+                    </td>
+                    <td class="col-paiement">
+                        <span class="statut-badge statut-paiement-ok">À jour</span>
+                    </td>
+                    <td class="col-statut">
+                        <span class="statut-badge statut-{{ location.statut }}">
+                            {{ location.get_statut_display }}
+                        </span>
+                    </td>
+                    <td class="col-actions sticky-right">
+                        <div class="actions-dropdown">
+                            <button class="actions-btn" onclick="toggleActionsDropdown(this)">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="1"></circle>
+                                    <circle cx="12" cy="5" r="1"></circle>
+                                    <circle cx="12" cy="19" r="1"></circle>
+                                </svg>
+                            </button>
+                            <div class="dropdown-menu">
+                                <a href="#" class="dropdown-item" onclick="openLocationDetail({{ location.id }})">
+                                    Voir détails contrat
+                                </a>
+                                <a href="#" class="dropdown-item" onclick="viewPaiements({{ location.id }})">
+                                    Voir historique paiements
+                                </a>
+                                <a href="#" class="dropdown-item" onclick="generateQuittance({{ location.id }})">
+                                    Générer quittance loyer
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a href="#" class="dropdown-item" onclick="downloadContratPDF({{ location.id }})">
+                                    Télécharger contrat PDF
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="12" class="empty-state">
+                        <p>Aucune location trouvée</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if locations.has_other_pages %}
+    <div class="pagination-wrapper">
+        <div class="pagination-info">
+            <select class="per-page-select" onchange="changePerPage(this.value)">
+                <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+                <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+            </select>
+            <span class="pagination-text">
+                Affichage {{ locations.start_index }}-{{ locations.end_index }} sur {{ locations.paginator.count|intcomma }} locations
+            </span>
+        </div>
+        <div class="pagination-controls">
+            {% if locations.has_previous %}
+            <a href="?page={{ locations.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">Précédent</a>
+            {% endif %}
+            {% for num in locations.paginator.page_range %}
+                {% if locations.number == num %}
+                <span class="page-current">{{ num }}</span>
+                {% elif num > locations.number|add:'-3' and num < locations.number|add:'3' %}
+                <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if locations.has_next %}
+            <a href="?page={{ locations.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">Suivant</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal Détail Location -->
+<div class="modal-overlay" id="location-detail-modal" style="display: none;">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2 id="modal-location-title">Détail location</h2>
+            <button class="modal-close" onclick="closeLocationDetailModal()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-detail-layout">
+                <div class="modal-detail-left">
+                    <div class="modal-tabs">
+                        <button class="modal-tab active" data-tab="contrat" onclick="switchLocationTab('contrat')">Informations contrat</button>
+                        <button class="modal-tab" data-tab="paiements" onclick="switchLocationTab('paiements')">Paiements</button>
+                        <button class="modal-tab" data-tab="incidents" onclick="switchLocationTab('incidents')">Incidents</button>
+                        <button class="modal-tab" data-tab="documents" onclick="switchLocationTab('documents')">Documents</button>
+                        <button class="modal-tab" data-tab="historique" onclick="switchLocationTab('historique')">Historique</button>
+                    </div>
+
+                    <div class="modal-tab-content active" id="location-tab-contrat">
+                        <div class="modal-form-section">
+                            <h3>Informations contrat</h3>
+                            <div class="modal-form-grid">
+                                <div class="modal-form-field">
+                                    <label>Date début</label>
+                                    <input type="date" id="location-date-debut" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Date fin</label>
+                                    <input type="date" id="location-date-fin" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Loyer hors charges</label>
+                                    <input type="number" id="location-loyer" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Charges</label>
+                                    <input type="number" id="location-charges" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Dépôt garantie</label>
+                                    <input type="number" id="location-depot" class="modal-input" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-tab-content" id="location-tab-paiements">
+                        <div class="modal-form-section">
+                            <h3>Paiements et quittances</h3>
+                            <div class="paiements-placeholder">
+                                <p>Calendrier paiements - À implémenter</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-tab-content" id="location-tab-incidents">
+                        <div class="modal-form-section">
+                            <h3>Incidents et tickets</h3>
+                            <div class="incidents-placeholder">
+                                <p>Liste incidents - À implémenter</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-tab-content" id="location-tab-documents">
+                        <div class="modal-form-section">
+                            <h3>Documents</h3>
+                            <div class="documents-placeholder">
+                                <p>Documents location - À implémenter</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-tab-content" id="location-tab-historique">
+                        <div class="modal-form-section">
+                            <h3>Historique</h3>
+                            <div class="timeline">
+                                <div class="timeline-item">
+                                    <div class="timeline-dot"></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-date">Date</div>
+                                        <div class="timeline-action">Événement</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-detail-right">
+                    <div class="modal-widget">
+                        <h4>Locataire</h4>
+                        <div class="modal-widget-content" id="location-locataire-info">
+                            <p class="no-data">-</p>
+                        </div>
+                    </div>
+
+                    <div class="modal-widget">
+                        <h4>Logement</h4>
+                        <div class="modal-widget-content" id="location-logement-info">
+                            <p class="no-data">-</p>
+                        </div>
+                    </div>
+
+                    <div class="modal-widget">
+                        <h4>Statut</h4>
+                        <div class="modal-widget-content">
+                            <div id="location-statut-badge" class="statut-badge"></div>
+                        </div>
+                    </div>
+
+                    <div class="modal-widget">
+                        <h4>Actions rapides</h4>
+                        <div class="modal-widget-content">
+                            <button class="btn-secondary btn-small btn-full" onclick="generateQuittance(currentLocationId)">Générer quittance</button>
+                            <button class="btn-secondary btn-small btn-full" onclick="enregistrerPaiement()">Enregistrer paiement</button>
+                            <button class="btn-secondary btn-small btn-full" onclick="creerIncident()">Créer incident</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

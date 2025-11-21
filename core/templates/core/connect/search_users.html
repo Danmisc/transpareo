@@ -1,0 +1,974 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="connect-search-users-page">
+    <div class="search-users-container">
+        <!-- En-tête -->
+        <div class="page-header">
+            <h1>Recherche d'utilisateurs</h1>
+            <p class="page-subtitle">Trouvez et connectez-vous avec des locataires et propriétaires</p>
+        </div>
+
+        <!-- Barre de recherche principale -->
+        <div class="search-section">
+            <form method="get" action="{% url 'connect-search-users' %}" class="search-form" id="search-form">
+                <div class="search-input-wrapper">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="M21 21l-4.35-4.35"></path>
+                    </svg>
+                    <input 
+                        type="text" 
+                        name="q" 
+                        id="search-query" 
+                        class="search-input" 
+                        placeholder="Rechercher par nom, prénom, pseudo..." 
+                        value="{{ query }}"
+                        autocomplete="off"
+                    >
+                    <div id="autocomplete-results" class="autocomplete-results" style="display: none;"></div>
+                </div>
+                <button type="submit" class="btn-search">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="M21 21l-4.35-4.35"></path>
+                    </svg>
+                    Rechercher
+                </button>
+            </form>
+        </div>
+
+        <!-- Filtres avancés -->
+        <div class="filters-section">
+            <h3 class="filters-title">Filtres avancés</h3>
+            <form method="get" action="{% url 'connect-search-users' %}" class="filters-form" id="filters-form">
+                {% if query %}
+                <input type="hidden" name="q" value="{{ query }}">
+                {% endif %}
+                
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label for="user_type" class="filter-label">Type d'utilisateur</label>
+                        <select id="user_type" name="user_type" class="filter-select">
+                            <option value="all" {% if user_type == 'all' %}selected{% endif %}>Tous</option>
+                            <option value="locataires" {% if user_type == 'locataires' %}selected{% endif %}>Locataires</option>
+                            <option value="proprietaires" {% if user_type == 'proprietaires' %}selected{% endif %}>Propriétaires</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="ville" class="filter-label">Localisation</label>
+                        <input 
+                            type="text" 
+                            id="ville" 
+                            name="ville" 
+                            class="filter-input" 
+                            placeholder="Ville..."
+                            value="{{ ville }}"
+                        >
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="verified" value="true" {% if verified_only %}checked{% endif %}>
+                            <span class="checkbox-label">Vérifiés uniquement</span>
+                        </label>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="with_properties" value="true" {% if with_properties %}checked{% endif %}>
+                            <span class="checkbox-label">Avec logements disponibles</span>
+                        </label>
+                    </div>
+
+                    <div class="filter-group">
+                        <button type="submit" class="btn-apply-filters">Appliquer les filtres</button>
+                        {% if query or user_type != 'all' or ville or verified_only or with_properties %}
+                        <a href="{% url 'connect-search-users' %}" class="btn-clear-filters">Réinitialiser</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Résultats -->
+        <div class="results-section">
+            <div class="results-header">
+                <h2 class="results-title">
+                    {% if users %}
+                        {{ users.paginator.count }} résultat{{ users.paginator.count|pluralize }} trouvé{{ users.paginator.count|pluralize }}
+                    {% else %}
+                        Aucun résultat
+                    {% endif %}
+                </h2>
+            </div>
+
+            {% if users %}
+            <div class="users-list">
+                {% for item in users_data %}
+                    {% with user=item.user %}
+                    <div class="user-card">
+                        <div class="user-avatar-section">
+                            <a href="{% url 'profile-user' user.id %}" class="user-avatar-link">
+                                {% if user.avatar %}
+                                    <img src="{{ user.avatar.url }}" alt="{{ user.username }}" class="user-avatar">
+                                {% else %}
+                                    <div class="user-avatar-placeholder">{{ user.username|first|upper }}</div>
+                                {% endif %}
+                            </a>
+                            {% if user.identity_verified or user.proprietaire_verified %}
+                            <div class="verification-badges">
+                                {% if user.identity_verified %}
+                                <span class="verification-badge" title="Identité vérifiée">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                    </svg>
+                                </span>
+                                {% endif %}
+                                {% if user.proprietaire_verified %}
+                                <span class="verification-badge owner" title="Propriétaire vérifié">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                    </svg>
+                                </span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="user-info">
+                            <div class="user-header">
+                                <a href="{% url 'profile-user' user.id %}" class="user-name">
+                                    {{ user.get_full_name|default:user.username }}
+                                </a>
+                                <div class="user-badges">
+                                    {% if user.is_locataire %}
+                                    <span class="user-badge locataire">Locataire</span>
+                                    {% endif %}
+                                    {% if user.is_proprietaire %}
+                                    <span class="user-badge proprietaire">Propriétaire</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            {% if user.ville %}
+                            <div class="user-location">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"></path>
+                                    <circle cx="12" cy="9" r="3"></circle>
+                                </svg>
+                                {{ user.ville }}{% if user.region %}, {{ user.region }}{% endif %}
+                            </div>
+                            {% endif %}
+
+                            {% if item.common_connections > 0 %}
+                            <div class="common-connections">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                {{ item.common_connections }} connexion{{ item.common_connections|pluralize }} commune{{ item.common_connections|pluralize }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="user-actions">
+                            {% if item.is_connected %}
+                                <a href="{% url 'connect-messages' %}?user={{ user.id }}" class="btn-secondary">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                    </svg>
+                                    Message
+                                </a>
+                            {% elif item.has_pending_request_from_me %}
+                                <button class="btn-secondary" disabled>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                    Demande envoyée
+                                </button>
+                            {% elif item.has_pending_request_to_me %}
+                                <button class="btn-primary" onclick="handleConnectionRequest({{ user.id }}, 'accept')">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Accepter
+                                </button>
+                                <button class="btn-secondary-sm" onclick="handleConnectionRequest({{ user.id }}, 'reject')">
+                                    Ignorer
+                                </button>
+                            {% else %}
+                                <button class="btn-primary" onclick="sendConnectionRequest({{ user.id }})">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    Se connecter
+                                </button>
+                                <a href="{% url 'connect-messages' %}?user={{ user.id }}" class="btn-secondary-sm">
+                                    Message
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endwith %}
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if users.has_other_pages %}
+            <div class="pagination-section">
+                <div class="pagination">
+                    {% if users.has_previous %}
+                    <a href="?{% if query %}q={{ query }}&{% endif %}{% if user_type != 'all' %}user_type={{ user_type }}&{% endif %}{% if ville %}ville={{ ville }}&{% endif %}{% if verified_only %}verified=true&{% endif %}{% if with_properties %}with_properties=true&{% endif %}page={{ users.previous_page_number }}" class="pagination-btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                        Précédent
+                    </a>
+                    {% endif %}
+                    
+                    <span class="pagination-info">
+                        Page {{ users.number }} sur {{ users.paginator.num_pages }}
+                    </span>
+                    
+                    {% if users.has_next %}
+                    <a href="?{% if query %}q={{ query }}&{% endif %}{% if user_type != 'all' %}user_type={{ user_type }}&{% endif %}{% if ville %}ville={{ ville }}&{% endif %}{% if verified_only %}verified=true&{% endif %}{% if with_properties %}with_properties=true&{% endif %}page={{ users.next_page_number }}" class="pagination-btn">
+                        Suivant
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            {% else %}
+                {% if query or user_type != 'all' or ville or verified_only or with_properties %}
+                <div class="empty-state">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="empty-icon">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="M21 21l-4.35-4.35"></path>
+                    </svg>
+                    <h3>Aucun résultat trouvé</h3>
+                    <p>Essayez de modifier vos critères de recherche ou vos filtres.</p>
+                    <a href="{% url 'connect-search-users' %}" class="btn-primary">Réinitialiser la recherche</a>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="empty-icon">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="M21 21l-4.35-4.35"></path>
+                    </svg>
+                    <h3>Commencez votre recherche</h3>
+                    <p>Utilisez la barre de recherche ci-dessus pour trouver des utilisateurs.</p>
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .connect-search-users-page {
+        min-height: calc(100vh - 70px);
+        background: #f5f5f5;
+        padding-top: 70px;
+    }
+
+    .search-users-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 32px 24px;
+    }
+
+    .page-header {
+        margin-bottom: 32px;
+        text-align: center;
+    }
+
+    .page-header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0 0 8px 0;
+    }
+
+    .page-subtitle {
+        font-size: 15px;
+        color: #666;
+        margin: 0;
+    }
+
+    /* Barre de recherche */
+    .search-section {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        margin-bottom: 24px;
+    }
+
+    .search-form {
+        display: flex;
+        gap: 12px;
+    }
+
+    .search-input-wrapper {
+        flex: 1;
+        position: relative;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 14px 16px 14px 48px;
+        border: 2px solid #e5e5e5;
+        border-radius: 12px;
+        font-size: 16px;
+        font-family: inherit;
+        transition: all 0.2s ease;
+        box-sizing: border-box;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: #D3580B;
+        box-shadow: 0 0 0 3px rgba(211, 88, 11, 0.1);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #999;
+        pointer-events: none;
+    }
+
+    .btn-search {
+        padding: 14px 28px;
+        background: #D3580B;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .btn-search:hover {
+        background: #c4510a;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(211, 88, 11, 0.3);
+    }
+
+    /* Autocomplétion */
+    .autocomplete-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        margin-top: 8px;
+        max-height: 400px;
+        overflow-y: auto;
+        z-index: 1000;
+    }
+
+    .autocomplete-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: background 0.2s ease;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .autocomplete-item:hover {
+        background: #f5f5f5;
+    }
+
+    .autocomplete-item:last-child {
+        border-bottom: none;
+    }
+
+    .autocomplete-avatar,
+    .autocomplete-avatar-placeholder {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .autocomplete-avatar-placeholder {
+        background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+    }
+
+    .autocomplete-info {
+        flex: 1;
+    }
+
+    .autocomplete-name {
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 2px;
+    }
+
+    .autocomplete-meta {
+        font-size: 12px;
+        color: #999;
+    }
+
+    /* Filtres */
+    .filters-section {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        margin-bottom: 24px;
+    }
+
+    .filters-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0 0 20px 0;
+    }
+
+    .filters-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .filter-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1a1a1a;
+    }
+
+    .filter-select,
+    .filter-input {
+        padding: 10px 14px;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: inherit;
+        transition: all 0.2s ease;
+    }
+
+    .filter-select:focus,
+    .filter-input:focus {
+        outline: none;
+        border-color: #D3580B;
+        box-shadow: 0 0 0 3px rgba(211, 88, 11, 0.1);
+    }
+
+    .filter-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        padding: 10px;
+        border-radius: 8px;
+        transition: background 0.2s ease;
+    }
+
+    .filter-checkbox:hover {
+        background: #f5f5f5;
+    }
+
+    .filter-checkbox input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        accent-color: #D3580B;
+        cursor: pointer;
+    }
+
+    .checkbox-label {
+        font-size: 14px;
+        color: #333;
+        cursor: pointer;
+    }
+
+    .btn-apply-filters,
+    .btn-clear-filters {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        text-align: center;
+    }
+
+    .btn-apply-filters {
+        background: #D3580B;
+        color: white;
+    }
+
+    .btn-apply-filters:hover {
+        background: #c4510a;
+    }
+
+    .btn-clear-filters {
+        background: #f5f5f5;
+        color: #333;
+        border: 1px solid #e5e5e5;
+    }
+
+    .btn-clear-filters:hover {
+        background: #e5e5e5;
+    }
+
+    /* Résultats */
+    .results-section {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .results-header {
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 2px solid #e5e5e5;
+    }
+
+    .results-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0;
+    }
+
+    /* Liste des utilisateurs */
+    .users-list {
+        display: grid;
+        gap: 20px;
+    }
+
+    .user-card {
+        display: flex;
+        gap: 20px;
+        padding: 20px;
+        background: #fafafa;
+        border-radius: 12px;
+        border: 1px solid #e5e5e5;
+        transition: all 0.2s ease;
+    }
+
+    .user-card:hover {
+        background: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .user-avatar-section {
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    .user-avatar-link {
+        display: block;
+    }
+
+    .user-avatar,
+    .user-avatar-placeholder {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .user-avatar-placeholder {
+        background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        font-weight: 700;
+    }
+
+    .verification-badges {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        display: flex;
+        gap: 4px;
+    }
+
+    .verification-badge {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        color: #0066cc;
+    }
+
+    .verification-badge.owner {
+        color: #D3580B;
+    }
+
+    .user-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .user-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .user-name {
+        font-size: 20px;
+        font-weight: 700;
+        color: #1a1a1a;
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .user-name:hover {
+        color: #D3580B;
+    }
+
+    .user-badges {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .user-badge {
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .user-badge.locataire {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+
+    .user-badge.proprietaire {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .user-location,
+    .common-connections {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        color: #666;
+    }
+
+    .user-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .btn-primary,
+    .btn-secondary,
+    .btn-secondary-sm {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: none;
+    }
+
+    .btn-primary {
+        background: #D3580B;
+        color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        background: #c4510a;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(211, 88, 11, 0.3);
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .btn-secondary {
+        background: white;
+        color: #333;
+        border: 1px solid #e5e5e5;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+        background: #f5f5f5;
+        border-color: #ddd;
+    }
+
+    .btn-secondary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .btn-secondary-sm {
+        padding: 8px 16px;
+        font-size: 13px;
+        background: white;
+        color: #333;
+        border: 1px solid #e5e5e5;
+    }
+
+    .btn-secondary-sm:hover {
+        background: #f5f5f5;
+        border-color: #ddd;
+    }
+
+    /* Pagination */
+    .pagination-section {
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .pagination-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: white;
+        color: #333;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .pagination-btn:hover {
+        background: #f5f5f5;
+        border-color: #D3580B;
+        color: #D3580B;
+    }
+
+    .pagination-info {
+        font-size: 14px;
+        color: #666;
+    }
+
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 80px 24px;
+    }
+
+    .empty-icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 16px;
+        color: #ddd;
+    }
+
+    .empty-state h3 {
+        font-size: 20px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0 0 8px 0;
+    }
+
+    .empty-state p {
+        color: #999;
+        margin: 0 0 24px 0;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .search-users-container {
+            padding: 16px;
+        }
+
+        .search-form {
+            flex-direction: column;
+        }
+
+        .filters-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .user-card {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .user-actions {
+            justify-content: center;
+            width: 100%;
+        }
+
+        .btn-primary,
+        .btn-secondary,
+        .btn-secondary-sm {
+            flex: 1;
+            justify-content: center;
+        }
+    }
+</style>
+
+<script>
+    let autocompleteTimeout;
+
+    // Autocomplétion
+    document.getElementById('search-query')?.addEventListener('input', function(e) {
+        const query = e.target.value.trim();
+        const resultsDiv = document.getElementById('autocomplete-results');
+
+        clearTimeout(autocompleteTimeout);
+
+        if (query.length < 2) {
+            resultsDiv.style.display = 'none';
+            return;
+        }
+
+        autocompleteTimeout = setTimeout(() => {
+            fetch(`{% url 'user-search-autocomplete' %}?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.results && data.results.length > 0) {
+                        resultsDiv.innerHTML = data.results.map(user => `
+                            <div class="autocomplete-item" onclick="selectUser('${user.profile_url}')">
+                                ${user.avatar_url ? 
+                                    `<img src="${user.avatar_url}" alt="${user.username}" class="autocomplete-avatar">` :
+                                    `<div class="autocomplete-avatar-placeholder">${user.username.charAt(0).toUpperCase()}</div>`
+                                }
+                                <div class="autocomplete-info">
+                                    <div class="autocomplete-name">${user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : user.username}</div>
+                                    <div class="autocomplete-meta">
+                                        ${user.is_locataire ? 'Locataire' : ''} ${user.is_proprietaire ? 'Propriétaire' : ''}
+                                        ${user.ville ? ` • ${user.ville}` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                        resultsDiv.style.display = 'block';
+                    } else {
+                        resultsDiv.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    resultsDiv.style.display = 'none';
+                });
+        }, 300);
+    });
+
+    // Fermer l'autocomplétion au clic extérieur
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.search-input-wrapper')) {
+            document.getElementById('autocomplete-results').style.display = 'none';
+        }
+    });
+
+    function selectUser(url) {
+        window.location.href = url;
+    }
+
+    // Envoyer demande de connexion
+    function sendConnectionRequest(userId) {
+        fetch(`{% url 'send-connection-request' 0 %}`.replace('0', userId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Demande de connexion envoyée !');
+                location.reload();
+            } else {
+                alert(data.error || 'Erreur lors de l\'envoi de la demande');
+            }
+        });
+    }
+
+    // Gérer demande de connexion
+    function handleConnectionRequest(userId, action) {
+        const url = action === 'accept' 
+            ? `{% url 'accept-connection-request' 0 %}`.replace('0', userId)
+            : `{% url 'reject-connection-request' 0 %}`.replace('0', userId);
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.error || 'Erreur lors du traitement de la demande');
+            }
+        });
+    }
+</script>
+{% endblock %}
+

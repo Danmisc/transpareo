@@ -1,0 +1,409 @@
+{% extends 'core/admin/base_admin.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Badges et Gamification - Admin{% endblock %}
+
+{% block content %}
+<div class="admin-page badges-page">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-left">
+            <h1>Badges et Gamification</h1>
+            <nav class="breadcrumb">
+                <a href="{% url 'admin-connect' %}">Admin</a>
+                <span>/</span>
+                <a href="#">Gestion plateforme</a>
+                <span>/</span>
+                <span>Badges</span>
+            </nav>
+        </div>
+        <div class="header-actions">
+            <button class="btn-primary" onclick="creerBadge()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Créer badge
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Total badges</div>
+                <div class="stat-value">{{ stats.total_badges|intcomma }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Total attributions</div>
+                <div class="stat-value">{{ stats.total_attributions|intcomma }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Badges rares</div>
+                <div class="stat-value">{{ stats.badges_rares|intcomma }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Liste Badges -->
+    <div class="table-section">
+        <div class="table-header">
+            <h3>Badges disponibles</h3>
+        </div>
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th class="col-icon">Icon</th>
+                        <th class="col-nom">Nom</th>
+                        <th class="col-description">Description</th>
+                        <th class="col-type">Type</th>
+                        <th class="col-rarity">Rareté</th>
+                        <th class="col-users">Utilisateurs</th>
+                        <th class="col-actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for badge in badges %}
+                    <tr>
+                        <td class="col-icon">
+                            <div class="badge-icon-large">{{ badge.icon }}</div>
+                        </td>
+                        <td>
+                            <strong>{{ badge.name }}</strong>
+                        </td>
+                        <td>{{ badge.description|truncatewords:15 }}</td>
+                        <td>
+                            <span class="type-badge type-{{ badge.badge_type }}">
+                                {{ badge.get_badge_type_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="rarity-badge rarity-{{ badge.rarity }}">
+                                {{ badge.get_rarity_display }}
+                            </span>
+                        </td>
+                        <td>{{ badge.users_count }} utilisateurs</td>
+                        <td>
+                            <div class="actions-dropdown">
+                                <button class="actions-btn" onclick="toggleActionsDropdown(this)">⋯</button>
+                                <div class="dropdown-menu">
+                                    <a href="#" class="dropdown-item" onclick="modifierBadge({{ badge.id }})">Modifier</a>
+                                    <a href="#" class="dropdown-item" onclick="attribuerBadge({{ badge.id }})">Attribuer à un utilisateur</a>
+                                    <a href="#" class="dropdown-item dropdown-danger" onclick="supprimerBadge({{ badge.id }})">Supprimer</a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="empty-state">Aucun badge trouvé</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Top Badges -->
+    <div class="table-section">
+        <div class="table-header">
+            <h3>Badges les plus attribués</h3>
+        </div>
+        <div class="top-badges-grid">
+            {% for badge in top_badges %}
+            <div class="badge-card">
+                <div class="badge-icon-large">{{ badge.icon }}</div>
+                <h4>{{ badge.name }}</h4>
+                <p>{{ badge.description|truncatewords:10 }}</p>
+                <div class="badge-stats">
+                    <span class="badge-count">{{ badge.users_count }} utilisateurs</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal Créer Badge -->
+<div class="modal-overlay" id="badge-modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modal-badge-title">Créer badge</h2>
+            <button class="modal-close" onclick="closeBadgeModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <form id="badge-form">
+                <div class="form-field">
+                    <label>Nom *</label>
+                    <input type="text" name="name" required class="filter-input">
+                </div>
+                <div class="form-field">
+                    <label>Description *</label>
+                    <textarea name="description" required class="filter-input" rows="3"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label>Icon (emoji) *</label>
+                        <input type="text" name="icon" value="🏆" maxlength="2" class="filter-input">
+                    </div>
+                    <div class="form-field">
+                        <label>Type *</label>
+                        <select name="badge_type" required class="filter-select">
+                            <option value="activity">Activité</option>
+                            <option value="social">Social</option>
+                            <option value="security">Sécurité</option>
+                            <option value="premium">Premium</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Rareté *</label>
+                        <select name="rarity" required class="filter-select">
+                            <option value="common">Commun</option>
+                            <option value="rare">Rare</option>
+                            <option value="epic">Épique</option>
+                            <option value="legendary">Légendaire</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Créer</button>
+                    <button type="button" class="btn-secondary" onclick="closeBadgeModal()">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="{% static 'core/admin/badges.css' %}">
+<script src="{% static 'core/admin/badges.js' %}"></script>
+{% endblock %}
+
+{% load static %}
+{% load humanize %}
+
+{% block title %}Badges et Gamification - Admin{% endblock %}
+
+{% block content %}
+<div class="admin-page badges-page">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-left">
+            <h1>Badges et Gamification</h1>
+            <nav class="breadcrumb">
+                <a href="{% url 'admin-connect' %}">Admin</a>
+                <span>/</span>
+                <a href="#">Gestion plateforme</a>
+                <span>/</span>
+                <span>Badges</span>
+            </nav>
+        </div>
+        <div class="header-actions">
+            <button class="btn-primary" onclick="creerBadge()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Créer badge
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Total badges</div>
+                <div class="stat-value">{{ stats.total_badges|intcomma }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Total attributions</div>
+                <div class="stat-value">{{ stats.total_attributions|intcomma }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Badges rares</div>
+                <div class="stat-value">{{ stats.badges_rares|intcomma }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Liste Badges -->
+    <div class="table-section">
+        <div class="table-header">
+            <h3>Badges disponibles</h3>
+        </div>
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th class="col-icon">Icon</th>
+                        <th class="col-nom">Nom</th>
+                        <th class="col-description">Description</th>
+                        <th class="col-type">Type</th>
+                        <th class="col-rarity">Rareté</th>
+                        <th class="col-users">Utilisateurs</th>
+                        <th class="col-actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for badge in badges %}
+                    <tr>
+                        <td class="col-icon">
+                            <div class="badge-icon-large">{{ badge.icon }}</div>
+                        </td>
+                        <td>
+                            <strong>{{ badge.name }}</strong>
+                        </td>
+                        <td>{{ badge.description|truncatewords:15 }}</td>
+                        <td>
+                            <span class="type-badge type-{{ badge.badge_type }}">
+                                {{ badge.get_badge_type_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="rarity-badge rarity-{{ badge.rarity }}">
+                                {{ badge.get_rarity_display }}
+                            </span>
+                        </td>
+                        <td>{{ badge.users_count }} utilisateurs</td>
+                        <td>
+                            <div class="actions-dropdown">
+                                <button class="actions-btn" onclick="toggleActionsDropdown(this)">⋯</button>
+                                <div class="dropdown-menu">
+                                    <a href="#" class="dropdown-item" onclick="modifierBadge({{ badge.id }})">Modifier</a>
+                                    <a href="#" class="dropdown-item" onclick="attribuerBadge({{ badge.id }})">Attribuer à un utilisateur</a>
+                                    <a href="#" class="dropdown-item dropdown-danger" onclick="supprimerBadge({{ badge.id }})">Supprimer</a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="empty-state">Aucun badge trouvé</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Top Badges -->
+    <div class="table-section">
+        <div class="table-header">
+            <h3>Badges les plus attribués</h3>
+        </div>
+        <div class="top-badges-grid">
+            {% for badge in top_badges %}
+            <div class="badge-card">
+                <div class="badge-icon-large">{{ badge.icon }}</div>
+                <h4>{{ badge.name }}</h4>
+                <p>{{ badge.description|truncatewords:10 }}</p>
+                <div class="badge-stats">
+                    <span class="badge-count">{{ badge.users_count }} utilisateurs</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal Créer Badge -->
+<div class="modal-overlay" id="badge-modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modal-badge-title">Créer badge</h2>
+            <button class="modal-close" onclick="closeBadgeModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <form id="badge-form">
+                <div class="form-field">
+                    <label>Nom *</label>
+                    <input type="text" name="name" required class="filter-input">
+                </div>
+                <div class="form-field">
+                    <label>Description *</label>
+                    <textarea name="description" required class="filter-input" rows="3"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label>Icon (emoji) *</label>
+                        <input type="text" name="icon" value="🏆" maxlength="2" class="filter-input">
+                    </div>
+                    <div class="form-field">
+                        <label>Type *</label>
+                        <select name="badge_type" required class="filter-select">
+                            <option value="activity">Activité</option>
+                            <option value="social">Social</option>
+                            <option value="security">Sécurité</option>
+                            <option value="premium">Premium</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Rareté *</label>
+                        <select name="rarity" required class="filter-select">
+                            <option value="common">Commun</option>
+                            <option value="rare">Rare</option>
+                            <option value="epic">Épique</option>
+                            <option value="legendary">Légendaire</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Créer</button>
+                    <button type="button" class="btn-secondary" onclick="closeBadgeModal()">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="{% static 'core/admin/badges.css' %}">
+<script src="{% static 'core/admin/badges.js' %}"></script>
+{% endblock %}
+

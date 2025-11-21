@@ -1,0 +1,368 @@
+{% extends 'core/admin/base_admin.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Avis et Évaluations - Admin{% endblock %}
+
+{% block content %}
+<div class="admin-page avis-page">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-left">
+            <h1>Avis et Évaluations</h1>
+            <nav class="breadcrumb">
+                <a href="{% url 'admin-connect' %}">Admin</a>
+                <span>/</span>
+                <a href="#">Gestion plateforme</a>
+                <span>/</span>
+                <span>Avis et Évaluations</span>
+            </nav>
+        </div>
+        <div class="header-actions">
+            <button class="btn-secondary" onclick="exportRapport()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Exporter rapport
+            </button>
+            <button class="btn-secondary" onclick="openStatsGlobales()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+                Statistiques globales
+            </button>
+            <button class="btn-secondary" onclick="openParametresNotation()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1m21.364 8.364l-4.243-4.243m-9.9-9.9l-4.243-4.243m9.9 9.9l-4.243-4.243m9.9 9.9l-4.243-4.243"></path>
+                </svg>
+                Paramètres notation
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="view-tabs">
+        <button class="view-tab {% if view_type == 'tous' %}active{% endif %}" 
+                onclick="switchView('tous')">
+            Tous les avis
+        </button>
+        <button class="view-tab {% if view_type == 'moderation' %}active{% endif %}" 
+                onclick="switchView('moderation')">
+            En attente modération
+        </button>
+        <button class="view-tab {% if view_type == 'signales' %}active{% endif %}" 
+                onclick="switchView('signales')">
+            Signalés
+        </button>
+        <button class="view-tab {% if view_type == 'analytics' %}active{% endif %}" 
+                onclick="switchView('analytics')">
+            Analytics
+        </button>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Total avis</div>
+                <div class="stat-value">{{ stats.total_avis|intcomma }}</div>
+                {% if stats.evolution_avis != 0 %}
+                <div class="stat-trend {% if stats.evolution_avis > 0 %}trend-up{% else %}trend-down{% endif %}">
+                    {{ stats.evolution_avis|floatformat:0 }}%
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Note moyenne globale</div>
+                <div class="stat-value">
+                    <div class="note-display-large">
+                        {% for i in "12345" %}
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="{% if forloop.counter <= stats.note_moyenne_globale %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                        {% endfor %}
+                        <span>{{ stats.note_moyenne_globale|floatformat:1 }}/5</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Taux réponse propriétaires</div>
+                <div class="stat-value">{{ stats.taux_reponse|floatformat:0 }}%</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Avis en attente</div>
+                <div class="stat-value">{{ stats.avis_en_attente|intcomma }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <path d="M10.29 3.86L1 20h18.01l-7.72-16.14z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Avis signalés</div>
+                <div class="stat-value">{{ stats.avis_signales|intcomma }}</div>
+            </div>
+        </div>
+    </div>
+
+    {% if view_type == 'tous' %}
+    <!-- VUE TOUS LES AVIS -->
+    {% include 'core/admin/partials/avis_tous.html' %}
+    {% elif view_type == 'moderation' %}
+    <!-- VUE MODÉRATION -->
+    {% include 'core/admin/partials/avis_moderation.html' %}
+    {% elif view_type == 'signales' %}
+    <!-- VUE SIGNALÉS -->
+    {% include 'core/admin/partials/avis_signales.html' %}
+    {% else %}
+    <!-- VUE ANALYTICS -->
+    {% include 'core/admin/partials/avis_analytics.html' %}
+    {% endif %}
+</div>
+
+<!-- Modal Détail Avis Complet -->
+<div class="modal-overlay" id="avis-detail-modal" style="display: none;">
+    <div class="modal-content modal-extra-large">
+        <div class="modal-header">
+            <h2 id="modal-avis-title">Détail avis</h2>
+            <button class="modal-close" onclick="closeAvisDetailModal()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-detail-layout">
+                <div class="modal-detail-left">
+                    <!-- Header Avis -->
+                    <div class="avis-header">
+                        <div class="auteur-header">
+                            <div class="avatar-large">
+                                <img id="modal-avis-avatar" src="" alt="">
+                            </div>
+                            <div class="auteur-info-large">
+                                <h3 id="modal-avis-auteur">-</h3>
+                                <div class="auteur-badges" id="modal-avis-badges"></div>
+                            </div>
+                        </div>
+                        <div class="avis-meta">
+                            <span id="modal-avis-date">-</span>
+                            <span class="statut-badge" id="modal-avis-statut">-</span>
+                        </div>
+                    </div>
+
+                    <!-- Note Globale -->
+                    <div class="note-section-large">
+                        <div class="note-display-very-large" id="modal-avis-note"></div>
+                        <div class="note-comparison" id="modal-avis-comparison"></div>
+                    </div>
+
+                    <!-- Notes Détaillées -->
+                    <div class="notes-detaillees" id="modal-avis-notes-detaillees">
+                        <h4>Notes détaillées</h4>
+                        <div class="notes-grid">
+                            <div class="note-item">
+                                <div class="note-label">Propreté</div>
+                                <div class="note-gauge" id="note-proprete"></div>
+                            </div>
+                            <div class="note-item">
+                                <div class="note-label">Emplacement</div>
+                                <div class="note-gauge" id="note-emplacement"></div>
+                            </div>
+                            <div class="note-item">
+                                <div class="note-label">Rapport qualité-prix</div>
+                                <div class="note-gauge" id="note-qualite-prix"></div>
+                            </div>
+                            <div class="note-item">
+                                <div class="note-label">Communication</div>
+                                <div class="note-gauge" id="note-communication"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Titre Avis -->
+                    <div class="avis-titre-section">
+                        <h2 id="modal-avis-titre">-</h2>
+                    </div>
+
+                    <!-- Contenu Avis -->
+                    <div class="avis-contenu-section">
+                        <div class="contenu-text" id="modal-avis-contenu">-</div>
+                    </div>
+
+                    <!-- Photos Avis -->
+                    <div class="avis-photos-section" id="modal-avis-photos" style="display: none;">
+                        <h4>Photos</h4>
+                        <div class="photos-grid" id="photos-grid"></div>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="avis-tags-section" id="modal-avis-tags"></div>
+
+                    <!-- Utilité -->
+                    <div class="avis-utilite-section">
+                        <h4>Utilité de cet avis</h4>
+                        <div class="utilite-display-large">
+                            <span class="thumbs-up-large">👍 <span id="utilite-up">0</span></span>
+                            <span class="thumbs-down-large">👎 <span id="utilite-down">0</span></span>
+                        </div>
+                        <p class="utilite-text" id="utilite-text">0 personnes ont trouvé cet avis utile</p>
+                    </div>
+
+                    <!-- Réponse Propriétaire -->
+                    <div class="avis-reponse-section" id="modal-avis-reponse" style="display: none;">
+                        <h4>Réponse du propriétaire</h4>
+                        <div class="reponse-content">
+                            <div class="reponse-header">
+                                <div class="avatar-small">
+                                    <img id="reponse-avatar" src="" alt="">
+                                </div>
+                                <div class="reponse-info">
+                                    <strong id="reponse-nom">-</strong>
+                                    <span id="reponse-date">-</span>
+                                </div>
+                            </div>
+                            <div class="reponse-text" id="reponse-text">-</div>
+                        </div>
+                    </div>
+
+                    <!-- Analyse Fraude -->
+                    <div class="avis-fraude-section">
+                        <h4>Analyse fraude/qualité</h4>
+                        <div class="fraude-score">
+                            <div class="fraude-gauge" id="fraude-gauge">
+                                <div class="gauge-circle-small">
+                                    <span id="fraude-score-value">0</span>
+                                </div>
+                                <div class="fraude-label" id="fraude-label">Fiable</div>
+                            </div>
+                            <div class="fraude-criteres" id="fraude-criteres"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-detail-right">
+                    <!-- Widget Auteur -->
+                    <div class="modal-widget">
+                        <h4>Auteur avis</h4>
+                        <div class="widget-content">
+                            <div class="avatar-large">
+                                <img id="widget-auteur-avatar" src="" alt="">
+                            </div>
+                            <div class="widget-info">
+                                <strong id="widget-auteur-nom">-</strong>
+                                <div id="widget-auteur-email">-</div>
+                                <div id="widget-auteur-membre-depuis">Membre depuis -</div>
+                                <div id="widget-auteur-nb-avis">- avis rédigés</div>
+                            </div>
+                            <div class="widget-actions">
+                                <button class="btn-secondary btn-small" onclick="voirProfilAuteur()">Voir profil</button>
+                                <button class="btn-secondary btn-small" onclick="voirTousAvisAuteur()">Tous ses avis</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Widget Logement -->
+                    <div class="modal-widget">
+                        <h4>Logement concerné</h4>
+                        <div class="widget-content">
+                            <div class="logement-image-widget">
+                                <img id="widget-logement-image" src="" alt="">
+                            </div>
+                            <div class="widget-info">
+                                <strong id="widget-logement-adresse">-</strong>
+                                <div id="widget-logement-type">-</div>
+                                <div id="widget-logement-prix">-</div>
+                                <div id="widget-logement-note">-</div>
+                            </div>
+                            <div class="widget-actions">
+                                <button class="btn-secondary btn-small" onclick="voirFicheLogement()">Voir fiche</button>
+                                <button class="btn-secondary btn-small" onclick="voirTousAvisLogement()">Tous les avis</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Widget Statut -->
+                    <div class="modal-widget">
+                        <h4>Statut avis</h4>
+                        <div class="widget-content">
+                            <div class="statut-display-large" id="widget-statut">-</div>
+                            <div class="widget-meta">
+                                <div>Date publication : <span id="widget-date-pub">-</span></div>
+                                <div>Dernière modification : <span id="widget-date-modif">-</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Widget Actions Rapides -->
+                    <div class="modal-widget">
+                        <h4>Actions rapides</h4>
+                        <div class="widget-actions-list">
+                            <button class="btn-primary btn-small btn-block" onclick="approuverAvisFromModal()">Approuver et publier</button>
+                            <button class="btn-secondary btn-small btn-block" onclick="masquerAvisFromModal()">Masquer avis</button>
+                            <button class="btn-secondary btn-small btn-block" onclick="epinglerAvis()">Épingler</button>
+                            <button class="btn-secondary btn-small btn-block" onclick="partagerAvis()">Partager lien</button>
+                            <button class="btn-secondary btn-small btn-block" onclick="telechargerPDFAvis()">Télécharger PDF</button>
+                            <button class="btn-danger btn-small btn-block" onclick="supprimerAvisFromModal()">Supprimer définitivement</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Styles -->
+<link rel="stylesheet" href="{% static 'core/admin/avis.css' %}">
+
+<!-- JavaScript -->
+<script src="{% static 'core/admin/avis.js' %}"></script>
+
+<script>
+    const currentView = '{{ view_type }}';
+    const currentSort = '{{ sort_by|default:"-date_avis" }}';
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        initAvisPage();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,421 @@
+{% load humanize %}
+<!-- Filtres Groupes -->
+<div class="filters-section">
+    <div class="filters-header">
+        <h3>Filtres</h3>
+    </div>
+    <div class="filters-content">
+        <form method="GET" action="{% url 'admin-connect' %}">
+            <input type="hidden" name="view" value="groupes">
+            <div class="filter-row">
+                <div class="filter-field filter-search">
+                    <label>Recherche</label>
+                    <div class="search-input-wrapper">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        <input type="text" name="search" value="{{ filters.search }}" 
+                               placeholder="Nom groupe, description..." class="filter-input">
+                    </div>
+                </div>
+                <div class="filter-field">
+                    <label>Type</label>
+                    <select name="type" class="filter-select">
+                        <option value="">Tous</option>
+                        <option value="public" {% if filters.type == 'public' %}selected{% endif %}>Public</option>
+                        <option value="private" {% if filters.type == 'private' %}selected{% endif %}>Privé</option>
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn-primary">Appliquer</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tableau Groupes -->
+<div class="table-section">
+    <div class="table-header">
+        <h3>Groupes</h3>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="col-checkbox">Checkbox</th>
+                    <th class="col-image">Image</th>
+                    <th class="col-nom">Nom groupe</th>
+                    <th class="col-description">Description</th>
+                    <th class="col-type">Type</th>
+                    <th class="col-membres">Membres</th>
+                    <th class="col-posts">Posts</th>
+                    <th class="col-date">Date création</th>
+                    <th class="col-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for groupe in groupes %}
+                <tr>
+                    <td><input type="checkbox" value="{{ groupe.id }}"></td>
+                    <td>
+                        <div class="group-thumbnail">👥</div>
+                    </td>
+                    <td>
+                        <strong><a href="#" onclick="openGroupeDetail({{ groupe.id }})">{{ groupe.name }}</a></strong>
+                    </td>
+                    <td>{{ groupe.description|truncatewords:10 }}</td>
+                    <td>
+                        {% if groupe.is_public %}
+                        <span class="type-badge type-public">Public</span>
+                        {% else %}
+                        <span class="type-badge type-private">Privé</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ groupe.member_count }}</td>
+                    <td>{{ groupe.posts_count }}</td>
+                    <td>{{ groupe.created_at|date:"d/m/Y" }}</td>
+                    <td>
+                        <div class="actions-dropdown">
+                            <button class="actions-btn" onclick="toggleActionsDropdown(this)">⋯</button>
+                            <div class="dropdown-menu">
+                                <a href="#" class="dropdown-item" onclick="openGroupeDetail({{ groupe.id }})">Voir détail</a>
+                                <a href="#" class="dropdown-item">Modifier</a>
+                                <a href="#" class="dropdown-item dropdown-danger">Supprimer</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="empty-state">Aucun groupe trouvé</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if groupes.has_other_pages %}
+    <div class="pagination-wrapper">
+        <div class="pagination-info">
+            <span class="pagination-text">
+                Affichage {{ groupes.start_index }}-{{ groupes.end_index }} sur {{ groupes.paginator.count|intcomma }} groupes
+            </span>
+        </div>
+        <div class="pagination-controls">
+            {% if groupes.has_previous %}
+            <a href="?page={{ groupes.previous_page_number }}&view=groupes" class="page-link">Précédent</a>
+            {% endif %}
+            {% if groupes.has_next %}
+            <a href="?page={{ groupes.next_page_number }}&view=groupes" class="page-link">Suivant</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal Détail Groupe -->
+<div class="modal-overlay" id="groupe-detail-modal" style="display: none;">
+    <div class="modal-content modal-extra-large">
+        <div class="modal-header">
+            <h2 id="modal-groupe-title">Détail groupe</h2>
+            <button class="modal-close" onclick="closeGroupeDetailModal()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-detail-layout">
+                <div class="modal-detail-left">
+                    <!-- Onglets -->
+                    <div class="modal-tabs">
+                        <button class="modal-tab active" data-tab="infos" onclick="switchGroupeTab('infos')">Informations</button>
+                        <button class="modal-tab" data-tab="membres" onclick="switchGroupeTab('membres')">Membres</button>
+                        <button class="modal-tab" data-tab="posts" onclick="switchGroupeTab('posts')">Posts</button>
+                        <button class="modal-tab" data-tab="analytics" onclick="switchGroupeTab('analytics')">Analytics</button>
+                    </div>
+
+                    <!-- Onglet Infos -->
+                    <div class="modal-tab-content active" id="tab-infos">
+                        <div class="groupe-header">
+                            <h2 id="modal-groupe-nom">-</h2>
+                            <div class="groupe-meta">
+                                <span class="type-badge" id="modal-groupe-type">-</span>
+                                <span class="statut-badge" id="modal-groupe-statut">-</span>
+                            </div>
+                        </div>
+                        <div class="groupe-description">
+                            <h4>Description</h4>
+                            <p id="modal-groupe-description">-</p>
+                        </div>
+                        <div class="groupe-stats">
+                            <div class="stat-item">
+                                <div class="stat-value" id="modal-groupe-membres-count">0</div>
+                                <div class="stat-label">Membres</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="modal-groupe-posts-count">0</div>
+                                <div class="stat-label">Posts</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="modal-groupe-date-creation">-</div>
+                                <div class="stat-label">Créé le</div>
+                            </div>
+                        </div>
+                        <div class="groupe-admins">
+                            <h4>Administrateurs</h4>
+                            <div class="admins-list" id="admins-list"></div>
+                        </div>
+                    </div>
+
+                    <!-- Onglet Membres -->
+                    <div class="modal-tab-content" id="tab-membres">
+                        <div class="membres-filters">
+                            <input type="text" class="filter-input" placeholder="Rechercher un membre..." id="membres-search">
+                        </div>
+                        <div class="membres-list" id="membres-list"></div>
+                    </div>
+
+                    <!-- Onglet Posts -->
+                    <div class="modal-tab-content" id="tab-posts">
+                        <p>Posts du groupe (à implémenter)</p>
+                    </div>
+
+                    <!-- Onglet Analytics -->
+                    <div class="modal-tab-content" id="tab-analytics">
+                        <p>Analytics du groupe (à implémenter)</p>
+                    </div>
+                </div>
+
+                <div class="modal-detail-right">
+                    <!-- Widget Actions -->
+                    <div class="modal-widget">
+                        <h4>Actions</h4>
+                        <div class="widget-actions-list">
+                            <button class="btn-primary btn-small btn-block" onclick="modifierGroupe()">Modifier</button>
+                            <button class="btn-secondary btn-small btn-block" onclick="gererMembres()">Gérer membres</button>
+                            <button class="btn-secondary btn-small btn-block" onclick="gererAdmins()">Gérer admins</button>
+                            <button class="btn-secondary btn-small btn-block" onclick="archiverGroupe()">Archiver</button>
+                            <button class="btn-danger btn-small btn-block" onclick="supprimerGroupe()">Supprimer</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="filters-section">
+    <div class="filters-header">
+        <h3>Filtres</h3>
+    </div>
+    <div class="filters-content">
+        <form method="GET" action="{% url 'admin-connect' %}">
+            <input type="hidden" name="view" value="groupes">
+            <div class="filter-row">
+                <div class="filter-field filter-search">
+                    <label>Recherche</label>
+                    <div class="search-input-wrapper">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        <input type="text" name="search" value="{{ filters.search }}" 
+                               placeholder="Nom groupe, description..." class="filter-input">
+                    </div>
+                </div>
+                <div class="filter-field">
+                    <label>Type</label>
+                    <select name="type" class="filter-select">
+                        <option value="">Tous</option>
+                        <option value="public" {% if filters.type == 'public' %}selected{% endif %}>Public</option>
+                        <option value="private" {% if filters.type == 'private' %}selected{% endif %}>Privé</option>
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn-primary">Appliquer</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tableau Groupes -->
+<div class="table-section">
+    <div class="table-header">
+        <h3>Groupes</h3>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="col-checkbox">Checkbox</th>
+                    <th class="col-image">Image</th>
+                    <th class="col-nom">Nom groupe</th>
+                    <th class="col-description">Description</th>
+                    <th class="col-type">Type</th>
+                    <th class="col-membres">Membres</th>
+                    <th class="col-posts">Posts</th>
+                    <th class="col-date">Date création</th>
+                    <th class="col-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for groupe in groupes %}
+                <tr>
+                    <td><input type="checkbox" value="{{ groupe.id }}"></td>
+                    <td>
+                        <div class="group-thumbnail">👥</div>
+                    </td>
+                    <td>
+                        <strong><a href="#" onclick="openGroupeDetail({{ groupe.id }})">{{ groupe.name }}</a></strong>
+                    </td>
+                    <td>{{ groupe.description|truncatewords:10 }}</td>
+                    <td>
+                        {% if groupe.is_public %}
+                        <span class="type-badge type-public">Public</span>
+                        {% else %}
+                        <span class="type-badge type-private">Privé</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ groupe.member_count }}</td>
+                    <td>{{ groupe.posts_count }}</td>
+                    <td>{{ groupe.created_at|date:"d/m/Y" }}</td>
+                    <td>
+                        <div class="actions-dropdown">
+                            <button class="actions-btn" onclick="toggleActionsDropdown(this)">⋯</button>
+                            <div class="dropdown-menu">
+                                <a href="#" class="dropdown-item" onclick="openGroupeDetail({{ groupe.id }})">Voir détail</a>
+                                <a href="#" class="dropdown-item">Modifier</a>
+                                <a href="#" class="dropdown-item dropdown-danger">Supprimer</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="empty-state">Aucun groupe trouvé</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if groupes.has_other_pages %}
+    <div class="pagination-wrapper">
+        <div class="pagination-info">
+            <span class="pagination-text">
+                Affichage {{ groupes.start_index }}-{{ groupes.end_index }} sur {{ groupes.paginator.count|intcomma }} groupes
+            </span>
+        </div>
+        <div class="pagination-controls">
+            {% if groupes.has_previous %}
+            <a href="?page={{ groupes.previous_page_number }}&view=groupes" class="page-link">Précédent</a>
+            {% endif %}
+            {% if groupes.has_next %}
+            <a href="?page={{ groupes.next_page_number }}&view=groupes" class="page-link">Suivant</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal Détail Groupe -->
+<div class="modal-overlay" id="groupe-detail-modal" style="display: none;">
+    <div class="modal-content modal-extra-large">
+        <div class="modal-header">
+            <h2 id="modal-groupe-title">Détail groupe</h2>
+            <button class="modal-close" onclick="closeGroupeDetailModal()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-detail-layout">
+                <div class="modal-detail-left">
+                    <!-- Onglets -->
+                    <div class="modal-tabs">
+                        <button class="modal-tab active" data-tab="infos" onclick="switchGroupeTab('infos')">Informations</button>
+                        <button class="modal-tab" data-tab="membres" onclick="switchGroupeTab('membres')">Membres</button>
+                        <button class="modal-tab" data-tab="posts" onclick="switchGroupeTab('posts')">Posts</button>
+                        <button class="modal-tab" data-tab="analytics" onclick="switchGroupeTab('analytics')">Analytics</button>
+                    </div>
+
+                    <!-- Onglet Infos -->
+                    <div class="modal-tab-content active" id="tab-infos">
+                        <div class="groupe-header">
+                            <h2 id="modal-groupe-nom">-</h2>
+                            <div class="groupe-meta">
+                                <span class="type-badge" id="modal-groupe-type">-</span>
+                                <span class="statut-badge" id="modal-groupe-statut">-</span>
+                            </div>
+                        </div>
+                        <div class="groupe-description">
+                            <h4>Description</h4>
+                            <p id="modal-groupe-description">-</p>
+                        </div>
+                        <div class="groupe-stats">
+                            <div class="stat-item">
+                                <div class="stat-value" id="modal-groupe-membres-count">0</div>
+                                <div class="stat-label">Membres</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="modal-groupe-posts-count">0</div>
+                                <div class="stat-label">Posts</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="modal-groupe-date-creation">-</div>
+                                <div class="stat-label">Créé le</div>
+                            </div>
+                        </div>
+                        <div class="groupe-admins">
+                            <h4>Administrateurs</h4>
+                            <div class="admins-list" id="admins-list"></div>
+                        </div>
+                    </div>
+
+                    <!-- Onglet Membres -->
+                    <div class="modal-tab-content" id="tab-membres">
+                        <div class="membres-filters">
+                            <input type="text" class="filter-input" placeholder="Rechercher un membre..." id="membres-search">
+                        </div>
+                        <div class="membres-list" id="membres-list"></div>
+                    </div>
+
+                    <!-- Onglet Posts -->
+                    <div class="modal-tab-content" id="tab-posts">
+                        <p>Posts du groupe (à implémenter)</p>
+                    </div>
+
+                    <!-- Onglet Analytics -->
+                    <div class="modal-tab-content" id="tab-analytics">
+                        <p>Analytics du groupe (à implémenter)</p>
+                    </div>
+                </div>
+
+                <div class="modal-detail-right">
+                    <!-- Widget Actions -->
+                    <div class="modal-widget">
+                        <h4>Actions</h4>
+                        <div class="widget-actions-list">
+                            <button class="btn-primary btn-small btn-block" onclick="modifierGroupe()">Modifier</button>
+                            <button class="btn-secondary btn-small btn-block" onclick="gererMembres()">Gérer membres</button>
+                            <button class="btn-secondary btn-small btn-block" onclick="gererAdmins()">Gérer admins</button>
+                            <button class="btn-secondary btn-small btn-block" onclick="archiverGroupe()">Archiver</button>
+                            <button class="btn-danger btn-small btn-block" onclick="supprimerGroupe()">Supprimer</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

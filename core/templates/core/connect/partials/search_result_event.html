@@ -1,0 +1,28 @@
+{% load static %}
+{% load humanize %}
+<a href="/connect/groups/{{ event.group.id }}/events/{{ event.id }}/" class="search-result-card">
+    <div>
+        <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #111827;">
+            {{ event.title }}
+        </h3>
+        {% if event.description %}
+        <p style="margin: 0 0 12px 0; font-size: 14px; color: #6B7280; line-height: 1.5;">
+            {{ event.description|truncatewords:25 }}
+        </p>
+        {% endif %}
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; color: #6B7280;">
+            <span>📅 {{ event.date_start|date:"d M Y à H:i" }}</span>
+            <span>•</span>
+            <span>👥 {{ event.group.name }}</span>
+            {% if event.participants_count %}
+            <span>•</span>
+            <span>{{ event.participants_count }} participant{{ event.participants_count|pluralize }}</span>
+            {% endif %}
+            {% if event.is_live %}
+            <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; background: rgba(220, 38, 38, 0.1); color: #dc2626; border-radius: 12px; font-size: 11px; font-weight: 600;">🔴 En direct</span>
+            {% endif %}
+        </div>
+    </div>
+</a>
+
+

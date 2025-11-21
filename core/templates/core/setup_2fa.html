@@ -1,0 +1,358 @@
+{% extends 'core/auth_base.html' %}
+
+{% block title %}Configuration 2FA - Transpareo{% endblock %}
+
+{% block extra_css %}
+<style>
+    .qr-code-container {
+        text-align: center;
+        padding: 32px;
+        background: white;
+        border: 2px solid #e5e5e5;
+        border-radius: 12px;
+        margin-bottom: 32px;
+    }
+    
+    .qr-code-container img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+    }
+    
+    .secret-key {
+        background: #fafafa;
+        padding: 16px;
+        border-radius: 10px;
+        font-family: monospace;
+        font-size: 14px;
+        letter-spacing: 2px;
+        text-align: center;
+        margin-bottom: 16px;
+        word-break: break-all;
+        border: 2px solid #e5e5e5;
+    }
+    
+    .backup-codes {
+        background: #fff9e6;
+        border: 2px solid #ffc107;
+        border-radius: 10px;
+        padding: 24px;
+        margin-top: 32px;
+    }
+    
+    .backup-codes h3 {
+        font-size: 16px;
+        margin-bottom: 12px;
+        color: #856404;
+        font-weight: 600;
+    }
+    
+    .backup-codes-list {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        font-family: monospace;
+        font-size: 14px;
+        font-weight: 600;
+        margin: 16px 0;
+    }
+    
+    .backup-code-item {
+        padding: 12px;
+        background: white;
+        border-radius: 8px;
+        text-align: center;
+        border: 1px solid #ffe082;
+    }
+    
+    .warning-box {
+        background: #fff9e6;
+        border: 2px solid #ffc107;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 32px;
+        font-size: 14px;
+        color: #856404;
+        line-height: 1.6;
+    }
+    
+    .warning-box strong {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 15px;
+    }
+    
+    .step-indicator {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 40px;
+        padding-bottom: 24px;
+        border-bottom: 2px solid #e5e5e5;
+    }
+    
+    .step {
+        flex: 1;
+        text-align: center;
+        position: relative;
+    }
+    
+    .step::after {
+        content: '';
+        position: absolute;
+        top: 16px;
+        left: 50%;
+        width: 100%;
+        height: 2px;
+        background: #e5e5e5;
+        z-index: 0;
+    }
+    
+    .step:last-child::after {
+        display: none;
+    }
+    
+    .step-number {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #e5e5e5;
+        color: #666;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 10px;
+        font-size: 14px;
+        font-weight: 600;
+        position: relative;
+        z-index: 1;
+        transition: all 0.3s;
+    }
+    
+    .step.active .step-number {
+        background: #D3580B;
+        color: white;
+    }
+    
+    .step.completed .step-number {
+        background: #28a745;
+        color: white;
+    }
+    
+    .step-label {
+        font-size: 12px;
+        color: #666;
+        font-weight: 500;
+    }
+    
+    .step.active .step-label {
+        color: #1a1a1a;
+        font-weight: 600;
+    }
+    
+    .code-input-2fa {
+        text-align: center;
+        font-size: 28px;
+        letter-spacing: 6px;
+        font-weight: 600;
+        padding: 16px;
+        border: 2px solid #e5e5e5;
+        border-radius: 10px;
+        width: 100%;
+        margin-bottom: 12px;
+        background: #fafafa;
+        transition: all 0.2s ease;
+    }
+    
+    .code-input-2fa:focus {
+        outline: none;
+        border-color: #D3580B;
+        background: #ffffff;
+        box-shadow: 0 0 0 4px rgba(211, 88, 11, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-form">
+    <div class="step-indicator">
+        <div class="step {% if setup_mode %}completed{% else %}active{% endif %}">
+            <div class="step-number">1</div>
+            <div class="step-label">Scanner QR</div>
+        </div>
+        <div class="step {% if setup_mode %}active{% endif %}">
+            <div class="step-number">2</div>
+            <div class="step-label">Vérifier</div>
+        </div>
+        <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-label">Activer</div>
+        </div>
+    </div>
+
+    <h1>Activer l'authentification à deux facteurs</h1>
+    <p class="subtitle">Sécurisez votre compte avec 2FA</p>
+
+    {% if not setup_mode %}
+        <div class="warning-box">
+            <strong>🔒 Important :</strong> L'authentification à deux facteurs ajoute une couche de sécurité supplémentaire à votre compte. Vous devrez entrer un code depuis votre application d'authentification à chaque connexion.
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="enable">
+            <button type="submit" class="btn">
+                Commencer la configuration
+            </button>
+        </form>
+        
+        <div class="auth-links" style="margin-top: 32px;">
+            <a href="{% url 'security-settings' %}">← Retour aux paramètres de sécurité</a>
+        </div>
+    {% else %}
+        <div class="warning-box">
+            <strong>📱 Étape 1 :</strong> Scannez ce QR code avec votre application d'authentification (Google Authenticator, Authy, Microsoft Authenticator, etc.)
+        </div>
+        
+        <div class="qr-code-container">
+            <img src="{{ qr_code }}" alt="QR Code 2FA">
+        </div>
+        
+        <div class="form-group">
+            <label>Clé secrète (si vous ne pouvez pas scanner)</label>
+            <div class="secret-key">{{ secret }}</div>
+            <button type="button" class="btn" style="background: white; color: #D3580B; border: 2px solid #D3580B; margin-top: 12px;" onclick="copySecret()">
+                📋 Copier la clé
+            </button>
+        </div>
+        
+        <div class="backup-codes">
+            <h3>🛡️ Codes de récupération</h3>
+            <p style="font-size: 13px; margin-bottom: 16px; color: #856404; line-height: 1.5;">
+                <strong>Important :</strong> Sauvegardez ces codes dans un endroit sûr. Vous en aurez besoin si vous perdez l'accès à votre application d'authentification.
+            </p>
+            <div class="backup-codes-list">
+                {% for code in backup_codes %}
+                    <div class="backup-code-item">{{ code }}</div>
+                {% endfor %}
+            </div>
+            <button type="button" class="btn" style="background: white; color: #856404; border: 2px solid #ffc107; margin-top: 16px;" onclick="printCodes()">
+                🖨️ Imprimer les codes
+            </button>
+        </div>
+        
+        <form method="post" style="margin-top: 32px;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="verify_and_enable">
+            
+            <div class="form-group">
+                <label for="code">Étape 2 : Entrez le code de vérification</label>
+                <input 
+                    type="text" 
+                    id="code" 
+                    name="code" 
+                    class="code-input-2fa" 
+                    maxlength="6" 
+                    pattern="[0-9]{6}" 
+                    placeholder="000000"
+                    autocomplete="off"
+                    autofocus
+                    required
+                >
+                <div class="help-text" style="text-align: center;">
+                    Entrez le code à 6 chiffres affiché dans votre application
+                </div>
+            </div>
+            
+            <button type="submit" class="btn" id="submit-btn">
+                <span id="submit-text">Vérifier et activer 2FA</span>
+                <div class="loading-spinner" id="loading-spinner" style="display: none;"></div>
+            </button>
+        </form>
+        
+        <div class="auth-links" style="margin-top: 32px;">
+            <a href="{% url 'security-settings' %}">← Annuler</a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+// Auto-format code input
+const codeInput = document.getElementById('code');
+if (codeInput) {
+    codeInput.addEventListener('input', function(e) {
+        this.value = this.value.replace(/\D/g, '').slice(0, 6);
+        
+        // Auto-submit when 6 digits entered
+        if (this.value.length === 6) {
+            setTimeout(() => {
+                this.form.submit();
+            }, 300);
+        }
+    });
+}
+
+function copySecret() {
+    const secret = document.querySelector('.secret-key').textContent.trim();
+    navigator.clipboard.writeText(secret).then(() => {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = '✓ Copié !';
+        btn.style.background = '#d4edda';
+        btn.style.borderColor = '#c3e6cb';
+        btn.style.color = '#155724';
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.style.background = 'white';
+            btn.style.borderColor = '#D3580B';
+            btn.style.color = '#D3580B';
+        }, 2000);
+    }).catch(() => {
+        alert('Erreur lors de la copie. Veuillez copier manuellement.');
+    });
+}
+
+function printCodes() {
+    const codes = Array.from(document.querySelectorAll('.backup-code-item')).map(el => el.textContent.trim());
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <title>Codes de récupération 2FA - Transpareo</title>
+                <style>
+                    body { font-family: monospace; padding: 40px; }
+                    h2 { margin-bottom: 20px; }
+                    .codes-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 24px; }
+                    .code-item { padding: 12px; border: 1px solid #ccc; text-align: center; font-size: 16px; font-weight: 600; }
+                </style>
+            </head>
+            <body>
+                <h2>Codes de récupération 2FA - Transpareo</h2>
+                <p>Conservez ces codes dans un endroit sûr. Vous en aurez besoin si vous perdez l'accès à votre application d'authentification.</p>
+                <div class="codes-grid">
+                    ${codes.map(code => `<div class="code-item">${code}</div>`).join('')}
+                </div>
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+}
+
+// Loading state
+const form2fa = document.querySelector('form[method="post"]');
+if (form2fa && document.getElementById('submit-btn')) {
+    form2fa.addEventListener('submit', function() {
+        const btn = document.getElementById('submit-btn');
+        const text = document.getElementById('submit-text');
+        const spinner = document.getElementById('loading-spinner');
+        
+        if (btn && text && spinner) {
+            btn.disabled = true;
+            text.style.display = 'none';
+            spinner.style.display = 'inline-block';
+        }
+    });
+}
+</script>
+{% endblock %}

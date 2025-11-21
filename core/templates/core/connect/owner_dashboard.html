@@ -1,0 +1,679 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="connect-dashboard-page">
+    <div class="dashboard-container">
+        <!-- En-tête -->
+        <div class="page-header">
+            <div>
+                <h1>Tableau de bord propriétaire</h1>
+                <p class="page-subtitle">Vue d'ensemble de vos locations et échéances</p>
+            </div>
+            <a href="{% url 'connect-properties' %}" class="btn-secondary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+                Gérer mes locations
+            </a>
+        </div>
+
+        <!-- Alertes urgentes -->
+        {% if loyers_en_retard or demandes_urgentes or fins_bail_approchantes %}
+        <div class="alerts-section">
+            {% if loyers_en_retard %}
+            <div class="alert-card alert-danger">
+                <div class="alert-icon">⚠️</div>
+                <div class="alert-content">
+                    <h3>Loyers en retard</h3>
+                    <p>{{ loyers_en_retard|length }} loyer(s) en retard nécessitant votre attention</p>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if demandes_urgentes %}
+            <div class="alert-card alert-warning">
+                <div class="alert-icon">🔧</div>
+                <div class="alert-content">
+                    <h3>Demandes urgentes</h3>
+                    <p>{{ demandes_urgentes|length }} demande(s) d'entretien urgente(s) en attente</p>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if fins_bail_approchantes %}
+            <div class="alert-card alert-info">
+                <div class="alert-icon">📅</div>
+                <div class="alert-content">
+                    <h3>Fins de bail approchantes</h3>
+                    <p>{{ fins_bail_approchantes|length }} bail(s) se termine(nt) dans les 60 prochains jours</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Sections principales -->
+        <div class="dashboard-grid">
+            <!-- Calendrier des échéances -->
+            <div class="dashboard-card calendar-card">
+                <div class="card-header">
+                    <h2>Calendrier des échéances</h2>
+                    <span class="card-subtitle">30 prochains jours</span>
+                </div>
+                <div class="card-content">
+                    {% if prochains_30_jours %}
+                        <div class="calendar-events">
+                            {% for event in prochains_30_jours %}
+                            <div class="calendar-event status-{{ event.statut }}">
+                                <div class="event-date">
+                                    <span class="event-day">{{ event.date|date:"d" }}</span>
+                                    <span class="event-month">{{ event.date|date:"M" }}</span>
+                                </div>
+                                <div class="event-details">
+                                    <h4>{{ event.bail.logement.titre }}</h4>
+                                    <p>{{ event.bail.locataire.get_full_name|default:event.bail.locataire.username }}</p>
+                                    <span class="event-amount">{{ event.montant }}€</span>
+                                </div>
+                                <div class="event-status">
+                                    {% if event.statut == 'paye' %}
+                                        <span class="status-badge status-success">Payé</span>
+                                    {% elif event.statut == 'en_retard' %}
+                                        <span class="status-badge status-danger">En retard</span>
+                                    {% else %}
+                                        <span class="status-badge status-pending">En attente</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            <p>Aucune échéance dans les 30 prochains jours</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Loyers en retard -->
+            <div class="dashboard-card overdue-card">
+                <div class="card-header">
+                    <h2>Loyers en retard</h2>
+                    <span class="badge-count">{{ loyers_en_retard|length }}</span>
+                </div>
+                <div class="card-content">
+                    {% if loyers_en_retard %}
+                        <div class="overdue-list">
+                            {% for paiement in loyers_en_retard %}
+                            <div class="overdue-item">
+                                <div class="overdue-info">
+                                    <h4>{{ paiement.bail.logement.titre }}</h4>
+                                    <p>{{ paiement.locataire.get_full_name|default:paiement.locataire.username }}</p>
+                                    <span class="overdue-amount">{{ paiement.montant_total }}€</span>
+                                    <span class="overdue-date">Échéance: {{ paiement.date_echeance|date:"d/m/Y" }}</span>
+                                </div>
+                                <div class="overdue-actions">
+                                    <a href="{% url 'send-payment-reminder' paiement.bail.id %}" class="btn-small btn-primary">Envoyer rappel</a>
+                                    <a href="{% url 'connect-property-detail' paiement.bail.id %}" class="btn-small btn-secondary">Gérer</a>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                            <p>Aucun loyer en retard</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Demandes urgentes -->
+            <div class="dashboard-card urgent-requests-card">
+                <div class="card-header">
+                    <h2>Demandes urgentes</h2>
+                    <span class="badge-count">{{ demandes_urgentes|length }}</span>
+                </div>
+                <div class="card-content">
+                    {% if demandes_urgentes %}
+                        <div class="urgent-requests-list">
+                            {% for demande in demandes_urgentes %}
+                            <div class="urgent-request-item">
+                                <div class="request-header">
+                                    <h4>{{ demande.titre|default:demande.get_type_probleme_display }}</h4>
+                                    <span class="request-date">{{ demande.created_at|date:"d/m/Y H:i" }}</span>
+                                </div>
+                                <p class="request-location">{{ demande.bail.logement.titre }}</p>
+                                <p class="request-tenant">{{ demande.locataire.get_full_name|default:demande.locataire.username }}</p>
+                                <a href="{% url 'connect-property-detail' demande.bail.id %}?tab=requests" class="btn-small btn-primary">Voir la demande</a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                            </svg>
+                            <p>Aucune demande urgente</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Fins de bail approchantes -->
+            <div class="dashboard-card lease-ends-card">
+                <div class="card-header">
+                    <h2>Fins de bail approchantes</h2>
+                    <span class="badge-count">{{ fins_bail_approchantes|length }}</span>
+                </div>
+                <div class="card-content">
+                    {% if fins_bail_approchantes %}
+                        <div class="lease-ends-list">
+                            {% for item in fins_bail_approchantes %}
+                            <div class="lease-end-item">
+                                <div class="lease-end-info">
+                                    <h4>{{ item.bail.logement.titre }}</h4>
+                                    <p>{{ item.bail.locataire.get_full_name|default:item.bail.locataire.username }}</p>
+                                    <div class="days-remaining">
+                                        {% if item.jours_avant_fin == 0 %}
+                                            <span class="badge-danger">Se termine aujourd'hui</span>
+                                        {% elif item.jours_avant_fin <= 30 %}
+                                            <span class="badge-warning">{{ item.jours_avant_fin }} jour(s) restant(s)</span>
+                                        {% else %}
+                                            <span class="badge-info">{{ item.jours_avant_fin }} jour(s) restant(s)</span>
+                                        {% endif %}
+                                    </div>
+                                    <span class="lease-end-date">Fin le {{ item.date_fin|date:"d/m/Y" }}</span>
+                                </div>
+                                <a href="{% url 'connect-property-detail' item.bail.id %}" class="btn-small btn-secondary">Gérer</a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            <p>Aucune fin de bail approchante</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .connect-dashboard-page {
+        padding-top: 70px;
+        min-height: calc(100vh - 70px);
+        background: #f5f5f5;
+    }
+
+    .dashboard-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+    }
+
+    .page-header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0 0 8px 0;
+    }
+
+    .page-subtitle {
+        font-size: 16px;
+        color: #666;
+        margin: 0;
+    }
+
+    /* Alertes */
+    .alerts-section {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin-bottom: 32px;
+    }
+
+    .alert-card {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 20px;
+        border-radius: 12px;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .alert-card.alert-danger {
+        border-left: 4px solid #dc3545;
+    }
+
+    .alert-card.alert-warning {
+        border-left: 4px solid #ffc107;
+    }
+
+    .alert-card.alert-info {
+        border-left: 4px solid #17a2b8;
+    }
+
+    .alert-icon {
+        font-size: 32px;
+        line-height: 1;
+    }
+
+    .alert-content h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0 0 4px 0;
+    }
+
+    .alert-content p {
+        font-size: 14px;
+        color: #666;
+        margin: 0;
+    }
+
+    /* Grille du tableau de bord */
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 24px;
+    }
+
+    .dashboard-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+
+    .card-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid #e5e5e5;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #fafafa;
+    }
+
+    .card-header h2 {
+        font-size: 20px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0;
+    }
+
+    .card-subtitle {
+        font-size: 14px;
+        color: #666;
+    }
+
+    .badge-count {
+        padding: 4px 12px;
+        border-radius: 12px;
+        background: #D3580B;
+        color: white;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .card-content {
+        padding: 24px;
+    }
+
+    /* Calendrier */
+    .calendar-events {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .calendar-event {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px;
+        border-radius: 8px;
+        border: 1px solid #e5e5e5;
+        transition: all 0.2s ease;
+    }
+
+    .calendar-event:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+
+    .event-date {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 60px;
+    }
+
+    .event-day {
+        font-size: 24px;
+        font-weight: 700;
+        color: #D3580B;
+    }
+
+    .event-month {
+        font-size: 12px;
+        text-transform: uppercase;
+        color: #666;
+    }
+
+    .event-details {
+        flex: 1;
+    }
+
+    .event-details h4 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0 0 4px 0;
+    }
+
+    .event-details p {
+        font-size: 14px;
+        color: #666;
+        margin: 0 0 8px 0;
+    }
+
+    .event-amount {
+        font-size: 18px;
+        font-weight: 700;
+        color: #D3580B;
+    }
+
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .status-badge.status-success {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-badge.status-danger {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .status-badge.status-pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    /* Loyers en retard */
+    .overdue-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .overdue-item {
+        padding: 16px;
+        border-radius: 8px;
+        border: 1px solid #f8d7da;
+        background: #fff5f5;
+    }
+
+    .overdue-info h4 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0 0 4px 0;
+    }
+
+    .overdue-info p {
+        font-size: 14px;
+        color: #666;
+        margin: 0 0 8px 0;
+    }
+
+    .overdue-amount {
+        display: block;
+        font-size: 20px;
+        font-weight: 700;
+        color: #dc3545;
+        margin-bottom: 4px;
+    }
+
+    .overdue-date {
+        font-size: 13px;
+        color: #666;
+    }
+
+    .overdue-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    /* Demandes urgentes */
+    .urgent-requests-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .urgent-request-item {
+        padding: 16px;
+        border-radius: 8px;
+        border: 1px solid #fff3cd;
+        background: #fffbf0;
+    }
+
+    .request-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 8px;
+    }
+
+    .request-header h4 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0;
+    }
+
+    .request-date {
+        font-size: 12px;
+        color: #666;
+    }
+
+    .request-location {
+        font-size: 14px;
+        color: #666;
+        margin: 4px 0;
+    }
+
+    .request-tenant {
+        font-size: 14px;
+        color: #D3580B;
+        font-weight: 500;
+        margin: 4px 0 12px 0;
+    }
+
+    /* Fins de bail */
+    .lease-ends-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .lease-end-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px;
+        border-radius: 8px;
+        border: 1px solid #e5e5e5;
+    }
+
+    .lease-end-info h4 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0 0 4px 0;
+    }
+
+    .lease-end-info p {
+        font-size: 14px;
+        color: #666;
+        margin: 0 0 8px 0;
+    }
+
+    .days-remaining {
+        margin-bottom: 4px;
+    }
+
+    .lease-end-date {
+        font-size: 13px;
+        color: #666;
+    }
+
+    .badge-danger {
+        padding: 4px 8px;
+        border-radius: 6px;
+        background: #f8d7da;
+        color: #721c24;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .badge-warning {
+        padding: 4px 8px;
+        border-radius: 6px;
+        background: #fff3cd;
+        color: #856404;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .badge-info {
+        padding: 4px 8px;
+        border-radius: 6px;
+        background: #d1ecf1;
+        color: #0c5460;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    /* États vides */
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #999;
+    }
+
+    .empty-state svg {
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+
+    .empty-state p {
+        font-size: 14px;
+        margin: 0;
+    }
+
+    /* Boutons */
+    .btn-small {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        display: inline-block;
+    }
+
+    .btn-small.btn-primary {
+        background: #D3580B;
+        color: white;
+    }
+
+    .btn-small.btn-primary:hover {
+        background: #c4510a;
+        transform: translateY(-1px);
+    }
+
+    .btn-small.btn-secondary {
+        background: #f5f5f5;
+        color: #333;
+        border: 1px solid #e5e5e5;
+    }
+
+    .btn-small.btn-secondary:hover {
+        background: #e9ecef;
+    }
+
+    .btn-secondary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        background: #f5f5f5;
+        color: #333;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+        background: #e9ecef;
+        transform: translateY(-1px);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .dashboard-container {
+            padding: 16px;
+        }
+
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .overdue-actions {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+

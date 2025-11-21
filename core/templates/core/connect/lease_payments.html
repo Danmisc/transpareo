@@ -1,0 +1,377 @@
+<!-- Onglet Paiements -->
+<div class="tab-section">
+    <h2 class="section-title">Prochain paiement</h2>
+    
+    {% if tab_data.prochain_paiement %}
+    <div class="next-payment-card">
+        <div class="payment-header">
+            <div class="payment-info">
+                <div class="payment-amount-large">{{ tab_data.prochain_paiement.montant_total }} €</div>
+                <div class="payment-label">Montant dû</div>
+            </div>
+            <div class="payment-date-info">
+                <div class="payment-date-label">Date d'échéance</div>
+                <div class="payment-date-value">{{ tab_data.prochain_paiement.date_echeance|date:"d/m/Y" }}</div>
+            </div>
+        </div>
+        
+        {% if tab_data.prochain_paiement.statut == 'en_attente' %}
+        <div class="payment-actions">
+            <button class="btn-primary" onclick="alert('Fonctionnalité de paiement en ligne non implémentée.')">Payer maintenant</button>
+        </div>
+        {% else %}
+        <div class="payment-status-badge status-{{ tab_data.prochain_paiement.statut }}">
+            {{ tab_data.prochain_paiement.get_statut_display }}
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+        </svg>
+        <p>Aucun prochain paiement à afficher.</p>
+    </div>
+    {% endif %}
+
+    <h2 class="section-title mt-4">Historique des paiements</h2>
+    
+    {% if tab_data.paiements %}
+    <div class="payments-history">
+        {% for paiement in tab_data.paiements %}
+        <div class="payment-item status-{{ paiement.statut }}">
+            <div class="payment-item-info">
+                <div class="payment-item-date">
+                    <div class="payment-month">{{ paiement.date_echeance|date:"M Y" }}</div>
+                    <div class="payment-day">{{ paiement.date_echeance|date:"d" }}</div>
+                </div>
+                <div class="payment-item-details">
+                    <div class="payment-item-amount">{{ paiement.montant_total }} €</div>
+                    <div class="payment-item-breakdown">
+                        Loyer: {{ paiement.montant_loyer }}€ + Charges: {{ paiement.montant_charges }}€
+                    </div>
+                    {% if paiement.date_paiement %}
+                    <div class="payment-item-paid-date">Payé le {{ paiement.date_paiement|date:"d/m/Y" }}</div>
+                    {% endif %}
+                </div>
+                <div class="payment-item-status">
+                    <span class="status-badge status-{{ paiement.statut }}">{{ paiement.get_statut_display }}</span>
+                </div>
+            </div>
+            <div class="payment-item-actions">
+                {% if paiement.quittance %}
+                <a href="{{ paiement.quittance.url }}" target="_blank" class="btn-secondary-sm">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Télécharger quittance
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>Aucun historique de paiement disponible.</p>
+    </div>
+    {% endif %}
+
+    <h2 class="section-title mt-4">Dépôt de garantie</h2>
+    <div class="deposit-section">
+        <div class="deposit-info-card">
+            <div class="deposit-item">
+                <span class="deposit-label">Montant du dépôt versé</span>
+                <span class="deposit-value">{{ bail.depot_garantie }} €</span>
+            </div>
+            <div class="deposit-item">
+                <span class="deposit-label">Solde actuel</span>
+                <span class="deposit-value">{{ solde_depot_garantie }} €</span>
+            </div>
+            <div class="deposit-note">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                Le solde sera ajusté selon l'état des lieux de sortie.
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .next-payment-card {
+        background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+        border-radius: 12px;
+        padding: 32px;
+        color: white;
+        margin-bottom: 32px;
+    }
+
+    .payment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .payment-amount-large {
+        font-size: 36px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .payment-label {
+        font-size: 14px;
+        opacity: 0.9;
+    }
+
+    .payment-date-info {
+        text-align: right;
+    }
+
+    .payment-date-label {
+        font-size: 13px;
+        opacity: 0.9;
+        margin-bottom: 4px;
+    }
+
+    .payment-date-value {
+        font-size: 20px;
+        font-weight: 600;
+    }
+
+    .payment-actions {
+        margin-top: 16px;
+    }
+
+    .btn-primary {
+        padding: 12px 24px;
+        background: white;
+        color: #D3580B;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .payment-status-badge {
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+        background: rgba(255,255,255,0.2);
+    }
+
+    /* Historique paiements */
+    .payments-history {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin-bottom: 32px;
+    }
+
+    .payment-item {
+        background: #f9f9f9;
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-left: 4px solid;
+        transition: all 0.2s ease;
+    }
+
+    .payment-item:hover {
+        background: #f0f0f0;
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .payment-item.status-paye {
+        border-color: #28a745;
+    }
+
+    .payment-item.status-en_attente {
+        border-color: #ffc107;
+    }
+
+    .payment-item.status-en_retard {
+        border-color: #dc3545;
+    }
+
+    .payment-item-info {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        flex: 1;
+    }
+
+    .payment-item-date {
+        text-align: center;
+        min-width: 60px;
+    }
+
+    .payment-month {
+        font-size: 12px;
+        color: #999;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+    }
+
+    .payment-day {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1a1a1a;
+    }
+
+    .payment-item-details {
+        flex: 1;
+    }
+
+    .payment-item-amount {
+        font-size: 20px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 4px;
+    }
+
+    .payment-item-breakdown {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 4px;
+    }
+
+    .payment-item-paid-date {
+        font-size: 12px;
+        color: #999;
+    }
+
+    .payment-item-status {
+        margin-right: 20px;
+    }
+
+    .status-badge {
+        padding: 6px 12px;
+        border-radius: 16px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .status-badge.status-paye {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-badge.status-en_attente {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .status-badge.status-en_retard {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .payment-item-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-secondary-sm {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: white;
+        color: #333;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .btn-secondary-sm:hover {
+        background: #f5f5f5;
+        border-color: #ddd;
+    }
+
+    /* Dépôt de garantie */
+    .deposit-section {
+        margin-bottom: 32px;
+    }
+
+    .deposit-info-card {
+        background: #f9f9f9;
+        border-radius: 12px;
+        padding: 24px;
+        border-left: 4px solid #D3580B;
+    }
+
+    .deposit-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 0;
+        border-bottom: 1px solid #e5e5e5;
+    }
+
+    .deposit-item:last-child {
+        border-bottom: none;
+    }
+
+    .deposit-label {
+        font-size: 14px;
+        color: #666;
+        font-weight: 500;
+    }
+
+    .deposit-value {
+        font-size: 20px;
+        font-weight: 700;
+        color: #1a1a1a;
+    }
+
+    .deposit-note {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 16px;
+        padding: 12px;
+        background: #fff3cd;
+        border-radius: 8px;
+        color: #856404;
+        font-size: 13px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 24px;
+        color: #999;
+    }
+
+    .empty-state svg {
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+
+    .empty-state p {
+        margin: 0;
+        font-size: 16px;
+    }
+</style>
+

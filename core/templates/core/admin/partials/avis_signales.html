@@ -1,0 +1,147 @@
+{% load humanize %}
+<!-- Filtres Signalés -->
+<div class="filters-section">
+    <div class="filters-header">
+        <h3>Filtres</h3>
+    </div>
+    <div class="filters-content">
+        <form method="GET" action="{% url 'admin-avis' %}">
+            <input type="hidden" name="view" value="signales">
+            <div class="filter-row">
+                <div class="filter-field">
+                    <label>Raison signalement</label>
+                    <select name="raison" class="filter-select">
+                        <option value="">Toutes</option>
+                        <option value="spam">Spam</option>
+                        <option value="inapproprie">Contenu inapproprié</option>
+                        <option value="faux">Faux avis</option>
+                        <option value="harcelement">Harcèlement</option>
+                        <option value="autre">Autre</option>
+                    </select>
+                </div>
+                <div class="filter-field">
+                    <label>Statut traitement</label>
+                    <select name="statut_traitement" class="filter-select">
+                        <option value="">Tous</option>
+                        <option value="en_attente">En attente</option>
+                        <option value="en_cours">En cours</option>
+                        <option value="resolu">Résolu</option>
+                        <option value="ignore">Ignoré</option>
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn-primary">Appliquer</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tableau Signalés -->
+<div class="table-section">
+    <div class="table-header">
+        <h3>Avis signalés</h3>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="col-checkbox sticky-left">
+                        <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
+                    </th>
+                    <th class="col-avis">Avis</th>
+                    <th class="col-note">Note</th>
+                    <th class="col-logement">Logement</th>
+                    <th class="col-signale-par">Signalé par</th>
+                    <th class="col-raison">Raison</th>
+                    <th class="col-date">Date signalement</th>
+                    <th class="col-statut">Statut</th>
+                    <th class="col-actions sticky-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="9" class="empty-state">
+                        <p>Aucun avis signalé pour le moment</p>
+                        <small>Le système de signalements sera implémenté prochainement</small>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Filtres Signalés -->
+<div class="filters-section">
+    <div class="filters-header">
+        <h3>Filtres</h3>
+    </div>
+    <div class="filters-content">
+        <form method="GET" action="{% url 'admin-avis' %}">
+            <input type="hidden" name="view" value="signales">
+            <div class="filter-row">
+                <div class="filter-field">
+                    <label>Raison signalement</label>
+                    <select name="raison" class="filter-select">
+                        <option value="">Toutes</option>
+                        <option value="spam">Spam</option>
+                        <option value="inapproprie">Contenu inapproprié</option>
+                        <option value="faux">Faux avis</option>
+                        <option value="harcelement">Harcèlement</option>
+                        <option value="autre">Autre</option>
+                    </select>
+                </div>
+                <div class="filter-field">
+                    <label>Statut traitement</label>
+                    <select name="statut_traitement" class="filter-select">
+                        <option value="">Tous</option>
+                        <option value="en_attente">En attente</option>
+                        <option value="en_cours">En cours</option>
+                        <option value="resolu">Résolu</option>
+                        <option value="ignore">Ignoré</option>
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn-primary">Appliquer</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tableau Signalés -->
+<div class="table-section">
+    <div class="table-header">
+        <h3>Avis signalés</h3>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="col-checkbox sticky-left">
+                        <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
+                    </th>
+                    <th class="col-avis">Avis</th>
+                    <th class="col-note">Note</th>
+                    <th class="col-logement">Logement</th>
+                    <th class="col-signale-par">Signalé par</th>
+                    <th class="col-raison">Raison</th>
+                    <th class="col-date">Date signalement</th>
+                    <th class="col-statut">Statut</th>
+                    <th class="col-actions sticky-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="9" class="empty-state">
+                        <p>Aucun avis signalé pour le moment</p>
+                        <small>Le système de signalements sera implémenté prochainement</small>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+

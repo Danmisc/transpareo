@@ -1,0 +1,183 @@
+{% extends 'core/admin/base_admin.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Transpareo Connect - Admin{% endblock %}
+
+{% block content %}
+<div class="admin-page connect-page">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-left">
+            <h1>Transpareo Connect - Réseau Social</h1>
+            <nav class="breadcrumb">
+                <a href="{% url 'admin-connect' %}">Admin</a>
+                <span>/</span>
+                <a href="#">Gestion plateforme</a>
+                <span>/</span>
+                <span>Transpareo Connect</span>
+            </nav>
+        </div>
+        <div class="header-actions">
+            <button class="btn-secondary" onclick="exportDonnees()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Exporter données
+            </button>
+            <button class="btn-secondary" onclick="openStatsEngagement()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+                Statistiques engagement
+            </button>
+            <button class="btn-secondary" onclick="openModerationAvancee()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+                Modération avancée
+            </button>
+            <button class="btn-secondary" onclick="openBadgesPage()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+                Badges
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="view-tabs">
+        <button class="view-tab {% if view_type == 'posts' %}active{% endif %}" 
+                onclick="switchView('posts')">
+            Posts
+        </button>
+        <button class="view-tab {% if view_type == 'groupes' %}active{% endif %}" 
+                onclick="switchView('groupes')">
+            Groupes
+        </button>
+        <button class="view-tab {% if view_type == 'messages' %}active{% endif %}" 
+                onclick="switchView('messages')">
+            Messages
+        </button>
+        <button class="view-tab {% if view_type == 'evenements' %}active{% endif %}" 
+                onclick="switchView('evenements')">
+            Événements
+        </button>
+        <button class="view-tab {% if view_type == 'analytics' %}active{% endif %}" 
+                onclick="switchView('analytics')">
+            Analytics
+        </button>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Posts totaux</div>
+                <div class="stat-value">{{ stats.total_posts|intcomma }}</div>
+                {% if stats.evolution_posts != 0 %}
+                <div class="stat-trend {% if stats.evolution_posts > 0 %}trend-up{% else %}trend-down{% endif %}">
+                    {{ stats.evolution_posts|floatformat:0 }}%
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Groupes actifs</div>
+                <div class="stat-value">{{ stats.groups_actifs|intcomma }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Messages échangés</div>
+                <div class="stat-value">{{ stats.total_messages|intcomma }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Taux engagement</div>
+                <div class="stat-value">{{ stats.taux_engagement|floatformat:1 }}%</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #EC4899 0%, #DB2777 100%);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Utilisateurs actifs</div>
+                <div class="stat-value">{{ stats.users_actifs|intcomma }}</div>
+            </div>
+        </div>
+    </div>
+
+    {% if view_type == 'posts' %}
+    <!-- VUE POSTS -->
+    {% include 'core/admin/partials/connect_posts.html' %}
+    {% elif view_type == 'groupes' %}
+    <!-- VUE GROUPES -->
+    {% include 'core/admin/partials/connect_groupes.html' %}
+    {% elif view_type == 'messages' %}
+    <!-- VUE MESSAGES -->
+    {% include 'core/admin/partials/connect_messages.html' %}
+    {% elif view_type == 'evenements' %}
+    <!-- VUE ÉVÉNEMENTS -->
+    {% include 'core/admin/partials/connect_evenements.html' %}
+    {% else %}
+    <!-- VUE ANALYTICS -->
+    {% include 'core/admin/partials/connect_analytics.html' %}
+    {% endif %}
+</div>
+
+<!-- Styles -->
+<link rel="stylesheet" href="{% static 'core/admin/connect.css' %}">
+
+<!-- JavaScript -->
+<script src="{% static 'core/admin/connect.js' %}"></script>
+
+<script>
+    const currentView = '{{ view_type }}';
+    const currentSort = '{{ sort_by|default:"-created_at" }}';
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        initConnectPage();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,415 @@
+{% extends 'core/admin/base_admin.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block page_title %}Analytics{% endblock %}
+
+{% block content %}
+<div class="admin-statistics-page">
+        <div class="page-header">
+            <div>
+                <h2>Statistiques avancées</h2>
+                <p class="page-subtitle">Analyse détaillée de l'activité Connect</p>
+            </div>
+            <div class="header-actions">
+                <a href="{% url 'admin-export-csv' %}?type=users" class="btn-export">Export Utilisateurs CSV</a>
+                <a href="{% url 'admin-export-csv' %}?type=posts" class="btn-export">Export Posts CSV</a>
+                <a href="{% url 'admin-export-csv' %}?type=groups" class="btn-export">Export Groupes CSV</a>
+                <a href="{% url 'admin-export-csv' %}?type=tickets" class="btn-export">Export Tickets CSV</a>
+            </div>
+        </div>
+
+        <!-- Filtres période -->
+        <div class="filters-section">
+            <form method="get" class="period-form">
+                <label for="period">Période d'analyse:</label>
+                <select name="period" id="period" class="period-select" onchange="this.form.submit()">
+                    <option value="7" {% if period == '7' %}selected{% endif %}>7 derniers jours</option>
+                    <option value="30" {% if period == '30' %}selected{% endif %}>30 derniers jours</option>
+                    <option value="90" {% if period == '90' %}selected{% endif %}>90 derniers jours</option>
+                    <option value="365" {% if period == '365' %}selected{% endif %}>1 an</option>
+                </select>
+            </form>
+        </div>
+
+        <!-- Graphiques -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h2>Croissance des utilisateurs</h2>
+                <div class="chart-container">
+                    <canvas id="userGrowthChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <h2>Posts par jour</h2>
+                <div class="chart-container">
+                    <canvas id="postsPerDayChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <h2>Messages par jour</h2>
+                <div class="chart-container">
+                    <canvas id="messagesPerDayChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Groupes les plus actifs -->
+        <div class="active-groups-section">
+            <h2>Groupes les plus actifs</h2>
+            <div class="groups-table-card">
+                <table class="groups-table">
+                    <thead>
+                        <tr>
+                            <th>Groupe</th>
+                            <th>Membres</th>
+                            <th>Posts</th>
+                            <th>Type</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for group in active_groups %}
+                        <tr>
+                            <td>
+                                <div class="group-cell">
+                                    <span class="group-icon-small">{{ group.icon|default:"👥" }}</span>
+                                    <div>
+                                        <div class="group-name">{{ group.name }}</div>
+                                        <div class="group-description-small">{{ group.description|truncatewords:10|default:"Aucune description" }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ group.members_count }}</td>
+                            <td>{{ group.posts_count }}</td>
+                            <td>
+                                {% if group.is_public %}
+                                    <span class="type-badge public">Public</span>
+                                {% else %}
+                                    <span class="type-badge private">Privé</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'admin-group-detail' group.id %}" class="btn-action-small">Voir</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="empty-state">Aucun groupe actif</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+</div>
+
+<style>
+    .admin-statistics-page {
+        padding: 0;
+    }
+    
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #e5e5e5;
+    }
+    
+    .page-header h2 {
+        font-size: 24px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0 0 4px 0;
+    }
+    
+    .page-subtitle {
+        color: #666;
+        font-size: 14px;
+        margin: 0;
+    }
+    
+    .header-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .btn-export {
+        padding: 10px 16px;
+        background: #17a2b8;
+        color: white;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-export:hover {
+        background: #138496;
+        transform: translateY(-1px);
+    }
+
+    .period-form {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .period-form label {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .period-select {
+        padding: 10px 16px;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        font-size: 15px;
+        background: white;
+        cursor: pointer;
+    }
+
+    .charts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 24px;
+        margin-bottom: 32px;
+    }
+
+    .chart-card {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .chart-card h2 {
+        font-size: 20px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0 0 20px 0;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 300px;
+    }
+
+    .active-groups-section {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .active-groups-section h2 {
+        font-size: 24px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0 0 24px 0;
+    }
+
+    .groups-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .groups-table thead {
+        background: #fafafa;
+    }
+
+    .groups-table th {
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+        color: #333;
+        font-size: 14px;
+        border-bottom: 2px solid #e5e5e5;
+    }
+
+    .groups-table td {
+        padding: 12px;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 14px;
+    }
+
+    .groups-table tbody tr:hover {
+        background: #fafafa;
+    }
+
+    .group-cell {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .group-icon-small {
+        font-size: 24px;
+        line-height: 1;
+    }
+
+    .group-name {
+        font-weight: 600;
+        color: #1a1a1a;
+    }
+
+    .group-description-small {
+        font-size: 12px;
+        color: #666;
+        margin-top: 2px;
+    }
+
+    .type-badge {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .type-badge.public {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .type-badge.private {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .btn-action-small {
+        padding: 6px 12px;
+        background: #D3580B;
+        color: white;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .btn-action-small:hover {
+        background: #c4510a;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #999;
+    }
+
+    @media (max-width: 768px) {
+        .header-actions {
+            flex-direction: column;
+        }
+
+        .btn-export {
+            width: 100%;
+        }
+
+        .charts-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .groups-table {
+            font-size: 12px;
+        }
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Graphique de croissance des utilisateurs
+    const userGrowthCtx = document.getElementById('userGrowthChart');
+    if (userGrowthCtx) {
+        const userGrowthData = {{ user_growth|safe|default:'[]' }};
+        new Chart(userGrowthCtx, {
+            type: 'line',
+            data: {
+                labels: userGrowthData.map(item => item.date),
+                datasets: [{
+                    label: 'Nombre d\'utilisateurs',
+                    data: userGrowthData.map(item => item.count),
+                    borderColor: '#D3580B',
+                    backgroundColor: 'rgba(211, 88, 11, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true
+                    }
+                }
+            }
+        });
+    }
+
+    // Graphique des posts par jour
+    const postsPerDayCtx = document.getElementById('postsPerDayChart');
+    if (postsPerDayCtx) {
+        const postsPerDayData = {{ posts_per_day|safe|default:'[]' }};
+        new Chart(postsPerDayCtx, {
+            type: 'bar',
+            data: {
+                labels: postsPerDayData.map(item => item.date),
+                datasets: [{
+                    label: 'Posts par jour',
+                    data: postsPerDayData.map(item => item.count),
+                    backgroundColor: '#17a2b8',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true
+                    }
+                }
+            }
+        });
+    }
+
+    // Graphique des messages par jour
+    const messagesPerDayCtx = document.getElementById('messagesPerDayChart');
+    if (messagesPerDayCtx) {
+        const messagesPerDayData = {{ messages_per_day|safe|default:'[]' }};
+        new Chart(messagesPerDayCtx, {
+            type: 'line',
+            data: {
+                labels: messagesPerDayData.map(item => item.date),
+                datasets: [{
+                    label: 'Messages par jour',
+                    data: messagesPerDayData.map(item => item.count),
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}
+

@@ -1,0 +1,354 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Candidater - {{ logement.titre }}{% endblock %}
+
+{% block content %}
+<div class="candidater-page">
+    <div class="container">
+        <div class="card">
+            <h1>📝 Candidater pour ce logement</h1>
+            <p class="subtitle">
+                <strong>{{ logement.titre }}</strong> - {{ logement.adresse }}, {{ logement.code_postal }}
+            </p>
+            
+            {% if proprietaire %}
+            <!-- Lien vers profil Connect du propriétaire (Phase 14.3) -->
+            <div class="owner-info-box">
+                <div class="owner-info-header">
+                    <span>Propriétaire :</span>
+                    <a href="{{ proprietaire_connect_url }}" class="owner-connect-link">
+                        {% if proprietaire.avatar %}
+                        <img src="{{ proprietaire.avatar.url }}" alt="{{ proprietaire.username }}" class="owner-avatar-small">
+                        {% else %}
+                        <div class="owner-avatar-small-placeholder">{{ proprietaire.username|first|upper }}</div>
+                        {% endif %}
+                        {{ proprietaire.get_full_name|default:proprietaire.username }}
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                    </a>
+                </div>
+                <p class="owner-info-text">Voir le profil Connect du propriétaire pour en savoir plus</p>
+            </div>
+            {% endif %}
+            
+            <form method="post" enctype="multipart/form-data" class="candidater-form">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="message">Message de motivation *</label>
+                    <textarea name="message" id="message" required class="form-control" rows="6" placeholder="Présentez-vous et expliquez pourquoi vous êtes intéressé par ce logement..."></textarea>
+                    <small class="form-help">Décrivez votre situation, vos motivations, votre projet de vie...</small>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="revenus_mensuels">Revenus mensuels (optionnel)</label>
+                        <input type="number" name="revenus_mensuels" id="revenus_mensuels" class="form-control" placeholder="Montant en euros" step="0.01" min="0">
+                        <small class="form-help">Aide le propriétaire à évaluer votre dossier</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="garant">Garant (optionnel)</label>
+                        <input type="text" name="garant" id="garant" class="form-control" placeholder="Nom et contact du garant">
+                        <small class="form-help">Si vous avez un garant, indiquez ses coordonnées</small>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pieces_justificatives">Pièces justificatives (optionnel)</label>
+                    <input type="file" name="pieces_justificatives" id="pieces_justificatives" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                    <small class="form-help">Dossier locataire, justificatifs de revenus, etc. (PDF, images)</small>
+                </div>
+                
+                <div class="info-box">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <div>
+                        <strong>Important :</strong> Votre candidature sera envoyée directement au propriétaire. 
+                        Le propriétaire recevra une notification Connect avec un lien vers votre profil.
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <a href="{% url 'logement-detail' logement.id %}" class="btn-secondary">Annuler</a>
+                    <button type="submit" class="btn-primary">Envoyer ma candidature</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .candidater-page {
+        min-height: calc(100vh - 70px);
+        background: #f5f7fa;
+        padding: 40px 20px;
+    }
+
+    .container {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .card {
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    h1 {
+        font-size: 28px;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .subtitle {
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 14px;
+    }
+
+    .subtitle strong {
+        color: #D3580B;
+        font-weight: 600;
+    }
+
+    /* Owner Info Box (Phase 14.3) */
+    .owner-info-box {
+        background: #f8f9fa;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 30px;
+        border-left: 4px solid #D3580B;
+    }
+
+    .owner-info-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .owner-connect-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #D3580B;
+        text-decoration: none;
+        font-weight: 600;
+        transition: color 0.2s;
+    }
+
+    .owner-connect-link:hover {
+        color: #c4510a;
+        text-decoration: underline;
+    }
+
+    .owner-avatar-small,
+    .owner-avatar-small-placeholder {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .owner-avatar-small-placeholder {
+        background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 14px;
+    }
+
+    .owner-info-text {
+        font-size: 13px;
+        color: #666;
+        margin: 0;
+    }
+
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #333;
+        font-size: 14px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #D3580B;
+        box-shadow: 0 0 0 3px rgba(211, 88, 11, 0.1);
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 120px;
+        font-family: inherit;
+    }
+
+    input[type="file"].form-control {
+        padding: 8px;
+    }
+
+    .form-help {
+        display: block;
+        margin-top: 6px;
+        font-size: 12px;
+        color: #666;
+        font-style: italic;
+    }
+
+    .info-box {
+        background: #e3f2fd;
+        border: 1px solid #90caf9;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 24px;
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .info-box svg {
+        flex-shrink: 0;
+        color: #1976d2;
+        margin-top: 2px;
+    }
+
+    .info-box strong {
+        color: #1976d2;
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    .info-box div {
+        flex: 1;
+        font-size: 13px;
+        color: #424242;
+        line-height: 1.6;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .btn-primary {
+        background: #D3580B;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #c4510a;
+    }
+
+    .btn-secondary {
+        background: white;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+
+    .btn-secondary:hover {
+        background: #f5f5f5;
+        border-color: #ccc;
+    }
+
+    .candidature-status {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 16px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #e5e5e5;
+        margin-bottom: 12px;
+    }
+
+    .candidature-status-badge {
+        font-weight: 600;
+        color: #27ae60;
+        font-size: 14px;
+    }
+
+    .candidature-status-text {
+        font-size: 13px;
+        color: #666;
+    }
+
+    @media (max-width: 768px) {
+        .candidater-page {
+            padding: 20px 12px;
+        }
+
+        .card {
+            padding: 24px;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn-primary,
+        .btn-secondary {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+

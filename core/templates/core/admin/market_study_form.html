@@ -1,0 +1,145 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ study.title }}{% endblock %}
+
+{% block content %}
+<div class="market-study-form-wrapper">
+<div class="market-study-form-page" style="background: {{ study.theme_color }}05;">
+    <div class="form-container">
+        <!-- Header -->
+        <div class="form-header">
+            {% if study.logo %}
+            <img src="{{ study.logo.url }}" alt="{{ study.title }}" class="form-logo">
+            {% endif %}
+            <h1 class="form-title">{{ study.title }}</h1>
+            {% if study.description %}
+            <p class="form-description">{{ study.description }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+        </div>
+
+        <!-- Form -->
+        <form id="study-form" method="POST" action="{% url 'market-study-submit' study.share_token %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="response_id" value="{{ response.id }}">
+            
+            <div class="questions-container">
+                {% for question in questions %}
+                <div class="question-block" data-question-id="{{ question.id }}" data-required="{{ question.required }}">
+                    <label class="question-label">
+                        {{ question.label }}
+                        {% if question.required %}<span class="required">*</span>{% endif %}
+                    </label>
+                    {% if question.description %}
+                    <p class="question-help">{{ question.description }}</p>
+                    {% endif %}
+                    
+                    <div class="question-input">
+                        {% if question.question_type == 'text_short' %}
+                        <input type="text" name="question_{{ question.id }}" class="form-input" {% if question.required %}required{% endif %} placeholder="Votre réponse...">
+                        
+                        {% elif question.question_type == 'text_long' %}
+                        <textarea name="question_{{ question.id }}" class="form-textarea" {% if question.required %}required{% endif %} rows="4" placeholder="Votre réponse..."></textarea>
+                        
+                        {% elif question.question_type == 'single_choice' %}
+                        <div class="radio-group">
+                            {% for option in question.options %}
+                            <label class="radio-label">
+                                <input type="radio" name="question_{{ question.id }}" value="{{ option }}" {% if question.required %}required{% endif %}>
+                                <span>{{ option }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                        
+                        {% elif question.question_type == 'multiple_choice' %}
+                        <div class="checkbox-group">
+                            {% for option in question.options %}
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="question_{{ question.id }}" value="{{ option }}">
+                                <span>{{ option }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                        
+                        {% elif question.question_type == 'scale' %}
+                        <div class="scale-group">
+                            <div class="scale-labels">
+                                {% if question.scale_label_min %}
+                                <span class="scale-label-min">{{ question.scale_label_min }}</span>
+                                {% endif %}
+                                {% if question.scale_label_max %}
+                                <span class="scale-label-max">{{ question.scale_label_max }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="scale-options" data-scale-min="{{ question.scale_min }}" data-scale-max="{{ question.scale_max }}" data-question-id="{{ question.id }}">
+                                <!-- Options générées par JavaScript -->
+                            </div>
+                        </div>
+                        
+                        {% elif question.question_type == 'nps' %}
+                        <div class="nps-group">
+                            <div class="nps-labels">
+                                <span class="nps-label-min">Très improbable</span>
+                                <span class="nps-label-max">Très probable</span>
+                            </div>
+                            <div class="nps-options" data-question-id="{{ question.id }}">
+                                <!-- Options NPS générées par JavaScript (0-10) -->
+                            </div>
+                        </div>
+                        
+                        {% elif question.question_type == 'date' %}
+                        <input type="date" name="question_{{ question.id }}" class="form-input" {% if question.required %}required{% endif %}>
+                        
+                        {% elif question.question_type == 'file' %}
+                        <input type="file" name="question_{{ question.id }}" class="form-file" {% if question.required %}required{% endif %} accept=".pdf,.doc,.docx,.jpg,.png">
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state">
+                    <p>Aucune question dans ce formulaire</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Submit Button -->
+            <div class="form-actions">
+                <button type="submit" class="btn-submit">
+                    Envoyer
+                </button>
+            </div>
+        </form>
+
+        <!-- Success Message (hidden by default) -->
+        <div class="success-message" id="success-message" style="display: none;">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="success-icon">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <h2>Merci !</h2>
+            <p id="completion-message">{{ study.completion_message }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Styles -->
+<link rel="stylesheet" href="{% static 'core/admin/market-study-form.css' %}">
+
+<!-- JavaScript -->
+<script src="{% static 'core/admin/market-study-form.js' %}"></script>
+
+<script>
+    const themeColor = '{{ study.theme_color }}';
+    const totalQuestions = {{ questions|length }};
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        initForm();
+    });
+</script>
+</div>
+{% endblock %}
+

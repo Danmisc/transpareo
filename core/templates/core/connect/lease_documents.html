@@ -1,0 +1,373 @@
+<!-- Onglet Documents -->
+<div class="tab-section">
+    <h2 class="section-title">Mes documents liés au bail</h2>
+    
+    {% if tab_data.documents %}
+    <div class="documents-list">
+        {% for doc in tab_data.documents %}
+        <div class="document-item">
+            <div class="document-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+            </div>
+            
+            <div class="document-info">
+                <div class="document-name">{{ doc.nom_document }}</div>
+                <div class="document-meta">
+                    <span class="document-type">{{ doc.get_type_document_display }}</span>
+                    <span class="document-separator">•</span>
+                    <span class="document-author">Ajouté par {{ doc.uploaded_by.get_full_name|default:doc.uploaded_by.username }}</span>
+                    <span class="document-separator">•</span>
+                    <span class="document-date">{{ doc.created_at|date:"d/m/Y" }}</span>
+                </div>
+            </div>
+            
+            <div class="document-actions">
+                <a href="{{ doc.document.url }}" target="_blank" class="btn-download">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Télécharger
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+        </svg>
+        <p>Aucun document supplémentaire n'a été ajouté.</p>
+    </div>
+    {% endif %}
+
+    <h2 class="section-title mt-4">Ajouter un document</h2>
+    
+    <form action="{% url 'upload-lease-document' %}" method="post" enctype="multipart/form-data" class="upload-document-form">
+        {% csrf_token %}
+        <input type="hidden" name="bail_id" value="{{ bail.id }}">
+        
+        <div class="form-group">
+            <label for="id_document_name">Nom du document <span class="required">*</span></label>
+            <input type="text" id="id_document_name" name="nom_document" required placeholder="Ex: Facture électricité janvier 2024">
+        </div>
+        
+        <div class="form-group">
+            <label for="id_document_type">Type de document <span class="required">*</span></label>
+            <select id="id_document_type" name="document_type" required>
+                <option value="">Sélectionnez un type</option>
+                <option value="facture">Facture</option>
+                <option value="quittance">Quittance</option>
+                <option value="assurance">Assurance</option>
+                <option value="etat_lieux">État des lieux</option>
+                <option value="contrat">Contrat</option>
+                <option value="autre">Autre</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="id_document_file">Fichier <span class="required">*</span></label>
+            <input type="file" id="id_document_file" name="document" required accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+            <small class="form-help">Formats acceptés : PDF, DOC, DOCX, JPG, PNG (max 10MB)</small>
+        </div>
+        
+        <button type="submit" class="btn-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            Uploader le document
+        </button>
+    </form>
+
+    <h2 class="section-title mt-4">Télécharger tous les documents</h2>
+    
+    <div class="download-all-section">
+        <div class="download-all-info">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <div>
+                <h3>Télécharger tous les documents (ZIP)</h3>
+                <p>Téléchargez tous les documents liés à ce bail dans une archive ZIP.</p>
+            </div>
+        </div>
+        <a href="{% url 'download-lease-documents' bail.id %}" class="btn-download-all">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Télécharger tout (ZIP)
+        </a>
+    </div>
+</div>
+
+<style>
+    .documents-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin-bottom: 32px;
+    }
+
+    .document-item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 20px;
+        background: #f9f9f9;
+        border-radius: 12px;
+        border: 1px solid #e5e5e5;
+        transition: all 0.2s ease;
+    }
+
+    .document-item:hover {
+        background: #f0f0f0;
+        border-color: #D3580B;
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .document-icon {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 8px;
+        color: #D3580B;
+        flex-shrink: 0;
+    }
+
+    .document-info {
+        flex: 1;
+    }
+
+    .document-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 6px;
+    }
+
+    .document-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: #666;
+        flex-wrap: wrap;
+    }
+
+    .document-separator {
+        color: #ccc;
+    }
+
+    .document-type {
+        padding: 2px 8px;
+        background: #e9ecef;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .document-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-download {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: white;
+        color: #333;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .btn-download:hover {
+        background: #f5f5f5;
+        border-color: #D3580B;
+        color: #D3580B;
+    }
+
+    .upload-document-form {
+        background: #f9f9f9;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 32px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 8px;
+    }
+
+    .required {
+        color: #dc3545;
+    }
+
+    .form-group input[type="text"],
+    .form-group select {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        font-size: 15px;
+        font-family: inherit;
+        box-sizing: border-box;
+        transition: all 0.2s ease;
+    }
+
+    .form-group input[type="text"]:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #D3580B;
+        box-shadow: 0 0 0 3px rgba(211, 88, 11, 0.1);
+    }
+
+    .form-group input[type="file"] {
+        width: 100%;
+        padding: 10px;
+        border: 2px dashed #e5e5e5;
+        border-radius: 8px;
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .form-group input[type="file"]:hover {
+        border-color: #D3580B;
+        background: #fff5f0;
+    }
+
+    .form-help {
+        display: block;
+        margin-top: 6px;
+        font-size: 12px;
+        color: #666;
+    }
+
+    .btn-primary {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: #D3580B;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+        background: #c4510a;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(211, 88, 11, 0.3);
+    }
+
+    .download-all-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 24px;
+        background: linear-gradient(135deg, rgba(211, 88, 11, 0.05) 0%, rgba(196, 81, 10, 0.05) 100%);
+        border: 2px solid #D3580B;
+        border-radius: 12px;
+        gap: 24px;
+        flex-wrap: wrap;
+    }
+
+    .download-all-info {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex: 1;
+    }
+
+    .download-all-info svg {
+        color: #D3580B;
+        flex-shrink: 0;
+    }
+
+    .download-all-info h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0 0 4px 0;
+    }
+
+    .download-all-info p {
+        font-size: 14px;
+        color: #666;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .btn-download-all {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: #D3580B;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .btn-download-all:hover {
+        background: #c4510a;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(211, 88, 11, 0.3);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 24px;
+        color: #999;
+    }
+
+    .empty-state svg {
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+
+    .empty-state p {
+        margin: 0;
+        font-size: 16px;
+    }
+</style>
+

@@ -1,0 +1,244 @@
+{% extends 'core/admin/base_admin.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block page_title %}Builder - {{ study.title }}{% endblock %}
+
+{% block content %}
+<div class="market-study-builder-page">
+    <!-- Header -->
+    <div class="builder-header">
+        <div class="header-left">
+            <h1 class="page-title-main">{{ study.title }}</h1>
+            <p class="page-subtitle">Créez votre questionnaire avec le builder drag & drop</p>
+        </div>
+        <div class="header-actions">
+            <button type="button" class="btn-secondary" onclick="previewForm()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                Aperçu
+            </button>
+            <button type="button" class="btn-primary" onclick="activateStudy()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                Activer l'étude
+            </button>
+        </div>
+    </div>
+
+    <!-- Builder Layout -->
+    <div class="builder-layout">
+        <!-- Sidebar - Question Types -->
+        <aside class="builder-sidebar">
+            <h3 class="sidebar-title">Types de questions</h3>
+            <div class="question-types">
+                <div class="question-type-item" draggable="true" data-type="text_short">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    <span>Texte court</span>
+                </div>
+                <div class="question-type-item" draggable="true" data-type="text_long">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="9" y1="9" x2="15" y2="9"></line>
+                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                    </svg>
+                    <span>Texte long</span>
+                </div>
+                <div class="question-type-item" draggable="true" data-type="single_choice">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <span>Choix unique</span>
+                </div>
+                <div class="question-type-item" draggable="true" data-type="multiple_choice">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <path d="M9 12l2 2 4-4"></path>
+                    </svg>
+                    <span>Choix multiple</span>
+                </div>
+                <div class="question-type-item" draggable="true" data-type="scale">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    <span>Échelle</span>
+                </div>
+                <div class="question-type-item" draggable="true" data-type="nps">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                    <span>NPS</span>
+                </div>
+                <div class="question-type-item" draggable="true" data-type="date">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <span>Date</span>
+                </div>
+                <div class="question-type-item" draggable="true" data-type="file">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    <span>Fichier</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content - Questions Builder -->
+        <main class="builder-content">
+            <div class="questions-builder" id="questions-builder">
+                {% for question in questions %}
+                <div class="question-item" data-question-id="{{ question.id }}" draggable="true">
+                    <div class="question-handle">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="9" cy="12" r="1"></circle>
+                            <circle cx="9" cy="5" r="1"></circle>
+                            <circle cx="9" cy="19" r="1"></circle>
+                            <circle cx="15" cy="12" r="1"></circle>
+                            <circle cx="15" cy="5" r="1"></circle>
+                            <circle cx="15" cy="19" r="1"></circle>
+                        </svg>
+                    </div>
+                    <div class="question-content">
+                        <div class="question-header">
+                            <div class="question-type-badge">{{ question.get_question_type_display }}</div>
+                            <button type="button" class="btn-remove-question" onclick="deleteQuestion({{ question.id }})">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="question-form">
+                            <div class="form-field">
+                                <label>Libellé de la question *</label>
+                                <input type="text" class="question-label" value="{{ question.label }}" data-field="label" onblur="saveQuestion({{ question.id }})">
+                            </div>
+                            <div class="form-field">
+                                <label>Description/aide</label>
+                                <textarea class="question-description" data-field="description" onblur="saveQuestion({{ question.id }})" rows="2">{{ question.description|default:'' }}</textarea>
+                            </div>
+                            <div class="form-fields-grid">
+                                <div class="form-field">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" class="question-required" {% if question.required %}checked{% endif %} data-field="required" onchange="saveQuestion({{ question.id }})">
+                                        <span>Obligatoire</span>
+                                    </label>
+                                </div>
+                            </div>
+                            {% if question.question_type in 'single_choice,multiple_choice' %}
+                            <div class="form-field">
+                                <label>Options de réponse</label>
+                                <div class="options-list" data-question-id="{{ question.id }}">
+                                    {% for option in question.options %}
+                                    <div class="option-item">
+                                        <input type="text" class="option-input" value="{{ option }}" onblur="saveQuestionOptions({{ question.id }})">
+                                        <button type="button" class="btn-remove-option" onclick="removeOption(this, {{ question.id }})">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    {% empty %}
+                                    <div class="option-item">
+                                        <input type="text" class="option-input" placeholder="Option 1" onblur="saveQuestionOptions({{ question.id }})">
+                                        <button type="button" class="btn-remove-option" onclick="removeOption(this, {{ question.id }})">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <button type="button" class="btn-add-option" onclick="addOption({{ question.id }})">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    Ajouter une option
+                                </button>
+                            </div>
+                            {% endif %}
+                            {% if question.question_type == 'scale' %}
+                            <div class="form-fields-grid">
+                                <div class="form-field">
+                                    <label>Min</label>
+                                    <input type="number" class="question-scale-min" value="{{ question.scale_min }}" data-field="scale_min" onblur="saveQuestion({{ question.id }})" min="1">
+                                </div>
+                                <div class="form-field">
+                                    <label>Max</label>
+                                    <input type="number" class="question-scale-max" value="{{ question.scale_max }}" data-field="scale_max" onblur="saveQuestion({{ question.id }})" min="2">
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-questions">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="empty-icon">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    <h3>Commencez à créer votre questionnaire</h3>
+                    <p>Glissez-déposez un type de question depuis la sidebar pour commencer</p>
+                </div>
+                {% endfor %}
+            </div>
+        </main>
+
+        <!-- Preview Panel (hidden by default) -->
+        <aside class="builder-preview" id="builder-preview" style="display: none;">
+            <div class="preview-header">
+                <h3>Aperçu</h3>
+                <button type="button" class="btn-close-preview" onclick="closePreview()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="preview-content" id="preview-content">
+                <!-- Preview sera généré dynamiquement -->
+            </div>
+        </aside>
+    </div>
+</div>
+
+<!-- Styles -->
+<link rel="stylesheet" href="{% static 'core/admin/market-studies.css' %}">
+<link rel="stylesheet" href="{% static 'core/admin/market-study-builder.css' %}">
+
+<!-- JavaScript -->
+<script src="{% static 'core/admin/market-study-builder.js' %}"></script>
+
+<script>
+    const studyId = {{ study.id }};
+    const saveQuestionUrl = '{% url "admin-market-study-save-question" study.id %}';
+    const deleteQuestionUrl = '{% url "admin-market-study-delete-question" study.id 0 %}'.replace('0/', '');
+    const reorderQuestionsUrl = '{% url "admin-market-study-reorder-questions" study.id %}';
+    const csrfToken = '{{ csrf_token }}';
+    const shareToken = '{{ study.share_token }}';
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        initBuilder();
+    });
+</script>
+{% endblock %}
+

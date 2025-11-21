@@ -1,0 +1,226 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="rgpd-page">
+    <div class="rgpd-container">
+        <h1>Conditions Générales d'Utilisation - Transpareo Connect</h1>
+        <p class="rgpd-last-updated">Dernière mise à jour : {{ "now"|date:"d/m/Y" }}</p>
+
+        <div class="rgpd-content">
+            <section class="rgpd-section">
+                <h2>1. Acceptation des Conditions</h2>
+                <p>En accédant et en utilisant Transpareo Connect, vous acceptez d'être lié par les présentes Conditions Générales d'Utilisation (CGU). Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser notre service.</p>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>2. Description du Service</h2>
+                <p>Transpareo Connect est un réseau social professionnel destiné au secteur immobilier, permettant :</p>
+                <ul>
+                    <li>La mise en relation entre locataires et propriétaires</li>
+                    <li>Le partage d'informations et d'expériences</li>
+                    <li>La création de groupes communautaires</li>
+                    <li>La gestion de contrats de location</li>
+                </ul>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>3. Inscription et Compte Utilisateur</h2>
+                <h3>3.1 Éligibilité</h3>
+                <p>Pour utiliser Transpareo Connect, vous devez :</p>
+                <ul>
+                    <li>Être âgé d'au moins 18 ans</li>
+                    <li>Fournir des informations exactes et complètes lors de l'inscription</li>
+                    <li>Vérifier votre adresse email</li>
+                    <li>Maintenir la sécurité de votre compte</li>
+                </ul>
+
+                <h3>3.2 Responsabilités</h3>
+                <p>Vous êtes responsable de :</p>
+                <ul>
+                    <li>La confidentialité de vos identifiants de connexion</li>
+                    <li>Toutes les activités qui se produisent sous votre compte</li>
+                    <li>Le contenu que vous publiez sur la plateforme</li>
+                </ul>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>4. Règles de Conduite</h2>
+                <p>En utilisant Transpareo Connect, vous vous engagez à :</p>
+                <ul>
+                    <li><strong>Respecter les autres utilisateurs</strong> : Pas de harcèlement, d'intimidation ou de comportement abusif</li>
+                    <li><strong>Publier du contenu approprié</strong> : Pas de contenu illégal, offensant, diffamatoire ou inapproprié</li>
+                    <li><strong>Ne pas spammer</strong> : Pas de publications répétitives ou commerciales non autorisées</li>
+                    <li><strong>Respecter la vie privée</strong> : Ne pas partager les informations personnelles d'autres utilisateurs sans consentement</li>
+                    <li><strong>Ne pas frauder</strong> : Pas d'arnaques, de tentatives de vente ou de demande d'argent hors plateforme</li>
+                </ul>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>5. Propriété Intellectuelle</h2>
+                <p>Le contenu que vous publiez sur Transpareo Connect reste votre propriété. En publiant du contenu, vous accordez à Transpareo une licence non exclusive, mondiale et gratuite pour utiliser, afficher, distribuer et modifier ce contenu dans le cadre du service.</p>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>6. Modération et Sanctions</h2>
+                <h3>6.1 Système de Modération</h3>
+                <p>Transpareo Connect dispose d'un système de modération automatique et manuelle :</p>
+                <ul>
+                    <li>Détection automatique de spam, arnaques et contenus inappropriés</li>
+                    <li>Mise en quarantaine des contenus suspects</li>
+                    <li>Review par les administrateurs</li>
+                </ul>
+
+                <h3>6.2 Sanctions</h3>
+                <p>En cas de violation des CGU, nous pouvons :</p>
+                <ul>
+                    <li>Avertir l'utilisateur</li>
+                    <li>Suspendre temporairement le compte (7 jours, 30 jours, ou durée personnalisée)</li>
+                    <li>Bannir définitivement le compte</li>
+                    <li>Supprimer le contenu inapproprié</li>
+                </ul>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>7. Limites de Responsabilité</h2>
+                <p>Transpareo Connect est fourni "tel quel". Nous ne garantissons pas :</p>
+                <ul>
+                    <li>La disponibilité ininterrompue du service</li>
+                    <li>L'exactitude des informations partagées par les utilisateurs</li>
+                    <li>La réussite des transactions entre utilisateurs</li>
+                </ul>
+                <p>Nous ne sommes pas responsables des pertes ou dommages résultant de l'utilisation de la plateforme.</p>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>8. Protection des Données</h2>
+                <p>Votre vie privée est importante. Consultez notre <a href="{% url 'politique-confidentialite' %}">Politique de Confidentialité</a> pour plus d'informations sur la collecte, l'utilisation et la protection de vos données personnelles.</p>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>9. Modification des CGU</h2>
+                <p>Nous nous réservons le droit de modifier ces CGU à tout moment. Les modifications prendront effet dès leur publication sur la plateforme. Votre utilisation continue du service après modification des CGU constitue votre acceptation des nouvelles conditions.</p>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>10. Résiliation</h2>
+                <p>Vous pouvez supprimer votre compte à tout moment via les paramètres de votre profil. Nous nous réservons également le droit de suspendre ou de résilier votre compte en cas de violation des CGU.</p>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>11. Droit Applicable</h2>
+                <p>Ces CGU sont régies par le droit français. Tout litige sera soumis à la compétence exclusive des tribunaux français.</p>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>12. Contact</h2>
+                <p>Pour toute question concernant ces CGU, vous pouvez nous contacter via le support de la plateforme.</p>
+            </section>
+        </div>
+    </div>
+</div>
+
+<style>
+    .rgpd-page {
+        min-height: calc(100vh - 70px);
+        background: #f5f5f5;
+        padding: 40px 20px;
+    }
+
+    .rgpd-container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 12px;
+        padding: 40px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .rgpd-page h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 10px;
+    }
+
+    .rgpd-last-updated {
+        color: #666;
+        font-size: 14px;
+        margin-bottom: 40px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #e5e5e5;
+    }
+
+    .rgpd-content {
+        line-height: 1.8;
+        color: #333;
+    }
+
+    .rgpd-section {
+        margin-bottom: 40px;
+    }
+
+    .rgpd-section h2 {
+        font-size: 24px;
+        font-weight: 700;
+        color: #D3580B;
+        margin-bottom: 16px;
+        margin-top: 32px;
+    }
+
+    .rgpd-section h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-top: 24px;
+        margin-bottom: 12px;
+    }
+
+    .rgpd-section p {
+        margin-bottom: 16px;
+        color: #555;
+    }
+
+    .rgpd-section ul {
+        margin-left: 20px;
+        margin-bottom: 16px;
+    }
+
+    .rgpd-section li {
+        margin-bottom: 8px;
+        color: #555;
+    }
+
+    .rgpd-section a {
+        color: #D3580B;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .rgpd-section a:hover {
+        text-decoration: underline;
+    }
+
+    .rgpd-section strong {
+        color: #333;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .rgpd-container {
+            padding: 24px;
+        }
+
+        .rgpd-page h1 {
+            font-size: 24px;
+        }
+
+        .rgpd-section h2 {
+            font-size: 20px;
+        }
+    }
+</style>
+{% endblock %}
+

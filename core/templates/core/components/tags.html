@@ -1,0 +1,14 @@
+{% load static %}
+
+<div class="tags-container" style="display: flex; flex-wrap: wrap; gap: var(--space-2);">
+    {% for tag in tags %}
+        <span class="tag {% if tag.accent %}tag-accent{% endif %}" 
+              {% if tag.url %}onclick="window.location.href='{{ tag.url }}'" style="cursor: pointer;"{% endif %}>
+            {% if tag.icon %}
+                <span aria-hidden="true">{{ tag.icon }}</span>
+            {% endif %}
+            <span>{{ tag.label }}</span>
+        </span>
+    {% endfor %}
+</div>
+

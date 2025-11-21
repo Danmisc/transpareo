@@ -1,0 +1,149 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Démonstration du Design System - Transpareo{% endblock %}
+
+{% block content %}
+<main id="main-content">
+    <!-- Breadcrumb -->
+    {% include "core/components/breadcrumb.html" with breadcrumb_items=breadcrumb_items %}
+    
+    <div class="container container-normal" style="padding: var(--space-8) 0;">
+        <h1 style="font-size: var(--font-size-4xl); font-weight: 700; margin-bottom: var(--space-8); color: var(--color-text-primary);">
+            Démonstration du Design System Transpareo
+        </h1>
+        
+        <!-- Section: Cartes -->
+        <section style="margin-bottom: var(--space-12);">
+            <h2 style="font-size: var(--font-size-2xl); margin-bottom: var(--space-6);">Cartes réutilisables</h2>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-6);">
+                <!-- Carte générique -->
+                <div class="card">
+                    <h3 style="margin-bottom: var(--space-4);">Carte générique</h3>
+                    <p style="color: var(--color-text-secondary); line-height: var(--line-height-relaxed);">
+                        Exemple de carte avec bords arrondis doux et ombre subtile.
+                    </p>
+                </div>
+                
+                <!-- Carte compacte -->
+                <div class="card card-compact">
+                    <h3 style="margin-bottom: var(--space-2);">Carte compacte</h3>
+                    <p style="color: var(--color-text-secondary); font-size: var(--font-size-sm);">
+                        Version compacte avec moins de padding.
+                    </p>
+                </div>
+                
+                <!-- Carte large -->
+                <div class="card card-large">
+                    <h3 style="margin-bottom: var(--space-6);">Carte large</h3>
+                    <p style="color: var(--color-text-secondary); line-height: var(--line-height-relaxed);">
+                        Version large avec plus d'espace pour le contenu.
+                    </p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Section: Boutons -->
+        <section style="margin-bottom: var(--space-12);">
+            <h2 style="font-size: var(--font-size-2xl); margin-bottom: var(--space-6);">Boutons</h2>
+            
+            <div style="display: flex; flex-wrap: wrap; gap: var(--space-4);">
+                <button class="btn btn-primary">Bouton principal</button>
+                <button class="btn btn-secondary">Bouton secondaire</button>
+                <button class="btn btn-ghost">Bouton fantôme</button>
+                <button class="btn btn-primary btn-sm">Petit</button>
+                <button class="btn btn-primary btn-lg">Grand</button>
+            </div>
+        </section>
+        
+        <!-- Section: Tags -->
+        <section style="margin-bottom: var(--space-12);">
+            <h2 style="font-size: var(--font-size-2xl); margin-bottom: var(--space-6);">Tags</h2>
+            
+            {% include "core/components/tags.html" with tags=tags_example %}
+        </section>
+        
+        <!-- Section: Feedback visuel -->
+        <section style="margin-bottom: var(--space-12);">
+            <h2 style="font-size: var(--font-size-2xl); margin-bottom: var(--space-6);">Feedback visuel</h2>
+            
+            <div style="display: flex; flex-wrap: wrap; gap: var(--space-4);">
+                <button class="btn btn-primary" onclick="showToast('Succès!', 'success')">
+                    Toast succès
+                </button>
+                <button class="btn btn-secondary" onclick="showToast('Erreur!', 'error')">
+                    Toast erreur
+                </button>
+                <button class="btn btn-ghost" onclick="showToast('Information', 'info')">
+                    Toast info
+                </button>
+                <button class="btn btn-primary" id="loader-btn" onclick="showLoader(this); setTimeout(() => hideLoader(this), 2000)">
+                    Loader
+                </button>
+                <button class="btn btn-primary" onclick="showCheck(this)">
+                    Check
+                </button>
+                <button class="btn btn-secondary" onclick="shake(this)">
+                    Shake (erreur)
+                </button>
+            </div>
+        </section>
+        
+        <!-- Section: Modale -->
+        <section style="margin-bottom: var(--space-12);">
+            <h2 style="font-size: var(--font-size-2xl); margin-bottom: var(--space-6);">Modale</h2>
+            
+            <button class="btn btn-primary" onclick="openModal('demo-modal')">
+                Ouvrir une modale
+            </button>
+            
+            {% include "core/components/modal.html" with modal_id="demo-modal" title="Exemple de modale" content="<p>Ceci est un exemple de modale accessible avec focus trap et fermeture au clavier.</p>" %}
+        </section>
+        
+        <!-- Section: Quick Actions -->
+        <section style="margin-bottom: var(--space-12);">
+            <h2 style="font-size: var(--font-size-2xl); margin-bottom: var(--space-6);">Quick Actions</h2>
+            
+            <div class="card" data-quick-actions='[{"icon": "💬", "label": "Envoyer un message", "url": "#"}, {"icon": "➕", "label": "Ajouter", "action": "addAction"}, {"icon": "👁️", "label": "Voir", "url": "#"}]'>
+                <p style="color: var(--color-text-secondary);">
+                    Survolez cette carte pour voir les quick actions apparaître en bas à droite.
+                </p>
+            </div>
+        </section>
+        
+        <!-- Section: Mode sombre -->
+        <section style="margin-bottom: var(--space-12);">
+            <h2 style="font-size: var(--font-size-2xl); margin-bottom: var(--space-6);">Mode sombre</h2>
+            
+            <button class="btn btn-primary" onclick="toggleDarkMode()">
+                Basculer le mode sombre
+            </button>
+        </section>
+    </div>
+</main>
+
+<script>
+function toggleDarkMode() {
+    const html = document.documentElement;
+    const currentTheme = html.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    showToast(`Mode ${newTheme === 'dark' ? 'sombre' : 'clair'} activé`, 'info');
+}
+
+// Restaurer le thème au chargement
+document.addEventListener('DOMContentLoaded', () => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+});
+
+function addAction() {
+    showToast('Action ajoutée!', 'success');
+}
+</script>
+{% endblock %}
+

@@ -1,0 +1,725 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Détail Logement - Transpareo</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f7f7f7;
+        }
+        
+        .navbar {
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+            padding: 0 40px;
+            height: 85px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 999;
+            box-shadow: 0 4px 20px rgba(201, 82, 8, 0.15);
+        }
+        
+        .navbar #logo {
+            color: white;
+            font-size: 28px;
+            font-weight: 700;
+            text-decoration: none;
+        }
+        
+        .nav-spacer {
+            height: 85px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+        
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 16px;
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .back-btn:hover {
+            background: #f5f5f5;
+            border-color: #D3580B;
+        }
+        
+        /* ========== GALERIE PHOTOS ========== */
+        .gallery-section {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .gallery-main {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            background: #000;
+            overflow: hidden;
+        }
+        
+        .gallery-main-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+        
+        .gallery-main-img.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .gallery-counter {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        .gallery-thumbs {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            padding: 12px;
+            background: #f5f5f5;
+        }
+        
+        .gallery-thumb {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 6px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .gallery-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .gallery-thumb:hover {
+            border-color: #D3580B;
+        }
+        
+        .gallery-thumb.active {
+            border-color: #D3580B;
+        }
+        
+        /* ========== DÉTAILS LOGEMENT ========== */
+        .details-section {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .details-main {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .details-main h1 {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 12px;
+        }
+        
+        .details-main .adresse {
+            color: #999;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        
+        .rating-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .stars {
+            color: #FFC107;
+            font-size: 18px;
+        }
+        
+        .rating-text {
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .info-item {
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border-left: 3px solid #D3580B;
+        }
+        
+        .info-item-label {
+            font-size: 12px;
+            color: #999;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        
+        .info-item-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .description {
+            font-size: 15px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        /* ========== SIDEBAR ========== */
+        .details-sidebar {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+        
+        .prix-section {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .prix-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #D3580B;
+        }
+        
+        .prix-label {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .btn-primary {
+            width: 100%;
+            padding: 12px;
+            background: #D3580B;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary:hover {
+            background: #c4510a;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(211, 88, 11, 0.3);
+        }
+        
+        .btn-secondary {
+            width: 100%;
+            padding: 12px;
+            background: white;
+            color: #D3580B;
+            border: 2px solid #D3580B;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+        
+        .btn-secondary:hover {
+            background: #FFF5ED;
+        }
+        
+        /* ========== AVIS ========== */
+        .avis-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .avis-section h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .avis-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .avis-item {
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border-left: 3px solid #FFC107;
+        }
+        
+        .avis-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .avis-author {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .avis-rating {
+            color: #FFC107;
+        }
+        
+        .avis-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 6px;
+        }
+        
+        .avis-text {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        /* ========== RECOMMANDÉES ========== */
+        .recommandes-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .recommandes-section h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .recommandes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .logement-recommande {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .logement-recommande:hover {
+            box-shadow: 0 4px 12px rgba(211, 88, 11, 0.2);
+            border-color: #D3580B;
+        }
+        
+        .logement-image {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+        
+        .logement-info {
+            padding: 12px;
+        }
+        
+        .logement-titre {
+            font-weight: 600;
+            color: #333;
+            font-size: 13px;
+            margin-bottom: 6px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .logement-prix {
+            color: #D3580B;
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        
+        .logement-meta {
+            font-size: 11px;
+            color: #999;
+        }
+        
+        /* ========== MAP ========== */
+        #map {
+            width: 100%;
+            height: 400px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        @media (max-width: 768px) {
+            .details-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .recommandes-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+            
+            .gallery-main {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="navbar">
+    <a href="/" id="logo">Transpareo</a>
+</nav>
+
+<div class="nav-spacer"></div>
+
+<!-- Main Content -->
+<div class="container">
+    
+    <!-- Back Button -->
+    <a href="/map/" class="back-btn">← Retour à la carte</a>
+    
+    <!-- Gallery -->
+    <div class="gallery-section">
+        <div class="gallery-main" id="gallery-main">
+            <img id="main-image" class="gallery-main-img" src="" alt="Logement" />
+            <div class="gallery-counter">
+                <span id="image-current">1</span> / <span id="image-total">0</span>
+            </div>
+        </div>
+        <div class="gallery-thumbs" id="gallery-thumbs"></div>
+    </div>
+    
+    <!-- Details -->
+    <div class="details-section">
+        
+        <!-- Main Details -->
+        <div class="details-main">
+            <h1 id="logement-titre">Titre du logement</h1>
+            <div class="adresse" id="logement-adresse">Adresse</div>
+            
+            <div class="rating-section">
+                <span class="stars" id="logement-stars">⭐⭐⭐⭐⭐</span>
+                <span class="rating-text" id="logement-rating">5.0 (12 avis)</span>
+            </div>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-item-label">Surface</div>
+                    <div class="info-item-value"><span id="logement-surface">0</span>m²</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-item-label">Chambres</div>
+                    <div class="info-item-value" id="logement-chambres">0</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-item-label">Type</div>
+                    <div class="info-item-value" id="logement-type">-</div>
+                </div>
+            </div>
+            
+            <div class="description" id="logement-description">Description du logement...</div>
+            
+            <!-- Map -->
+            <div id="map"></div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="details-sidebar">
+            <div class="prix-section">
+                <div class="prix-value"><span id="logement-prix">0</span>€</div>
+                <div class="prix-label">par mois</div>
+            </div>
+            
+            <button class="btn-primary" onclick="laisserAvis()">Laisser un avis</button>
+            <button class="btn-secondary" onclick="reclamerBien()">Revendiquer ce bien</button>
+            <button class="btn-primary" onclick="toggleFavori()" id="btn-favori">❤️ Ajouter aux favoris</button>
+        </div>
+        
+    </div>
+    
+    <!-- Avis Section -->
+    <div class="avis-section" id="avis-section">
+        <h2>Avis des locataires</h2>
+        <div class="avis-list" id="avis-list"></div>
+    </div>
+    
+    <!-- Recommandées Section -->
+    <div class="recommandes-section">
+        <h2>Logements recommandés</h2>
+        <div id="tabs-recommandes" style="display: flex; gap: 20px; margin-bottom: 20px;">
+            <button onclick="loadRecommandes('plus_proches')" style="
+                padding: 10px 16px;
+                background: #D3580B;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 600;
+            ">📍 Les plus proches</button>
+            <button onclick="loadRecommandes('mieux_notes')" style="
+                padding: 10px 16px;
+                background: white;
+                color: #D3580B;
+                border: 2px solid #D3580B;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 600;
+            ">⭐ Les mieux notés</button>
+            <button onclick="loadRecommandes('plus_recents')" style="
+                padding: 10px 16px;
+                background: white;
+                color: #D3580B;
+                border: 2px solid #D3580B;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 600;
+            ">📅 Les plus récents</button>
+        </div>
+        <div class="recommandes-grid" id="recommandes-grid"></div>
+    </div>
+    
+</div>
+
+<!-- Leaflet -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Custom Script -->
+<script>
+let logementId = null;
+let logementData = null;
+let currentImageIndex = 0;
+let map = null;
+
+// Get logement ID from URL
+document.addEventListener('DOMContentLoaded', function() {
+    logementId = window.location.pathname.split('/').filter(x => x).pop();
+    loadLogementDetail();
+});
+
+function loadLogementDetail() {
+    fetch(`/api/map/logement/${logementId}/detail-complet/`)
+        .then(r => r.json())
+        .then(data => {
+            logementData = data;
+            displayLogement(data);
+            loadRecommandes('plus_proches');
+            initMap();
+        })
+        .catch(e => console.error('Erreur:', e));
+}
+
+function displayLogement(log) {
+    document.getElementById('logement-titre').textContent = log.titre;
+    document.getElementById('logement-adresse').textContent = log.adresse + ' ' + log.code_postal;
+    document.getElementById('logement-prix').textContent = Math.round(log.prix);
+    document.getElementById('logement-surface').textContent = Math.round(log.surface);
+    document.getElementById('logement-chambres').textContent = log.chambres;
+    document.getElementById('logement-type').textContent = log.type_logement;
+    document.getElementById('logement-description').textContent = log.description || 'Pas de description disponible';
+    
+    const stars = '⭐'.repeat(Math.round(log.note_moyenne));
+    document.getElementById('logement-stars').textContent = stars;
+    document.getElementById('logement-rating').textContent = log.note_moyenne.toFixed(1) + ' (' + log.nombre_avis + ' avis)';
+    
+    // Gallery
+    if (log.images && log.images.length > 0) {
+        const gallery = document.getElementById('gallery-thumbs');
+        gallery.innerHTML = log.images.map((img, idx) => `
+            <div class="gallery-thumb ${idx === 0 ? 'active' : ''}" onclick="selectImage(${idx})">
+                <img src="${img.image}" alt="Photo ${idx + 1}" />
+            </div>
+        `).join('');
+        
+        document.getElementById('image-total').textContent = log.images.length;
+        selectImage(0);
+    }
+    
+    // Avis
+    const avisList = document.getElementById('avis-list');
+    if (log.avis && log.avis.length > 0) {
+        avisList.innerHTML = log.avis.map(avis => `
+            <div class="avis-item">
+                <div class="avis-header">
+                    <div class="avis-author">${avis.locataire__username}</div>
+                    <div class="avis-rating">${'⭐'.repeat(avis.note)}</div>
+                </div>
+                <div class="avis-title">${avis.titre}</div>
+                <div class="avis-text">${avis.commentaire}</div>
+            </div>
+        `).join('');
+    } else {
+        avisList.innerHTML = '<p style="color: #999;">Pas d\'avis pour le moment</p>';
+    }
+    
+    // Favori button
+    if (log.est_favori) {
+        document.getElementById('btn-favori').textContent = '❤️ Ajouter aux favoris';
+    }
+}
+
+function selectImage(idx) {
+    currentImageIndex = idx;
+    document.querySelectorAll('.gallery-thumb').forEach((el, i) => {
+        el.classList.toggle('active', i === idx);
+    });
+    
+    const img = logementData.images[idx];
+    document.getElementById('main-image').src = img.image;
+    document.getElementById('main-image').classList.add('active');
+    document.getElementById('image-current').textContent = idx + 1;
+}
+
+function loadRecommandes(categorie) {
+    fetch(`/api/map/logements-recommandes/${logementId}/?lat=${logementData.latitude}&lng=${logementData.longitude}`)
+        .then(r => r.json())
+        .then(data => {
+            const logements = data[categorie] || [];
+            const grid = document.getElementById('recommandes-grid');
+            grid.innerHTML = logements.map(log => `
+                <div class="logement-recommande" onclick="goToLogement(${log.id})">
+                    <img src="${log.url_image || 'https://via.placeholder.com/200'}" class="logement-image" alt="${log.titre}" />
+                    <div class="logement-info">
+                        <div class="logement-titre">${log.titre}</div>
+                        <div class="logement-prix">${Math.round(log.prix)}€/mois</div>
+                        <div class="logement-meta">⭐${log.note.toFixed(1)} • ${log.surface}m²</div>
+                    </div>
+                </div>
+            `).join('');
+        });
+}
+
+function goToLogement(id) {
+    window.location.href = `/logement/${id}/`;
+}
+
+function toggleFavori() {
+    fetch(`/api/map/logement/${logementId}/favori/`, {
+        method: 'POST',
+        headers: {'X-CSRFToken': getCookie('csrftoken')}
+    })
+    .then(r => r.json())
+    .then(data => {
+        const btn = document.getElementById('btn-favori');
+        if (data.is_favori) {
+            btn.textContent = '❤️ Retirer des favoris';
+        } else {
+            btn.textContent = '❤️ Ajouter aux favoris';
+        }
+    });
+}
+
+function laisserAvis() {
+    alert('Ouverture du formulaire avis');
+}
+
+function reclamerBien() {
+    alert('Ouverture du formulaire réclamation');
+}
+
+function initMap() {
+    if (!map) {
+        map = L.map('map').setView([logementData.latitude, logementData.longitude], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    }
+    
+    const marker = L.marker([logementData.latitude, logementData.longitude]).addTo(map);
+    marker.bindPopup(`<b>${logementData.titre}</b><br>${logementData.prix}€/mois`).openPopup();
+}
+
+function getCookie(name) {
+    let value = null;
+    if (document.cookie) {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.startsWith(name + '=')) {
+                value = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return value;
+}
+</script>
+
+</body>
+</html>

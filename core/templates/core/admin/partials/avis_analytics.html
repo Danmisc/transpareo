@@ -1,0 +1,335 @@
+{% load humanize %}
+<!-- Analytics Dashboard -->
+<div class="analytics-dashboard">
+    <!-- KPIs Cards -->
+    <div class="analytics-kpis">
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                </div>
+                <h3>Volume avis</h3>
+            </div>
+            <div class="kpi-value">{{ stats.total_avis|intcomma }}</div>
+            <div class="kpi-trend {% if stats.evolution_avis > 0 %}trend-up{% else %}trend-down{% endif %}">
+                {{ stats.evolution_avis|floatformat:0 }}% ce mois
+            </div>
+            <div class="kpi-chart-mini" id="volume-chart"></div>
+        </div>
+        
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                </div>
+                <h3>Note moyenne globale</h3>
+            </div>
+            <div class="kpi-value">
+                <div class="note-display-large">
+                    {% for i in "12345" %}
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="{% if forloop.counter <= stats.note_moyenne_globale %}currentColor{% else %}none{% endif %}" 
+                         stroke="currentColor" stroke-width="2" style="color: #F59E0B;">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                    {% endfor %}
+                    <span>{{ stats.note_moyenne_globale|floatformat:1 }}/5</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+                <h3>Taux réponse propriétaires</h3>
+            </div>
+            <div class="kpi-value">{{ stats.taux_reponse|floatformat:0 }}%</div>
+            <div class="kpi-gauge">
+                <div class="gauge-circle" data-percent="{{ stats.taux_reponse }}">
+                    <svg viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="#E5E7EB" stroke-width="8"></circle>
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="#10B981" stroke-width="8" 
+                                stroke-dasharray="{{ stats.taux_reponse|floatformat:0 }} 100" 
+                                stroke-dashoffset="25" transform="rotate(-90 50 50)"></circle>
+                    </svg>
+                    <div class="gauge-value">{{ stats.taux_reponse|floatformat:0 }}%</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M10.29 3.86L1 20h18.01l-7.72-16.14z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                </div>
+                <h3>Taux fraude détecté</h3>
+            </div>
+            <div class="kpi-value">3.2%</div>
+            <div class="kpi-trend trend-down">En baisse</div>
+        </div>
+    </div>
+
+    <!-- Graphiques -->
+    <div class="analytics-charts">
+        <div class="chart-card">
+            <h3>Évolution avis dans le temps</h3>
+            <canvas id="evolution-chart"></canvas>
+        </div>
+        
+        <div class="chart-card">
+            <h3>Répartition par note</h3>
+            <canvas id="repartition-chart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    // Données pour graphiques
+    const evolutionData = {{ evolution_data|safe }};
+    const repartitionData = {{ repartition_notes|safe }};
+    
+    // Graphique évolution
+    const ctxEvolution = document.getElementById('evolution-chart');
+    if (ctxEvolution) {
+        new Chart(ctxEvolution, {
+            type: 'line',
+            data: {
+                labels: evolutionData.map(d => d.mois),
+                datasets: [{
+                    label: 'Avis publiés',
+                    data: evolutionData.map(d => d.count),
+                    borderColor: '#3B82F6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true
+                    }
+                }
+            }
+        });
+    }
+    
+    // Graphique répartition
+    const ctxRepartition = document.getElementById('repartition-chart');
+    if (ctxRepartition) {
+        new Chart(ctxRepartition, {
+            type: 'bar',
+            data: {
+                labels: repartitionData.map(d => d.note + ' étoiles'),
+                datasets: [{
+                    label: 'Nombre d\'avis',
+                    data: repartitionData.map(d => d.count),
+                    backgroundColor: [
+                        '#EF4444',
+                        '#F59E0B',
+                        '#F59E0B',
+                        '#10B981',
+                        '#10B981'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+</script>
+
+<!-- Analytics Dashboard -->
+<div class="analytics-dashboard">
+    <!-- KPIs Cards -->
+    <div class="analytics-kpis">
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                </div>
+                <h3>Volume avis</h3>
+            </div>
+            <div class="kpi-value">{{ stats.total_avis|intcomma }}</div>
+            <div class="kpi-trend {% if stats.evolution_avis > 0 %}trend-up{% else %}trend-down{% endif %}">
+                {{ stats.evolution_avis|floatformat:0 }}% ce mois
+            </div>
+            <div class="kpi-chart-mini" id="volume-chart"></div>
+        </div>
+        
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                </div>
+                <h3>Note moyenne globale</h3>
+            </div>
+            <div class="kpi-value">
+                <div class="note-display-large">
+                    {% for i in "12345" %}
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="{% if forloop.counter <= stats.note_moyenne_globale %}currentColor{% else %}none{% endif %}" 
+                         stroke="currentColor" stroke-width="2" style="color: #F59E0B;">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                    {% endfor %}
+                    <span>{{ stats.note_moyenne_globale|floatformat:1 }}/5</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+                <h3>Taux réponse propriétaires</h3>
+            </div>
+            <div class="kpi-value">{{ stats.taux_reponse|floatformat:0 }}%</div>
+            <div class="kpi-gauge">
+                <div class="gauge-circle" data-percent="{{ stats.taux_reponse }}">
+                    <svg viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="#E5E7EB" stroke-width="8"></circle>
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="#10B981" stroke-width="8" 
+                                stroke-dasharray="{{ stats.taux_reponse|floatformat:0 }} 100" 
+                                stroke-dashoffset="25" transform="rotate(-90 50 50)"></circle>
+                    </svg>
+                    <div class="gauge-value">{{ stats.taux_reponse|floatformat:0 }}%</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M10.29 3.86L1 20h18.01l-7.72-16.14z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                </div>
+                <h3>Taux fraude détecté</h3>
+            </div>
+            <div class="kpi-value">3.2%</div>
+            <div class="kpi-trend trend-down">En baisse</div>
+        </div>
+    </div>
+
+    <!-- Graphiques -->
+    <div class="analytics-charts">
+        <div class="chart-card">
+            <h3>Évolution avis dans le temps</h3>
+            <canvas id="evolution-chart"></canvas>
+        </div>
+        
+        <div class="chart-card">
+            <h3>Répartition par note</h3>
+            <canvas id="repartition-chart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    // Données pour graphiques
+    const evolutionData = {{ evolution_data|safe }};
+    const repartitionData = {{ repartition_notes|safe }};
+    
+    // Graphique évolution
+    const ctxEvolution = document.getElementById('evolution-chart');
+    if (ctxEvolution) {
+        new Chart(ctxEvolution, {
+            type: 'line',
+            data: {
+                labels: evolutionData.map(d => d.mois),
+                datasets: [{
+                    label: 'Avis publiés',
+                    data: evolutionData.map(d => d.count),
+                    borderColor: '#3B82F6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true
+                    }
+                }
+            }
+        });
+    }
+    
+    // Graphique répartition
+    const ctxRepartition = document.getElementById('repartition-chart');
+    if (ctxRepartition) {
+        new Chart(ctxRepartition, {
+            type: 'bar',
+            data: {
+                labels: repartitionData.map(d => d.note + ' étoiles'),
+                datasets: [{
+                    label: 'Nombre d\'avis',
+                    data: repartitionData.map(d => d.count),
+                    backgroundColor: [
+                        '#EF4444',
+                        '#F59E0B',
+                        '#F59E0B',
+                        '#10B981',
+                        '#10B981'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+</script>
+

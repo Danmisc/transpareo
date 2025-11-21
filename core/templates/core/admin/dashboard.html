@@ -1,0 +1,366 @@
+{% extends 'core/admin/base_admin.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block page_title %}Tableau de bord{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard-page">
+    <!-- Filtres Dashboard -->
+    <div class="dashboard-filters">
+        <form method="get" class="filters-form" id="dashboard-filters">
+            <div class="filter-group">
+                <label for="period">Période</label>
+                <select name="period" id="period" class="filter-select">
+                    <option value="7j" {% if period == '7j' %}selected{% endif %}>7 jours</option>
+                    <option value="30j" {% if period == '30j' %}selected{% endif %}>30 jours</option>
+                    <option value="3mois" {% if period == '3mois' %}selected{% endif %}>3 mois</option>
+                    <option value="6mois" {% if period == '6mois' %}selected{% endif %}>6 mois</option>
+                    <option value="1an" {% if period == '1an' %}selected{% endif %}>1 an</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="city">Ville</label>
+                <select name="city" id="city" class="filter-select">
+                    <option value="all" {% if city_filter == 'all' %}selected{% endif %}>Toutes</option>
+                    {% for city in cities %}
+                    <option value="{{ city }}" {% if city_filter == city %}selected{% endif %}>{{ city }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="user_type">Type utilisateur</label>
+                <select name="user_type" id="user_type" class="filter-select">
+                    <option value="all" {% if user_type_filter == 'all' %}selected{% endif %}>Tous</option>
+                    <option value="locataires" {% if user_type_filter == 'locataires' %}selected{% endif %}>Locataires</option>
+                    <option value="proprietaires" {% if user_type_filter == 'proprietaires' %}selected{% endif %}>Propriétaires</option>
+                    <option value="entreprises" {% if user_type_filter == 'entreprises' %}selected{% endif %}>Entreprises</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-refresh">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+                Rafraîchir
+            </button>
+        </form>
+    </div>
+
+    <!-- KPIs Cards (4 cards) -->
+    <div class="kpis-grid">
+        <!-- KPI 1 - Utilisateurs Actifs -->
+        <div class="kpi-card kpi-blue">
+            <div class="kpi-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+            </div>
+            <div class="kpi-content">
+                <div class="kpi-label">Utilisateurs Actifs</div>
+                <div class="kpi-value">{{ total_users|intcomma }}</div>
+                <div class="kpi-evolution {% if users_evolution >= 0 %}positive{% else %}negative{% endif %}">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        {% if users_evolution >= 0 %}
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                        {% else %}
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                        {% endif %}
+                    </svg>
+                    <span>{{ users_evolution|floatformat:1 }}% ce mois</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI 2 - Logements Publiés -->
+        <div class="kpi-card kpi-green">
+            <div class="kpi-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+            </div>
+            <div class="kpi-content">
+                <div class="kpi-label">Logements Publiés</div>
+                <div class="kpi-value">{{ total_logements|intcomma }}</div>
+                <div class="kpi-evolution {% if logements_evolution >= 0 %}positive{% else %}negative{% endif %}">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        {% if logements_evolution >= 0 %}
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                        {% else %}
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                        {% endif %}
+                    </svg>
+                    <span>{{ logements_evolution|floatformat:1 }}% ce mois</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI 3 - Candidatures ce mois -->
+        <div class="kpi-card kpi-orange">
+            <div class="kpi-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+            </div>
+            <div class="kpi-content">
+                <div class="kpi-label">Candidatures ce mois</div>
+                <div class="kpi-value">{{ candidatures_this_month|intcomma }}</div>
+                <div class="kpi-evolution {% if candidatures_evolution >= 0 %}positive{% else %}negative{% endif %}">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        {% if candidatures_evolution >= 0 %}
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                        {% else %}
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                        {% endif %}
+                    </svg>
+                    <span>{{ candidatures_evolution|floatformat:1 }}% ce mois</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI 4 - Revenu Total -->
+        <div class="kpi-card kpi-purple">
+            <div class="kpi-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+            </div>
+            <div class="kpi-content">
+                <div class="kpi-label">Revenu Total</div>
+                <div class="kpi-value">{{ total_revenue|floatformat:0|intcomma }} €</div>
+                <div class="kpi-evolution {% if revenue_evolution >= 0 %}positive{% else %}negative{% endif %}">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        {% if revenue_evolution >= 0 %}
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                        {% else %}
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                        {% endif %}
+                    </svg>
+                    <span>{{ revenue_evolution|floatformat:1 }}% ce mois</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphiques et Widgets -->
+    <div class="dashboard-grid">
+        <!-- Graphique 1 - Croissance Utilisateurs (Line chart) -->
+        <div class="dashboard-card chart-card">
+            <div class="card-header">
+                <h3 class="card-title">Croissance des Utilisateurs</h3>
+                <div class="card-actions">
+                    <button class="btn-icon" onclick="exportChart('userGrowthChart', 'png')" title="Télécharger PNG">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                    </button>
+                    <button class="btn-icon" onclick="exportChart('userGrowthChart', 'csv')" title="Télécharger CSV">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="userGrowthChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Graphique 2 - Candidatures par Statut (Donut chart) -->
+        <div class="dashboard-card chart-card">
+            <div class="card-header">
+                <h3 class="card-title">Candidatures par Statut</h3>
+            </div>
+            <div class="chart-container">
+                <canvas id="candidaturesDonutChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Graphique 3 - Revenus Mensuels (Bar chart) -->
+        <div class="dashboard-card chart-card chart-full">
+            <div class="card-header">
+                <h3 class="card-title">Revenus Mensuels (12 derniers mois)</h3>
+                <div class="card-actions">
+                    <button class="btn-icon" onclick="exportChart('revenueChart', 'png')" title="Télécharger PNG">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Widget Activité Récente -->
+        <div class="dashboard-card widget-card">
+            <div class="card-header">
+                <h3 class="card-title">Activité Récente</h3>
+                <a href="#" class="card-link">Voir tout</a>
+            </div>
+            <div class="widget-content">
+                {% if recent_activities %}
+                <ul class="activity-list">
+                    {% for activity in recent_activities %}
+                    <li class="activity-item">
+                        <div class="activity-icon">
+                            {% if activity.type_activite == 'connexion' %}
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                                <polyline points="10 17 15 12 10 7"></polyline>
+                                <line x1="15" y1="12" x2="3" y2="12"></line>
+                            </svg>
+                            {% elif activity.type_activite == 'creation' %}
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            {% else %}
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            {% endif %}
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-text">{{ activity.description|default:activity.type_activite }}</div>
+                            <div class="activity-time">{{ activity.created_at|naturaltime }}</div>
+                        </div>
+                        {% if activity.user %}
+                        <a href="{% url 'admin-user-detail' activity.user.id %}" class="activity-link">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </a>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="empty-state">Aucune activité récente</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Widget Top Propriétaires -->
+        <div class="dashboard-card widget-card">
+            <div class="card-header">
+                <h3 class="card-title">Top Propriétaires</h3>
+                <a href="{% url 'admin-users' %}?user_type=proprietaires" class="card-link">Voir tout</a>
+            </div>
+            <div class="widget-content">
+                {% if top_proprietaires %}
+                <ul class="top-list">
+                    {% for prop in top_proprietaires %}
+                    <li class="top-item">
+                        <div class="top-avatar">
+                            {% if prop.avatar %}
+                            <img src="{{ prop.avatar.url }}" alt="{{ prop.username }}">
+                            {% else %}
+                            <div class="avatar-placeholder">{{ prop.username|first|upper }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="top-info">
+                            <div class="top-name">{{ prop.get_full_name|default:prop.username }}</div>
+                            <div class="top-details">
+                                <span class="top-rating">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                    </svg>
+                                    {{ prop.avg_rating|floatformat:1|default:"0.0" }}
+                                </span>
+                                <span class="top-separator">•</span>
+                                <span class="top-count">{{ prop.biens_count }} bien{{ prop.biens_count|pluralize }}</span>
+                            </div>
+                        </div>
+                        <a href="{% url 'admin-user-detail' prop.id %}" class="top-link">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="empty-state">Aucun propriétaire</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Widget Alertes & Notifications -->
+        <div class="dashboard-card widget-card">
+            <div class="card-header">
+                <h3 class="card-title">Alertes & Notifications</h3>
+                <span class="badge-count">{{ alerts|length }}</span>
+            </div>
+            <div class="widget-content">
+                {% if alerts %}
+                <ul class="alerts-list">
+                    {% for alert in alerts %}
+                    <li class="alert-item alert-{{ alert.priority }}">
+                        <div class="alert-badge priority-{{ alert.priority }}">
+                            {% if alert.priority == 'haute' %}🔴
+                            {% elif alert.priority == 'moyenne' %}🟡
+                            {% else %}🟢
+                            {% endif %}
+                        </div>
+                        <div class="alert-content">
+                            <div class="alert-title">{{ alert.title }}</div>
+                            <div class="alert-description">{{ alert.description }}</div>
+                        </div>
+                        <a href="{{ alert.url }}" class="alert-action">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="empty-state">Aucune alerte</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Styles -->
+<link rel="stylesheet" href="{% static 'core/admin/dashboard.css' %}">
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+
+<!-- Dashboard JavaScript -->
+<script src="{% static 'core/admin/dashboard.js' %}"></script>
+
+<script>
+    // Données pour les graphiques
+    const userGrowthData = {{ user_growth_data|safe }};
+    const candidaturesStats = {{ candidatures_stats|safe }};
+    const totalCandidatures = {{ total_candidatures_for_chart }};
+    const revenueMonthlyData = {{ revenue_monthly_data|safe }};
+
+    // Initialiser les graphiques
+    document.addEventListener('DOMContentLoaded', function() {
+        initDashboardCharts();
+    });
+</script>
+{% endblock %}

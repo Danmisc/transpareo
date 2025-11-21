@@ -1,0 +1,785 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="connect-groups-page">
+    <div class="groups-container">
+        <!-- En-tête -->
+        <div class="groups-header">
+            <div>
+                <h1>Groupes & Communautés</h1>
+                <p class="header-subtitle">Rejoignez des groupes de discussion et échangez avec des locataires et propriétaires</p>
+            </div>
+            <a href="{% url 'create-group' %}" class="btn-primary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Créer un groupe
+            </a>
+        </div>
+
+        <!-- Onglets -->
+        <div class="groups-tabs">
+            <a href="?tab=my" class="tab-item {% if tab == 'my' %}active{% endif %}">
+                Mes groupes
+                {% if my_groups_count %}
+                <span class="tab-count">{{ my_groups_count }}</span>
+                {% endif %}
+            </a>
+            <a href="?tab=discover" class="tab-item {% if tab == 'discover' %}active{% endif %}">
+                Découvrir
+            </a>
+            <a href="?tab=suggested" class="tab-item {% if tab == 'suggested' %}active{% endif %}">
+                Suggérés
+            </a>
+        </div>
+
+        <!-- Barre de recherche et filtres -->
+        <div class="groups-filters">
+            <form method="get" class="search-form">
+                <input type="hidden" name="tab" value="{{ tab }}">
+                <div class="search-wrapper">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="M21 21l-4.35-4.35"></path>
+                    </svg>
+                    <input type="text" name="search" value="{{ search_query }}" placeholder="Rechercher un groupe..." class="search-input">
+                    {% if search_query %}
+                    <button type="button" class="clear-search" onclick="clearSearch()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                    {% endif %}
+                </div>
+                <button type="submit" class="search-btn">Rechercher</button>
+            </form>
+
+            <div class="filter-options">
+                <select name="public" class="filter-select" onchange="updateFilter(this)">
+                    <option value="">Tous les groupes</option>
+                    <option value="true" {% if filter_public == 'true' %}selected{% endif %}>Publics uniquement</option>
+                    <option value="false" {% if filter_public == 'false' %}selected{% endif %}>Privés uniquement</option>
+                </select>
+
+                <select name="category" class="filter-select" onchange="updateFilter(this)">
+                    <option value="">Toutes les catégories</option>
+                    <option value="locataires" {% if filter_category == 'locataires' %}selected{% endif %}>Locataires</option>
+                    <option value="proprietaires" {% if filter_category == 'proprietaires' %}selected{% endif %}>Propriétaires</option>
+                    <option value="mixte" {% if filter_category == 'mixte' %}selected{% endif %}>Mixte</option>
+                    <option value="quartier" {% if filter_category == 'quartier' %}selected{% endif %}>Quartier</option>
+                    <option value="theme" {% if filter_category == 'theme' %}selected{% endif %}>Thème</option>
+                </select>
+
+                <input type="text" name="location" value="{{ filter_location }}" placeholder="Ville..." class="filter-input" onchange="updateLocationFilter(this)">
+            </div>
+        </div>
+
+        <!-- Liste des groupes -->
+        <div class="groups-list">
+            {% for group in groups %}
+            <div class="group-card">
+                <div class="group-header">
+                    {% if group.cover_image %}
+                        <img src="{{ group.cover_image.url }}" alt="{{ group.name }}" class="group-cover">
+                    {% else %}
+                        <div class="group-cover-placeholder">
+                            <div class="group-icon-large">{{ group.icon|default:"👥" }}</div>
+                        </div>
+                    {% endif %}
+                    <div class="group-badge">
+                        {% if group.is_public %}
+                            <span class="badge badge-public">Public</span>
+                        {% else %}
+                            <span class="badge badge-private">Privé</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="group-content">
+                    <div class="group-main-info">
+                        <div class="group-icon-small">{{ group.icon|default:"👥" }}</div>
+                        <div class="group-info">
+                            <h3 class="group-name">
+                                <a href="{% url 'connect-group-detail' group.id %}">{{ group.name }}</a>
+                            </h3>
+                            <p class="group-description">{{ group.description|truncatewords:20 }}</p>
+                        </div>
+                    </div>
+                    <div class="group-stats">
+                        <div class="stat-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                            <span>{{ group.member_count|default:0 }} membre{{ group.member_count|pluralize }}</span>
+                        </div>
+                        <div class="stat-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            <span>{{ group.post_count|default:0 }} publication{{ group.post_count|pluralize }}</span>
+                        </div>
+                        {% if group.ville %}
+                        <div class="stat-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"></path>
+                                <circle cx="12" cy="9" r="3"></circle>
+                            </svg>
+                            <span>{{ group.ville }}{% if group.region %}, {{ group.region }}{% endif %}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="group-actions">
+                        {% if group.is_member %}
+                            <a href="{% url 'connect-group-detail' group.id %}" class="btn-secondary">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                Voir le groupe
+                            </a>
+                        {% else %}
+                            <button class="btn-primary" onclick="joinGroup({{ group.id }})">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                {% if group.require_approval %}
+                                Demander à rejoindre
+                                {% else %}
+                                Rejoindre
+                                {% endif %}
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-groups">
+                <svg width="128" height="128" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="empty-icon">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                <h3>Aucun groupe trouvé</h3>
+                <p>
+                    {% if tab == 'my' %}
+                        Vous n'avez pas encore rejoint de groupe.
+                    {% elif tab == 'suggested' %}
+                        Aucune suggestion de groupe pour le moment.
+                    {% else %}
+                        Aucun groupe ne correspond à vos critères de recherche.
+                    {% endif %}
+                </p>
+                {% if tab == 'my' %}
+                <a href="?tab=discover" class="btn-primary">Découvrir des groupes</a>
+                {% else %}
+                <a href="{% url 'create-group' %}" class="btn-primary">Créer un groupe</a>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if groups.has_other_pages %}
+        <div class="groups-pagination">
+            <div class="pagination">
+                {% if groups.has_previous %}
+                <a href="?page={{ groups.previous_page_number }}&tab={{ tab }}{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_public %}&public={{ filter_public }}{% endif %}{% if filter_category %}&category={{ filter_category }}{% endif %}{% if filter_location %}&location={{ filter_location }}{% endif %}" class="pagination-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                    Précédent
+                </a>
+                {% endif %}
+
+                <span class="pagination-info">
+                    Page {{ groups.number }} sur {{ groups.paginator.num_pages }}
+                </span>
+
+                {% if groups.has_next %}
+                <a href="?page={{ groups.next_page_number }}&tab={{ tab }}{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_public %}&public={{ filter_public }}{% endif %}{% if filter_category %}&category={{ filter_category }}{% endif %}{% if filter_location %}&location={{ filter_location }}{% endif %}" class="pagination-btn">
+                    Suivant
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .connect-groups-page {
+        min-height: calc(100vh - 70px);
+        background: #f5f5f5;
+        padding-top: 70px;
+    }
+
+    .groups-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 32px 24px;
+    }
+
+    /* En-tête */
+    .groups-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 32px;
+    }
+
+    .groups-header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0 0 8px 0;
+    }
+
+    .header-subtitle {
+        font-size: 15px;
+        color: #666;
+        margin: 0;
+    }
+
+    .btn-primary {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: #D3580B;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+        background: #c4510a;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(211, 88, 11, 0.3);
+    }
+
+    /* Onglets */
+    .groups-tabs {
+        display: flex;
+        gap: 8px;
+        padding: 16px;
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .tab-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 500;
+        color: #666;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .tab-item:hover {
+        background: #f5f5f5;
+        color: #333;
+    }
+
+    .tab-item.active {
+        background: #D3580B;
+        color: white;
+    }
+
+    .tab-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    /* Filtres */
+    .groups-filters {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .search-form {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .search-wrapper {
+        flex: 1;
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 16px;
+        color: #999;
+        pointer-events: none;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 12px 16px 12px 48px;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        font-size: 15px;
+        transition: all 0.2s ease;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: #D3580B;
+        box-shadow: 0 0 0 3px rgba(211, 88, 11, 0.1);
+    }
+
+    .clear-search {
+        position: absolute;
+        right: 12px;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        background: transparent;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        color: #999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .clear-search:hover {
+        background: #f5f5f5;
+        color: #333;
+    }
+
+    .search-btn {
+        padding: 12px 24px;
+        background: #D3580B;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .search-btn:hover {
+        background: #c4510a;
+    }
+
+    .filter-options {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .filter-select,
+    .filter-input {
+        padding: 10px 16px;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+
+    .filter-select {
+        min-width: 180px;
+        cursor: pointer;
+    }
+
+    .filter-input {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .filter-select:focus,
+    .filter-input:focus {
+        outline: none;
+        border-color: #D3580B;
+        box-shadow: 0 0 0 3px rgba(211, 88, 11, 0.1);
+    }
+
+    /* Liste des groupes */
+    .groups-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 24px;
+        margin-bottom: 32px;
+    }
+
+    .group-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .group-card:hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+        transform: translateY(-4px);
+    }
+
+    .group-header {
+        position: relative;
+        height: 120px;
+        overflow: hidden;
+    }
+
+    .group-cover {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .group-cover-placeholder {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .group-icon-large {
+        font-size: 48px;
+    }
+
+    .group-badge {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+    }
+
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 12px;
+        border-radius: 16px;
+        font-size: 12px;
+        font-weight: 600;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .badge-public {
+        color: #27ae60;
+    }
+
+    .badge-private {
+        color: #e74c3c;
+    }
+
+    .group-content {
+        padding: 20px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .group-main-info {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .group-icon-small {
+        font-size: 32px;
+        flex-shrink: 0;
+    }
+
+    .group-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .group-name {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0 0 8px 0;
+    }
+
+    .group-name a {
+        color: inherit;
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .group-name a:hover {
+        color: #D3580B;
+    }
+
+    .group-description {
+        font-size: 14px;
+        color: #666;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    .group-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 16px;
+        padding-top: 16px;
+        border-top: 1px solid #f5f5f5;
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: #666;
+    }
+
+    .stat-item svg {
+        color: #999;
+    }
+
+    .group-actions {
+        margin-top: auto;
+        padding-top: 16px;
+        border-top: 1px solid #f5f5f5;
+    }
+
+    .btn-secondary {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 10px 16px;
+        background: white;
+        color: #333;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+        background: #f5f5f5;
+        border-color: #ddd;
+    }
+
+    /* État vide */
+    .empty-groups {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 80px 24px;
+        text-align: center;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .empty-icon {
+        color: #ddd;
+        margin-bottom: 24px;
+    }
+
+    .empty-groups h3 {
+        font-size: 24px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+    }
+
+    .empty-groups p {
+        font-size: 15px;
+        color: #666;
+        margin-bottom: 24px;
+    }
+
+    /* Pagination */
+    .groups-pagination {
+        display: flex;
+        justify-content: center;
+    }
+
+    .pagination {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 24px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .pagination-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: #f5f5f5;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #333;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .pagination-btn:hover {
+        background: #e5e5e5;
+        border-color: #ddd;
+    }
+
+    .pagination-info {
+        font-size: 14px;
+        color: #666;
+        font-weight: 500;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .groups-container {
+            padding: 16px;
+        }
+
+        .groups-header {
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .groups-tabs {
+            flex-wrap: wrap;
+        }
+
+        .search-form {
+            flex-direction: column;
+        }
+
+        .filter-options {
+            flex-direction: column;
+        }
+
+        .filter-select,
+        .filter-input {
+            width: 100%;
+        }
+
+        .groups-list {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+    function clearSearch() {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('search');
+        window.location.href = url.toString();
+    }
+
+    function updateFilter(select) {
+        const form = select.closest('.groups-filters');
+        const searchForm = form.querySelector('.search-form');
+        const url = new URL(window.location.href);
+        
+        if (select.value) {
+            url.searchParams.set(select.name, select.value);
+        } else {
+            url.searchParams.delete(select.name);
+        }
+        
+        // Préserver les autres paramètres
+        const tab = url.searchParams.get('tab') || 'my';
+        url.searchParams.set('tab', tab);
+        
+        window.location.href = url.toString();
+    }
+
+    function updateLocationFilter(input) {
+        const url = new URL(window.location.href);
+        
+        if (input.value) {
+            url.searchParams.set('location', input.value);
+        } else {
+            url.searchParams.delete('location');
+        }
+        
+        const tab = url.searchParams.get('tab') || 'my';
+        url.searchParams.set('tab', tab);
+        
+        window.location.href = url.toString();
+    }
+
+    function joinGroup(groupId) {
+        fetch(`{% url 'join-group' 0 %}`.replace('0', groupId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (data.requires_approval) {
+                    alert('Votre demande d\'adhésion a été envoyée. Elle sera examinée par un administrateur.');
+                } else {
+                    alert('Vous avez rejoint le groupe !');
+                }
+                location.reload();
+            } else {
+                alert(data.error || 'Erreur lors de l\'adhésion au groupe');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erreur lors de l\'adhésion au groupe');
+        });
+    }
+</script>
+{% endblock %}
+

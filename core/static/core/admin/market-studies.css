@@ -1,0 +1,470 @@
+/* ============================================
+   MARKET STUDIES - PHASE 6 STYLES
+   ============================================ */
+
+.market-studies-page {
+    margin: 0;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.studies-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.header-left {
+    flex: 1;
+}
+
+.page-title-main {
+    font-size: 28px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 8px 0;
+}
+
+.page-subtitle {
+    font-size: 14px;
+    color: #6B7280;
+    margin: 0;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.btn-primary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: #D3580B;
+    color: white;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.btn-primary:hover {
+    background: #c4510a;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: white;
+    color: #111827;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background: #F9FAFB;
+    border-color: #D1D5DB;
+}
+
+/* ============================================
+   FILTERS
+   ============================================ */
+
+.filters-section {
+    margin-bottom: 24px;
+    padding: 20px;
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+}
+
+.filters-form {
+    margin: 0;
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    align-items: end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.filter-select,
+.filter-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #D1D5DB;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #111827;
+    background: white;
+    transition: all 0.2s ease;
+}
+
+.filter-select:focus,
+.filter-input:focus {
+    outline: none;
+    border-color: #D3580B;
+    box-shadow: 0 0 0 3px rgba(211, 88, 11, 0.1);
+}
+
+/* ============================================
+   STUDIES GRID
+   ============================================ */
+
+.studies-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+}
+
+.study-card {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 24px;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.study-card:hover {
+    border-color: #D3580B;
+    box-shadow: 0 4px 12px rgba(211, 88, 11, 0.1);
+}
+
+.study-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.study-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+    flex: 1;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+}
+
+.status-draft {
+    background: #F3F4F6;
+    color: #6B7280;
+}
+
+.status-active {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+.status-completed {
+    background: #DBEAFE;
+    color: #1E40AF;
+}
+
+.status-archived {
+    background: #F3F4F6;
+    color: #9CA3AF;
+}
+
+.study-description {
+    font-size: 14px;
+    color: #6B7280;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.study-stats {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding-top: 12px;
+    border-top: 1px solid #F3F4F6;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #6B7280;
+}
+
+.stat-item svg {
+    flex-shrink: 0;
+    color: #9CA3AF;
+}
+
+.study-dates {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 13px;
+    color: #6B7280;
+}
+
+.date-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.date-label {
+    font-weight: 500;
+    color: #9CA3AF;
+}
+
+.date-value {
+    color: #374151;
+}
+
+.study-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #F3F4F6;
+    flex-wrap: wrap;
+}
+
+.btn-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: #F9FAFB;
+    color: #111827;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-link:hover {
+    background: #F3F4F6;
+    color: #D3580B;
+}
+
+.btn-link svg {
+    flex-shrink: 0;
+}
+
+/* ============================================
+   EMPTY STATE
+   ============================================ */
+
+.empty-state {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.empty-icon {
+    color: #D1D5DB;
+    margin-bottom: 20px;
+}
+
+.empty-state h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 8px 0;
+}
+
+.empty-state p {
+    font-size: 14px;
+    color: #6B7280;
+    margin: 0 0 24px 0;
+}
+
+/* ============================================
+   CREATE PAGE
+   ============================================ */
+
+.market-study-create-page {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.create-header {
+    margin-bottom: 32px;
+}
+
+.create-form {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 32px;
+}
+
+.form-section {
+    margin-bottom: 32px;
+}
+
+.section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 24px 0;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #E5E7EB;
+}
+
+.form-field {
+    margin-bottom: 20px;
+}
+
+.form-field label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px;
+}
+
+.input-field,
+.textarea-field {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #D1D5DB;
+    border-radius: 8px;
+    font-size: 16px;
+    font-family: inherit;
+    line-height: 1.7;
+    color: #111827;
+    background: white;
+    transition: all 0.2s ease;
+}
+
+.input-field:focus,
+.textarea-field:focus {
+    outline: none;
+    border-color: #D3580B;
+    box-shadow: 0 0 0 3px rgba(211, 88, 11, 0.1);
+}
+
+.textarea-field {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.input-color {
+    width: 100px;
+    height: 40px;
+    border: 1px solid #D1D5DB;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.form-fields-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 24px;
+    border-top: 1px solid #E5E7EB;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    .studies-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .header-actions {
+        justify-content: stretch;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .filters-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .studies-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .study-actions {
+        flex-direction: column;
+    }
+
+    .btn-link {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .create-form {
+        padding: 24px;
+    }
+
+    .form-fields-grid {
+        grid-template-columns: 1fr;
+    }
+}
+

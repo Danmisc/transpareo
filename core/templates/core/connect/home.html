@@ -1,0 +1,2373 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="connect-home">
+    <div class="connect-container">
+        <!-- COLONNE GAUCHE - Sidebar (25%) -->
+        {% if user.is_authenticated %}
+        <aside class="connect-sidebar-left">
+            <!-- Carte de profil résumée -->
+            <div class="profile-card">
+                {% if user.avatar %}
+                    <img src="{{ user.avatar.url }}" alt="{{ user.username }}" class="profile-card-avatar">
+                {% else %}
+                    <div class="profile-card-avatar-placeholder">{{ user.username|first|upper }}</div>
+                {% endif %}
+                <h3 class="profile-card-name">{{ user.get_full_name|default:user.username }}</h3>
+                <div class="profile-card-status">
+                    {% if user.is_locataire %}📍 Locataire{% endif %}
+                    {% if user.is_proprietaire %}🏠 Propriétaire{% endif %}
+                </div>
+                {% if user.identity_verified or user.proprietaire_verified %}
+                <div class="profile-card-badges">
+                    {% if user.identity_verified %}<span class="badge-verified" title="Identité vérifiée">✓</span>{% endif %}
+                    {% if user.proprietaire_verified %}<span class="badge-verified" title="Propriétaire vérifié">🏠</span>{% endif %}
+                </div>
+                {% endif %}
+                <div class="profile-card-connections">
+                    {{ connection_count|default:0 }} connexion{{ connection_count|pluralize }}
+                </div>
+                <a href="{% url 'profile' %}" class="profile-card-link">Voir mon profil →</a>
+            </div>
+
+            <!-- Widget Mes connexions récentes -->
+            <div class="widget">
+                <h4 class="widget-title">Mes connexions récentes</h4>
+                <div class="connections-list">
+                    {% for conn in recent_connections %}
+                    <div class="connection-item">
+                        {% if conn.user_from == user %}
+                            {% if conn.user_to.avatar %}
+                                <img src="{{ conn.user_to.avatar.url }}" alt="{{ conn.user_to.username }}" class="connection-avatar">
+                            {% else %}
+                                <div class="connection-avatar-placeholder">{{ conn.user_to.username|first|upper }}</div>
+                            {% endif %}
+                            <a href="{% url 'profile-user' conn.user_to.id %}" class="connection-name">{{ conn.user_to.username }}</a>
+                        {% else %}
+                            {% if conn.user_from.avatar %}
+                                <img src="{{ conn.user_from.avatar.url }}" alt="{{ conn.user_from.username }}" class="connection-avatar">
+                            {% else %}
+                                <div class="connection-avatar-placeholder">{{ conn.user_from.username|first|upper }}</div>
+                            {% endif %}
+                            <a href="{% url 'profile-user' conn.user_from.id %}" class="connection-name">{{ conn.user_from.username }}</a>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <p class="empty-state">Aucune connexion récente</p>
+                    {% endfor %}
+                </div>
+                <a href="{% url 'connect-search-users' %}" class="widget-link">Voir toutes mes connexions →</a>
+            </div>
+
+            <!-- Widget Suggestions de connexions -->
+            {% if suggestions %}
+            <div class="widget">
+                <h4 class="widget-title">Suggestions de connexions</h4>
+                <div class="suggestions-list">
+                    {% for suggestion in suggestions %}
+                    <div class="suggestion-item">
+                        {% if suggestion.avatar %}
+                            <img src="{{ suggestion.avatar.url }}" alt="{{ suggestion.username }}" class="suggestion-avatar">
+                        {% else %}
+                            <div class="suggestion-avatar-placeholder">{{ suggestion.username|first|upper }}</div>
+                        {% endif %}
+                        <div class="suggestion-info">
+                            <a href="{% url 'profile-user' suggestion.id %}" class="suggestion-name">{{ suggestion.username }}</a>
+                            <span class="suggestion-location">{{ suggestion.ville|default:"" }}</span>
+                        </div>
+                        <button class="btn-connect" data-user-id="{{ suggestion.id }}" onclick="connectUser({{ suggestion.id }})">Se connecter</button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </aside>
+        {% endif %}
+
+        <!-- COLONNE CENTRALE - Feed (50%) -->
+        <main class="connect-feed">
+            <!-- ========== EN-TÊTE PERSONNALISABLE ========== -->
+            {% if user.is_authenticated %}
+            <div class="connect-header-customizable">
+                <div class="header-banner">
+                    {% if user.profile_banner_video %}
+                    <video class="banner-video" autoplay muted loop playsinline>
+                        <source src="{{ user.profile_banner_video.url }}" type="video/mp4">
+                    </video>
+                    {% elif user.profile_banner_image %}
+                    <img src="{{ user.profile_banner_image.url }}" alt="Bannière" class="banner-image">
+                    {% else %}
+                    <div class="banner-default" style="background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);"></div>
+                    {% endif %}
+                    <div class="banner-overlay"></div>
+                </div>
+                <div class="header-content">
+                    <div class="header-stats">
+                        <div class="stat-item">
+                            <span class="stat-value">{{ total_posts|default:0 }}</span>
+                            <span class="stat-label">Publications</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">{{ connection_count|default:0 }}</span>
+                            <span class="stat-label">Connexions</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">{{ total_views|default:0 }}</span>
+                            <span class="stat-label">Vues profil</span>
+                        </div>
+                    </div>
+                    <div class="header-keywords-slider">
+                        <div class="keywords-track" id="keywords-track">
+                            {% for keyword in trending_keywords|default:"location,immobilier,transparence,avis,logement"|make_list %}
+                            <span class="keyword-tag">{{ keyword }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== STORIES/ACTUALITÉS ÉPHÉMÈRES ========== -->
+            <div class="stories-section">
+                <div class="stories-container" id="stories-container">
+                    <div class="story-item story-add" onclick="openStoryCreator()">
+                        <div class="story-add-icon">+</div>
+                        <span>Créer</span>
+                    </div>
+                    {% for story in recent_stories|default:"" %}
+                    <div class="story-item" onclick="openStory({{ story.id }})">
+                        {% if story.author.avatar %}
+                        <img src="{{ story.author.avatar.url }}" alt="{{ story.author.username }}" class="story-avatar">
+                        {% else %}
+                        <div class="story-avatar-placeholder">{{ story.author.username|first|upper }}</div>
+                        {% endif %}
+                        <span class="story-author-name">{{ story.author.username|truncatechars:10 }}</span>
+                    </div>
+                    {% empty %}
+                    <div class="story-item story-empty">
+                        <span>Aucune story</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- ========== ANNONCE COMMUNAUTAIRE ÉPINGLÉE ========== -->
+            {% if pinned_announcement %}
+            <div class="pinned-announcement">
+                <div class="announcement-header">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                    </svg>
+                    <span>Annonce de la communauté</span>
+                </div>
+                <div class="announcement-content">
+                    <h3>{{ pinned_announcement.title }}</h3>
+                    <p>{{ pinned_announcement.content|linebreaks }}</p>
+                    {% if pinned_announcement.link %}
+                    <a href="{{ pinned_announcement.link }}" class="announcement-link">En savoir plus →</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
+
+            <!-- Bloc de publication (si connecté) -->
+            {% if user.is_authenticated %}
+            <div class="post-creator">
+                <form id="create-post-form" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="post-creator-header">
+                        {% if user.avatar %}
+                            <img src="{{ user.avatar.url }}" alt="{{ user.username }}" class="creator-avatar">
+                        {% else %}
+                            <div class="creator-avatar-placeholder">{{ user.username|first|upper }}</div>
+                        {% endif %}
+                        <textarea id="post-content" name="content" class="post-creator-input" placeholder="Partagez une mise à jour..." rows="3" required></textarea>
+                    </div>
+                    <div class="post-creator-actions">
+                        <div class="post-creator-buttons">
+                            <label for="post-images" class="post-creator-btn">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
+                                Photo
+                            </label>
+                            <input type="file" id="post-images" name="images" multiple accept="image/*" style="display: none;">
+                            
+                            <label for="post-documents" class="post-creator-btn">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                                Document
+                            </label>
+                            <input type="file" id="post-documents" name="documents" multiple accept=".pdf,.doc,.docx" style="display: none;">
+                            
+                            <button type="button" class="post-creator-btn" onclick="insertEmoji()">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                                    <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                                    <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                                </svg>
+                                Emoji
+                            </button>
+                        </div>
+                        <div class="post-creator-visibility">
+                            <select id="post-visibility" name="visibility">
+                                <option value="public">Public</option>
+                                <option value="connections">Connexions uniquement</option>
+                                {% if user_groups %}
+                                <option value="group">Groupe spécifique</option>
+                                {% endif %}
+                            </select>
+                            <select id="post-group" name="group_id" style="display: none;">
+                                {% for group in user_groups %}
+                                <option value="{{ group.id }}">{{ group.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-primary">Publier</button>
+                    </div>
+                    <div id="post-preview" class="post-preview" style="display: none;"></div>
+                    <!-- Modération assistée IA -->
+                    <div id="ai-moderation-warning" class="ai-moderation-warning" style="display: none;">
+                        <div class="warning-icon">⚠️</div>
+                        <div class="warning-content">
+                            <strong>Attention :</strong> <span id="warning-message"></span>
+                            <div class="warning-actions">
+                                <button type="button" class="btn-warning-edit" onclick="editPostContent()">Modifier</button>
+                                <button type="button" class="btn-warning-ignore" onclick="ignoreWarning()">Publier quand même</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- Filtres et tri dynamiques -->
+            <div class="feed-filters">
+                <div class="filter-group">
+                    <button class="filter-btn {% if sort_by == 'recent' %}active{% endif %}" data-sort="recent">Plus récents</button>
+                    <button class="filter-btn {% if sort_by == 'popular' %}active{% endif %}" data-sort="popular">Plus populaires</button>
+                    <button class="filter-btn {% if sort_by == 'relevant' %}active{% endif %}" data-sort="relevant">Pertinents</button>
+                    {% if user.is_authenticated %}
+                    <button class="filter-btn {% if sort_by == 'connections' %}active{% endif %}" data-sort="connections">Mes connexions</button>
+                    <button class="filter-btn {% if sort_by == 'recommended' %}active{% endif %}" data-sort="recommended">Recommandés</button>
+                    {% endif %}
+                </div>
+                <div class="filter-group">
+                    <select id="filter-content-type" class="filter-select">
+                        <option value="">Tous les contenus</option>
+                        <option value="actu" {% if filter_content_type == 'actu' %}selected{% endif %}>Actualités</option>
+                        <option value="guides" {% if filter_content_type == 'guides' %}selected{% endif %}>Guides</option>
+                        <option value="offres" {% if filter_content_type == 'offres' %}selected{% endif %}>Offres</option>
+                        <option value="discussions" {% if filter_content_type == 'discussions' %}selected{% endif %}>Discussions</option>
+                        <option value="logements" {% if filter_content_type == 'logements' %}selected{% endif %}>Logements</option>
+                        <option value="groupes" {% if filter_content_type == 'groupes' %}selected{% endif %}>Groupes</option>
+                    </select>
+                    <select id="filter-type" class="filter-select">
+                        <option value="">Tous les types</option>
+                        <option value="locataire" {% if filter_type == 'locataire' %}selected{% endif %}>Locataires</option>
+                        <option value="proprietaire" {% if filter_type == 'proprietaire' %}selected{% endif %}>Propriétaires</option>
+                    </select>
+                    {% if user_groups %}
+                    <select id="filter-group" class="filter-select">
+                        <option value="">Tous les groupes</option>
+                        {% for group in user_groups %}
+                        <option value="{{ group.id }}" {% if filter_group == group.id|stringformat:"s" %}selected{% endif %}>{{ group.name }}</option>
+                        {% endfor %}
+                    </select>
+                    {% endif %}
+                    <input type="text" id="filter-hashtag" class="filter-input" placeholder="#hashtag" value="{% if filter_hashtag %}{{ filter_hashtag }}{% endif %}">
+                </div>
+            </div>
+
+            <!-- Fil d'actualité -->
+            <div class="posts-feed" id="posts-feed">
+                {% for post_data in posts_with_data %}
+                {% with post=post_data.post %}
+                <article class="post-card" data-post-id="{{ post.id }}">
+                    <div class="post-header">
+                        {% if post.author.avatar %}
+                            <img src="{{ post.author.avatar.url }}" alt="{{ post.author.username }}" class="post-author-avatar">
+                        {% else %}
+                            <div class="post-author-avatar-placeholder">{{ post.author.username|first|upper }}</div>
+                        {% endif %}
+                        <div class="post-author-info">
+                            <a href="{% url 'profile-user' post.author.id %}" class="post-author-name">{{ post.author.get_full_name|default:post.author.username }}</a>
+                            <div class="post-meta">
+                                {% if post.author.is_locataire %}📍 Locataire{% endif %}
+                                {% if post.author.is_proprietaire %}🏠 Propriétaire{% endif %}
+                                {% if post.author.identity_verified %}<span class="badge-verified">✓</span>{% endif %}
+                                <span>•</span>
+                                <span>{{ post.created_at|timesince }}</span>
+                            </div>
+                        </div>
+                        <button class="post-menu-btn" onclick="togglePostMenu({{ post.id }})">⋯</button>
+                        <div class="post-menu" id="post-menu-{{ post.id }}" style="display: none;">
+                            {% if post.author == user %}
+                            <button class="post-menu-item" onclick="deletePost({{ post.id }})">Supprimer</button>
+                            {% else %}
+                            <button class="post-menu-item post-menu-report" onclick="reportPost({{ post.id }})">Signaler</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="post-content">
+                        {{ post.content|linebreaks }}
+                        {% if post_data.hashtags_list %}
+                        <div class="post-hashtags">
+                            {% for tag in post_data.hashtags_list %}
+                            <a href="?filter_hashtag={{ tag }}" class="hashtag">{{ tag }}</a>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if post.images.all %}
+                        <div class="post-images">
+                            {% for image in post.images.all %}
+                            <img src="{{ image.image.url }}" alt="{{ image.caption|default:'' }}" class="post-image">
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if post.documents.all %}
+                        <div class="post-documents">
+                            {% for doc in post.documents.all %}
+                            <div class="document-preview" data-doc-id="{{ doc.id }}">
+                                {% if doc.document.url|slice:"-4:" == ".pdf" %}
+                                <div class="doc-preview-pdf" onclick="openDocumentPreview('{{ doc.document.url }}', '{{ doc.title }}', 'pdf')">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                    <div class="doc-info">
+                                        <strong>{{ doc.title }}</strong>
+                                        <span>PDF • Cliquez pour prévisualiser</span>
+                                    </div>
+                                </div>
+                                {% elif doc.document.url|slice:"-4:" in ".jpg,.png,.gif,.jpeg" %}
+                                <div class="doc-preview-image" onclick="openDocumentPreview('{{ doc.document.url }}', '{{ doc.title }}', 'image')">
+                                    <img src="{{ doc.document.url }}" alt="{{ doc.title }}" class="doc-thumbnail">
+                                    <div class="doc-overlay">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                            <circle cx="11" cy="11" r="8"></circle>
+                                            <path d="m21 21-4.35-4.35"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                {% else %}
+                            <a href="{{ doc.document.url }}" target="_blank" class="post-document">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                                {{ doc.title }}
+                            </a>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if post.related_logement %}
+                        <div class="post-logement-widget">
+                            <div class="logement-widget-header">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                </svg>
+                                <span>Logement associé</span>
+                            </div>
+                            <div class="logement-widget-content">
+                                <div class="logement-widget-image">
+                                    {% if post.related_logement.images.first %}
+                                    <img src="{{ post.related_logement.images.first.image.url }}" alt="{{ post.related_logement.adresse }}">
+                                    {% else %}
+                                    <div class="logement-widget-placeholder">🏠</div>
+                                    {% endif %}
+                                </div>
+                                <div class="logement-widget-info">
+                                    <h4>{{ post.related_logement.adresse|truncatechars:30 }}</h4>
+                                    <div class="logement-widget-rating">
+                                        <span class="rating-stars">{% for i in "12345"|make_list %}{% if forloop.counter <= post.related_logement.note_moyenne|default:0 %}⭐{% else %}☆{% endif %}{% endfor %}</span>
+                                        <span class="rating-value">{{ post.related_logement.note_moyenne|default:"N/A" }}</span>
+                                    </div>
+                                    <div class="logement-widget-details">
+                                        <span>{{ post.related_logement.quartier|default:"Quartier" }}</span>
+                                        <span class="logement-widget-price">{{ post.related_logement.loyer|default:"N/A" }}€/mois</span>
+                                    </div>
+                                    <a href="{% url 'logement-detail' post.related_logement.id %}" class="logement-widget-link">Voir le logement →</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if post.is_collaborative %}
+                        <div class="post-collaborative-badge">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                            <span>Discussion collaborative • {{ post.collaborators_count|default:1 }} participant{{ post.collaborators_count|pluralize }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="post-footer">
+                        <div class="post-stats">
+                            <button class="post-stat-btn" onclick="showReactions({{ post.id }})">
+                                <span class="reactions-summary" id="reactions-summary-{{ post.id }}">
+                                    {% if post.get_reactions_summary %}
+                                    {% for emoji, count in post.get_reactions_summary.items %}
+                                    <span class="reaction-emoji">{{ emoji }}</span>
+                                    {% endfor %}
+                                    {% endif %}
+                                </span>
+                                <span class="reactions-count">{{ post.get_total_reactions|default:post.get_likes_count }}</span>
+                            </button>
+                            <span class="post-stat">{{ post.get_comments_count }} commentaire{{ post.get_comments_count|pluralize }}</span>
+                            <span class="post-stat">{{ post.get_shares_count }} partage{{ post.get_shares_count|pluralize }}</span>
+                        </div>
+                        <div class="post-actions">
+                            <div class="reactions-picker" id="reactions-picker-{{ post.id }}" style="display: none;">
+                                <button class="reaction-btn" data-reaction="👍" onclick="addReaction({{ post.id }}, '👍')" title="J'aime">👍</button>
+                                <button class="reaction-btn" data-reaction="🔥" onclick="addReaction({{ post.id }}, '🔥')" title="Feu">🔥</button>
+                                <button class="reaction-btn" data-reaction="❤️" onclick="addReaction({{ post.id }}, '❤️')" title="Cœur">❤️</button>
+                                <button class="reaction-btn" data-reaction="😊" onclick="addReaction({{ post.id }}, '😊')" title="Sourire">😊</button>
+                                <button class="reaction-btn" data-reaction="🎉" onclick="addReaction({{ post.id }}, '🎉')" title="Célébration">🎉</button>
+                                <button class="reaction-btn" data-reaction="💡" onclick="addReaction({{ post.id }}, '💡')" title="Idée">💡</button>
+                            </div>
+                            <button class="post-action-btn like-btn" onmouseenter="showReactionsPicker({{ post.id }})" onmouseleave="hideReactionsPicker({{ post.id }})" onclick="toggleLike({{ post.id }})">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="{% if post_data.is_liked %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                </svg>
+                                J'aime
+                            </button>
+                            <button class="post-action-btn" onclick="toggleComments({{ post.id }})">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                Commenter
+                            </button>
+                            {% if post.is_collaborative %}
+                            <button class="post-action-btn" onclick="joinCollaborativePost({{ post.id }})">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="8.5" cy="7" r="4"></circle>
+                                    <line x1="20" y1="8" x2="20" y2="14"></line>
+                                    <line x1="23" y1="11" x2="17" y2="11"></line>
+                                </svg>
+                                Participer
+                            </button>
+                            {% endif %}
+                            <button class="post-action-btn" onclick="sharePost({{ post.id }})">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="18" cy="5" r="3"></circle>
+                                    <circle cx="6" cy="12" r="3"></circle>
+                                    <circle cx="18" cy="19" r="3"></circle>
+                                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                                </svg>
+                                Partager
+                            </button>
+                        </div>
+                        <div class="reactions-detail" id="reactions-detail-{{ post.id }}" style="display: none;">
+                            <div class="reactions-detail-content">
+                                <h4>Réactions</h4>
+                                <div class="reactions-list" id="reactions-list-{{ post.id }}">
+                                    <!-- Chargé dynamiquement -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="post-comments" id="comments-{{ post.id }}" style="display: none;">
+                            <div class="comments-list" id="comments-list-{{ post.id }}">
+                                {% for comment in post.comments.filter|slice:":10" %}
+                                <div class="comment-item" data-comment-id="{{ comment.id }}" data-parent-id="{{ comment.parent_id|default:'' }}">
+                                    <div class="comment-header">
+                                        {% if comment.author.avatar %}
+                                            <img src="{{ comment.author.avatar.url }}" alt="{{ comment.author.username }}" class="comment-avatar">
+                                        {% else %}
+                                            <div class="comment-avatar-placeholder">{{ comment.author.username|first|upper }}</div>
+                                        {% endif %}
+                                        <div class="comment-info">
+                                            <div class="comment-author-row">
+                                            <span class="comment-author">{{ comment.author.username }}</span>
+                                                {% if comment.author.is_proprietaire and comment.author.proprietaire_verified %}
+                                                <span class="comment-badge badge-proprietaire" title="Propriétaire vérifié">🏠 Expert</span>
+                                                {% elif comment.author.identity_verified %}
+                                                <span class="comment-badge badge-verified" title="Vérifié">✓</span>
+                                                {% endif %}
+                                                {% if comment.author.experience_years %}
+                                                <span class="comment-badge badge-experience">{{ comment.author.experience_years }} ans d'expérience</span>
+                                                {% endif %}
+                                        </div>
+                                            <span class="comment-date">{{ comment.created_at|timesince }}</span>
+                                    </div>
+                                    </div>
+                                    <div class="comment-content">
+                                        {{ comment.content|linebreaks }}
+                                        {% if comment.images.all %}
+                                        <div class="comment-images">
+                                            {% for img in comment.images.all %}
+                                            <img src="{{ img.image.url }}" alt="{{ img.caption|default:'' }}" class="comment-image" onclick="openImageModal('{{ img.image.url }}')">
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                        {% if comment.documents.all %}
+                                        <div class="comment-documents">
+                                            {% for doc in comment.documents.all %}
+                                            <a href="{{ doc.document.url }}" target="_blank" class="comment-document">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                                </svg>
+                                                {{ doc.title }}
+                                            </a>
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="comment-actions">
+                                        <button class="comment-action-btn" onclick="toggleCommentLike({{ comment.id }})">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                            </svg>
+                                            {{ comment.get_likes_count }}
+                                        </button>
+                                        <button class="comment-action-btn comment-reply-btn" onclick="showReplyForm({{ comment.id }}, {{ post.id }})">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="9 10 4 15 9 20"></polyline>
+                                                <path d="M20 4v7a4 4 0 0 1-4 4H4"></path>
+                                            </svg>
+                                            Répondre
+                                        </button>
+                                        {% if comment.author != user %}
+                                        <button class="comment-action-btn comment-report-btn" onclick="reportComment({{ comment.id }})" title="Signaler">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <circle cx="12" cy="12" r="10"></circle>
+                                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                            </svg>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                    <div class="comment-replies" id="replies-{{ comment.id }}">
+                                        {% for reply in comment.replies.all|slice:":3" %}
+                                        <div class="comment-item comment-reply" data-comment-id="{{ reply.id }}" data-parent-id="{{ reply.parent_id }}">
+                                            <div class="comment-header">
+                                                {% if reply.author.avatar %}
+                                                    <img src="{{ reply.author.avatar.url }}" alt="{{ reply.author.username }}" class="comment-avatar">
+                                                {% else %}
+                                                    <div class="comment-avatar-placeholder">{{ reply.author.username|first|upper }}</div>
+                                                {% endif %}
+                                                <div class="comment-info">
+                                                    <span class="comment-author">{{ reply.author.username }}</span>
+                                                    <span class="comment-date">{{ reply.created_at|timesince }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="comment-content">{{ reply.content|linebreaks }}</div>
+                                        </div>
+                                        {% endfor %}
+                                        {% if comment.replies.count > 3 %}
+                                        <button class="show-more-replies" onclick="loadMoreReplies({{ comment.id }})">
+                                            Voir {{ comment.replies.count|add:"-3" }} réponse{{ comment.replies.count|add:"-3"|pluralize }} de plus
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                    <div class="comment-reply-form" id="reply-form-{{ comment.id }}" style="display: none;">
+                                        <form onsubmit="createReply(event, {{ comment.id }}, {{ post.id }})">
+                                            {% csrf_token %}
+                                            <textarea name="content" placeholder="Écrire une réponse..." rows="2" required></textarea>
+                                            <div class="comment-form-actions">
+                                                <label class="comment-attach-btn">
+                                                    <input type="file" name="images" multiple accept="image/*" style="display: none;">
+                                                    📷
+                                                </label>
+                                                <button type="submit" class="btn-comment">Répondre</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <p class="no-comments">Aucun commentaire pour le moment</p>
+                                {% endfor %}
+                            </div>
+                            {% if user.is_authenticated %}
+                            <form class="comment-form" onsubmit="createComment(event, {{ post.id }})" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <textarea name="content" placeholder="Écrire un commentaire..." rows="2" required></textarea>
+                                <div class="comment-form-actions">
+                                    <label class="comment-attach-btn">
+                                        <input type="file" name="images" multiple accept="image/*" style="display: none;">
+                                        📷
+                                    </label>
+                                    <label class="comment-attach-btn">
+                                        <input type="file" name="documents" multiple accept=".pdf,.doc,.docx" style="display: none;">
+                                        📄
+                                    </label>
+                                <button type="submit" class="btn-comment">Commenter</button>
+                                </div>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </article>
+                {% endwith %}
+                {% empty %}
+                <div class="empty-feed">
+                    <p>Aucun post disponible. {% if user.is_authenticated %}Commencez par publier quelque chose !{% else %}Connectez-vous pour voir plus de contenu.{% endif %}</p>
+                </div>
+                {% endfor %}
+
+                <!-- Scroll infini - Chargement automatique -->
+                <div class="infinite-scroll-loader" id="infinite-scroll-loader" style="display: none;">
+                    <div class="loader-spinner"></div>
+                    <span>Chargement de plus de publications...</span>
+                </div>
+                <div class="infinite-scroll-end" id="infinite-scroll-end" style="display: none;">
+                    <p>Vous avez atteint la fin du feed</p>
+            </div>
+            </div>
+
+            <!-- Bouton Return to Top -->
+            <button class="return-to-top" id="return-to-top" onclick="scrollToTop()" style="display: none;" aria-label="Retour en haut">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="18 15 12 9 6 15"></polyline>
+                </svg>
+            </button>
+        </main>
+
+        <!-- COLONNE DROITE - Sidebar (25%) -->
+        {% if user.is_authenticated %}
+        <aside class="connect-sidebar-right">
+            <!-- Widget Groupes suggérés -->
+            {% if suggested_groups %}
+            <div class="widget">
+                <h4 class="widget-title">Groupes suggérés</h4>
+                <div class="groups-list">
+                    {% for group in suggested_groups %}
+                    <div class="group-item">
+                        <div class="group-icon">{{ group.icon }}</div>
+                        <div class="group-info">
+                            <div class="group-name">{{ group.name }}</div>
+                            <div class="group-members">{{ group.member_count|default:0 }} membre{{ group.member_count|pluralize }}</div>
+                        </div>
+                        <button class="btn-join" onclick="joinGroup({{ group.id }})">Rejoindre</button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Widget Tendances -->
+            {% if popular_hashtags %}
+            <div class="widget">
+                <h4 class="widget-title">Tendances</h4>
+                <div class="trends-list">
+                    {% for hashtag, count in popular_hashtags %}
+                    <a href="?filter_hashtag={{ hashtag }}" class="trend-item">
+                        <span class="trend-hashtag">{{ hashtag }}</span>
+                        <span class="trend-count">{{ count }} publication{{ count|pluralize }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Widget Actualités immobilières -->
+            <div class="widget">
+                <h4 class="widget-title">Actualités immobilières</h4>
+                <div class="news-list">
+                    <div class="news-item">
+                        <h5 class="news-title">Nouveau marché de la location</h5>
+                        <p class="news-excerpt">Découvrez les dernières tendances du marché...</p>
+                        <a href="#" class="news-link">Lire la suite →</a>
+                    </div>
+                    <div class="news-item">
+                        <h5 class="news-title">Conseils pour propriétaires</h5>
+                        <p class="news-excerpt">Comment bien gérer son bien locatif...</p>
+                        <a href="#" class="news-link">Lire la suite →</a>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Styles LinkedIn - Les styles principaux sont dans connect-linkedin.css -->
+<style>
+    /* Styles spécifiques supplémentaires pour home.html */
+    .connect-home {
+        padding-top: 0;
+    }
+    .connect-container {
+        grid-template-columns: {% if user.is_authenticated %}1fr 3fr 1fr{% else %}0 1fr 0{% endif %};
+    }
+    .connect-sidebar-left,
+    .connect-sidebar-right {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        position: sticky;
+        top: 90px;
+        height: fit-content;
+        max-height: calc(100vh - 110px);
+        overflow-y: auto;
+    }
+    .connect-feed {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    /* Profile Card - Utilise les styles LinkedIn du CSS global */
+    /* Widgets - Utilise les styles LinkedIn du CSS global */
+    /* Post Creator - Utilise les styles LinkedIn du CSS global */
+    .post-creator-header {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    .creator-avatar,
+    .creator-avatar-placeholder {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .creator-avatar-placeholder {
+        background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+    }
+    #post-content {
+        flex: 1;
+        border: none;
+        resize: none;
+        font-size: 15px;
+        font-family: inherit;
+        outline: none;
+    }
+    .post-creator-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .post-creator-buttons {
+        display: flex;
+        gap: 8px;
+    }
+    .post-action-btn {
+        padding: 8px 12px;
+        border: none;
+        background: transparent;
+        color: #666;
+        cursor: pointer;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+    .post-action-btn:hover {
+        background: #f5f5f5;
+        color: #D3580B;
+    }
+    
+    /* Feed Filters */
+    .feed-filters {
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .filter-group {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .filter-btn {
+        padding: 8px 16px;
+        border: 1px solid #e5e5e5;
+        background: white;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+    .filter-btn.active,
+    .filter-btn:hover {
+        border-color: #D3580B;
+        color: #D3580B;
+        background: rgba(211, 88, 11, 0.05);
+    }
+    
+    /* Post Card - Utilise les styles LinkedIn du CSS global */
+    .post-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+        position: relative;
+    }
+    .post-author {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+        text-decoration: none;
+        color: inherit;
+    }
+    .post-avatar,
+    .post-avatar-placeholder {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+    }
+    .post-avatar-placeholder {
+        background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+    }
+    .post-author-name {
+        font-weight: 600;
+        color: #1a1a1a;
+        text-decoration: none;
+    }
+    
+    .post-author-name:hover {
+        color: #D3580B;
+        text-decoration: underline;
+    }
+    
+    .post-author-status {
+        font-size: 12px;
+        color: #666;
+    }
+    
+    .post-date {
+        font-size: 12px;
+        color: #999;
+    }
+    
+    /* Post Content - Utilise les styles LinkedIn du CSS global */
+    .post-images {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 8px;
+        margin-top: 12px;
+    }
+    .post-image {
+        width: 100%;
+        border-radius: 8px;
+        object-fit: cover;
+    }
+    /* Post Actions - Utilise les styles LinkedIn du CSS global */
+    /* Comments - Utilise les styles LinkedIn du CSS global */
+    .comment-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+    .comment-avatar,
+    .comment-avatar-placeholder {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .comment-avatar-placeholder {
+        background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 14px;
+    }
+    .comment-info {
+        flex: 1;
+    }
+    .comment-author {
+        font-weight: 600;
+        font-size: 14px;
+        color: #1a1a1a;
+        margin-right: 8px;
+    }
+    .comment-date {
+        font-size: 12px;
+        color: #999;
+    }
+    .comment-content {
+        margin-left: 40px;
+        font-size: 14px;
+        color: #333;
+        line-height: 1.5;
+    }
+    .comment-actions {
+        margin-left: 40px;
+        margin-top: 8px;
+    }
+    .comment-action-btn {
+        padding: 4px 8px;
+        border: none;
+        background: transparent;
+        color: #666;
+        cursor: pointer;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        transition: all 0.2s;
+    }
+    .comment-action-btn:hover {
+        background: #f5f5f5;
+        color: #D3580B;
+    }
+    .comment-report-btn {
+        color: #dc3545;
+    }
+    .comment-report-btn:hover {
+        background: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+    }
+    
+    /* Post Menu */
+    .post-menu-btn {
+        position: absolute;
+        top: 0;
+        right: 0;
+        padding: 8px 12px;
+        border: none;
+        background: transparent;
+        color: #666;
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 20px;
+        line-height: 1;
+        transition: all 0.2s;
+    }
+    .post-menu-btn:hover {
+        background: #f5f5f5;
+        color: #333;
+    }
+    
+    /* Post Menu - Utilise les styles LinkedIn du CSS global */
+    .post-menu-item.post-menu-report {
+        color: #dc3545;
+    }
+    .post-menu-item.post-menu-report:hover {
+        background: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+    }
+    .comment-form {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+    }
+    .comment-form textarea {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: inherit;
+        resize: none;
+    }
+    .btn-comment {
+        padding: 10px 20px;
+        background: #D3580B;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.2s ease;
+    }
+    
+    .btn-comment:hover {
+        background: #c4510a;
+    }
+    
+    /* Connections & Suggestions */
+    .connections-list,
+    .suggestions-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    .connection-item,
+    .suggestion-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .connection-avatar,
+    .connection-avatar-placeholder,
+    .suggestion-avatar,
+    .suggestion-avatar-placeholder {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .connection-avatar-placeholder,
+    .suggestion-avatar-placeholder {
+        background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+    }
+    .connection-name,
+    .suggestion-name {
+        flex: 1;
+        text-decoration: none;
+        color: #1a1a1a;
+        font-weight: 500;
+        font-size: 14px;
+    }
+    .suggestion-info {
+        flex: 1;
+    }
+    .suggestion-location {
+        font-size: 12px;
+        color: #666;
+        display: block;
+    }
+    .btn-connect,
+    .btn-join {
+        padding: 6px 12px;
+        background: #D3580B;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-connect:hover,
+    .btn-join:hover {
+        background: #c4510a;
+        transform: translateY(-1px);
+    }
+    
+    /* Groups */
+    .groups-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .group-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .group-icon {
+        font-size: 24px;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f5f5f5;
+        border-radius: 8px;
+    }
+    .group-info {
+        flex: 1;
+    }
+    .group-name {
+        font-weight: 600;
+        font-size: 14px;
+        color: #1a1a1a;
+    }
+    .group-members {
+        font-size: 12px;
+        color: #666;
+    }
+    
+    /* Trends */
+    .trends-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .trend-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px;
+        border-radius: 6px;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.2s;
+    }
+    .trend-item:hover {
+        background: #f5f5f5;
+    }
+    .trend-hashtag {
+        font-weight: 600;
+        color: #D3580B;
+        font-size: 14px;
+    }
+    .trend-count {
+        font-size: 12px;
+        color: #666;
+    }
+    
+    /* News */
+    .news-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+    .news-item {
+        padding-bottom: 16px;
+        border-bottom: 1px solid #e5e5e5;
+    }
+    .news-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+    .news-title {
+        font-weight: 600;
+        font-size: 14px;
+        color: #1a1a1a;
+        margin: 0 0 8px;
+    }
+    .news-excerpt {
+        font-size: 12px;
+        color: #666;
+        margin: 0 0 8px;
+        line-height: 1.5;
+    }
+    .news-link {
+        color: #D3580B;
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    /* Widget Links - Utilise les styles LinkedIn du CSS global */
+    
+    /* Empty States */
+    .empty-state,
+    .empty-feed,
+    .no-comments {
+        text-align: center;
+        padding: 40px 20px;
+        color: #666;
+        font-size: 14px;
+    }
+    
+    /* Hashtags */
+    .post-hashtags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+    }
+    .hashtag {
+        color: #D3580B;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 14px;
+    }
+    .hashtag:hover {
+        text-decoration: underline;
+    }
+    
+    /* ========== EN-TÊTE PERSONNALISABLE ========== */
+    .connect-header-customizable {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    .header-banner {
+        position: relative;
+        height: 200px;
+        overflow: hidden;
+    }
+    .banner-video, .banner-image, .banner-default {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .banner-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 60px;
+        background: linear-gradient(to top, rgba(0,0,0,0.3), transparent);
+    }
+    .header-content {
+        padding: 20px;
+    }
+    .header-stats {
+        display: flex;
+        gap: 24px;
+        margin-bottom: 16px;
+    }
+    .stat-item {
+        text-align: center;
+    }
+    .stat-value {
+        display: block;
+        font-size: 24px;
+        font-weight: 700;
+        color: #D3580B;
+    }
+    .stat-label {
+        display: block;
+        font-size: 12px;
+        color: #666;
+        margin-top: 4px;
+    }
+    .header-keywords-slider {
+        overflow: hidden;
+        position: relative;
+    }
+    .keywords-track {
+        display: flex;
+        gap: 8px;
+        animation: scrollKeywords 30s linear infinite;
+    }
+    @keyframes scrollKeywords {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+    }
+    .keyword-tag {
+        padding: 6px 12px;
+        background: rgba(211, 88, 11, 0.1);
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #D3580B;
+        white-space: nowrap;
+    }
+
+    /* ========== STORIES ========== */
+    .stories-section {
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .stories-container {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    .stories-container::-webkit-scrollbar {
+        display: none;
+    }
+    .story-item {
+        flex-shrink: 0;
+        width: 80px;
+        text-align: center;
+        cursor: pointer;
+    }
+    .story-avatar, .story-avatar-placeholder {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        border: 3px solid #D3580B;
+        margin: 0 auto 8px;
+        object-fit: cover;
+    }
+    .story-avatar-placeholder {
+        background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+    }
+    .story-add {
+        border: 2px dashed #ccc;
+        border-radius: 50%;
+        width: 64px;
+        height: 64px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+    }
+    .story-add-icon {
+        font-size: 24px;
+        color: #666;
+    }
+    .story-author-name {
+        font-size: 12px;
+        color: #666;
+        display: block;
+    }
+
+    /* ========== ANNONCE ÉPINGLÉE ========== */
+    .pinned-announcement {
+        background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
+        border: 2px solid #D3580B;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .announcement-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        font-weight: 700;
+        color: #D3580B;
+    }
+    .announcement-content h3 {
+        margin: 0 0 8px;
+        font-size: 18px;
+    }
+    .announcement-link {
+        color: #D3580B;
+        font-weight: 600;
+        text-decoration: none;
+        margin-top: 8px;
+        display: inline-block;
+    }
+
+    /* ========== MODÉRATION IA ========== */
+    .ai-moderation-warning {
+        background: #fff3cd;
+        border: 2px solid #ffc107;
+        border-radius: 8px;
+        padding: 16px;
+        margin-top: 12px;
+        display: flex;
+        gap: 12px;
+    }
+    .warning-icon {
+        font-size: 24px;
+    }
+    .warning-content {
+        flex: 1;
+    }
+    .warning-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+    }
+    .btn-warning-edit, .btn-warning-ignore {
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+    }
+    .btn-warning-edit {
+        background: #D3580B;
+        color: white;
+    }
+    .btn-warning-ignore {
+        background: #ccc;
+        color: #333;
+    }
+
+    /* ========== RÉACTIONS AVANCÉES ========== */
+    .reactions-picker {
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        background: white;
+        border-radius: 24px;
+        padding: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        display: flex;
+        gap: 4px;
+        z-index: 100;
+    }
+    .reaction-btn {
+        width: 40px;
+        height: 40px;
+        border: none;
+        background: transparent;
+        font-size: 24px;
+        cursor: pointer;
+        border-radius: 50%;
+        transition: transform 0.2s;
+    }
+    .reaction-btn:hover {
+        transform: scale(1.3);
+    }
+    .reactions-summary {
+        display: flex;
+        gap: 4px;
+    }
+    .reaction-emoji {
+        font-size: 16px;
+    }
+    .reactions-detail {
+        margin-top: 12px;
+        padding: 12px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+    .reactions-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    /* ========== APERÇU DOCUMENTS ========== */
+    .document-preview {
+        margin-top: 12px;
+    }
+    .doc-preview-pdf, .doc-preview-image {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .doc-preview-pdf:hover, .doc-preview-image:hover {
+        background: #e9ecef;
+    }
+    .doc-thumbnail {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 6px;
+    }
+    .doc-preview-image {
+        position: relative;
+    }
+    .doc-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.2s;
+        border-radius: 8px;
+    }
+    .doc-preview-image:hover .doc-overlay {
+        opacity: 1;
+    }
+
+    /* ========== MINI-WIDGET LOGEMENT ========== */
+    .post-logement-widget {
+        margin-top: 16px;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .logement-widget-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px;
+        background: #f8f9fa;
+        font-weight: 600;
+    }
+    .logement-widget-content {
+        display: flex;
+        gap: 12px;
+        padding: 12px;
+    }
+    .logement-widget-image {
+        width: 120px;
+        height: 120px;
+        border-radius: 8px;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    .logement-widget-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .logement-widget-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        background: #f8f9fa;
+    }
+    .logement-widget-info {
+        flex: 1;
+    }
+    .logement-widget-info h4 {
+        margin: 0 0 8px;
+        font-size: 16px;
+    }
+    .logement-widget-rating {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+    .logement-widget-details {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 14px;
+        color: #666;
+    }
+    .logement-widget-price {
+        font-weight: 700;
+        color: #D3580B;
+    }
+    .logement-widget-link {
+        color: #D3580B;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    /* ========== POST COLLABORATIF ========== */
+    .post-collaborative-badge {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        background: rgba(211, 88, 11, 0.1);
+        border-radius: 6px;
+        margin-top: 12px;
+        font-size: 13px;
+        color: #D3580B;
+        font-weight: 600;
+    }
+
+    /* ========== COMMENTAIRES ENRICHIS ========== */
+    .comment-author-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .comment-badge {
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    .badge-proprietaire {
+        background: rgba(211, 88, 11, 0.15);
+        color: #D3580B;
+    }
+    .badge-verified {
+        background: rgba(34, 197, 94, 0.15);
+        color: #22c55e;
+    }
+    .badge-experience {
+        background: rgba(59, 130, 246, 0.15);
+        color: #3b82f6;
+    }
+    .comment-images {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+        flex-wrap: wrap;
+    }
+    .comment-image {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+    .comment-documents {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 8px;
+    }
+    .comment-document {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        text-decoration: none;
+        color: #333;
+        font-size: 13px;
+    }
+    .comment-replies {
+        margin-left: 40px;
+        margin-top: 12px;
+        padding-left: 12px;
+        border-left: 2px solid #e5e5e5;
+    }
+    .comment-reply {
+        margin-bottom: 12px;
+    }
+    .show-more-replies {
+        background: none;
+        border: none;
+        color: #D3580B;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 8px 0;
+    }
+    .comment-reply-form {
+        margin-left: 40px;
+        margin-top: 12px;
+    }
+    .comment-form-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+    }
+    .comment-attach-btn {
+        padding: 8px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 18px;
+    }
+
+    /* ========== SCROLL INFINI & RETURN TO TOP ========== */
+    .infinite-scroll-loader, .infinite-scroll-end {
+        text-align: center;
+        padding: 24px;
+        color: #666;
+    }
+    .loader-spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #D3580B;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 12px;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .return-to-top {
+        position: fixed;
+        bottom: 32px;
+        right: 32px;
+        width: 48px;
+        height: 48px;
+        background: #D3580B;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(211, 88, 11, 0.3);
+        transition: all 0.3s;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .return-to-top:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 6px 16px rgba(211, 88, 11, 0.4);
+    }
+
+    /* ========== MODAL DOCUMENT PREVIEW ========== */
+    .document-preview-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.9);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+    .document-preview-content {
+        max-width: 90vw;
+        max-height: 90vh;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .document-preview-content iframe {
+        width: 100%;
+        height: 80vh;
+        border: none;
+    }
+    .document-preview-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        width: 40px;
+        height: 40px;
+        background: white;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Responsive - LinkedIn Style */
+    @media (max-width: 1200px) {
+        .connect-container {
+            grid-template-columns: {% if user.is_authenticated %}1fr 2fr{% else %}0 1fr{% endif %};
+        }
+        .connect-sidebar-right {
+            display: none;
+        }
+    }
+    @media (max-width: 768px) {
+        .connect-container {
+            grid-template-columns: 1fr;
+            padding: 16px;
+        }
+        .connect-sidebar-left,
+        .connect-sidebar-right {
+            display: none;
+        }
+        .header-stats {
+            gap: 16px;
+        }
+        .stat-value {
+            font-size: 20px;
+        }
+        .return-to-top {
+            bottom: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+        }
+    }
+</style>
+
+<script>
+    // Fonctions JavaScript pour les interactions
+    function toggleLike(postId) {
+        fetch(`/connect/posts/${postId}/like/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+    
+    function toggleComments(postId) {
+        const commentsDiv = document.getElementById(`comments-${postId}`);
+        commentsDiv.style.display = commentsDiv.style.display === 'none' ? 'block' : 'none';
+    }
+    
+    function createComment(e, postId) {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+        
+        fetch(`/connect/posts/${postId}/comment/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+            },
+            body: formData,
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+    
+    function toggleCommentLike(commentId) {
+        fetch(`/connect/comments/${commentId}/like/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+    
+    function sharePost(postId) {
+        // TODO: Implémenter le partage
+        alert('Fonctionnalité de partage à venir');
+    }
+    
+    function togglePostMenu(postId) {
+        const menu = document.getElementById(`post-menu-${postId}`);
+        if (menu) {
+            // Fermer tous les autres menus
+            document.querySelectorAll('.post-menu').forEach(m => {
+                if (m.id !== `post-menu-${postId}`) {
+                    m.style.display = 'none';
+                }
+            });
+            // Toggle le menu actuel
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+        }
+    }
+    
+    // Fermer les menus au clic extérieur
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.post-menu') && !e.target.closest('.post-menu-btn')) {
+            document.querySelectorAll('.post-menu').forEach(menu => {
+                menu.style.display = 'none';
+            });
+        }
+    });
+    
+    // Fonction pour signaler un post (Phase 12.3)
+    function reportPost(postId) {
+        const reason = prompt('Raison du signalement:\n1. Spam\n2. Harcèlement\n3. Arnaque/Fraude\n4. Contenu inapproprié\n5. Fausse information\n6. Violence\n7. Usurpation d\'identité\n8. Autre\n\nEntrez le numéro ou la raison:');
+        if (!reason || reason.trim() === '') return;
+        
+        const description = prompt('Description supplémentaire (optionnel):') || '';
+        
+        const formData = new FormData();
+        formData.append('reason', reason.trim());
+        formData.append('description', description.trim());
+        
+        fetch(`/connect/posts/${postId}/report/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+            body: formData,
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message || 'Post signalé. Notre équipe va examiner le signalement.');
+                togglePostMenu(postId); // Fermer le menu
+            } else {
+                alert(data.error || 'Erreur lors du signalement.');
+            }
+        })
+        .catch(err => {
+            console.error('Erreur:', err);
+            alert('Erreur lors du signalement.');
+        });
+    }
+    
+    // Fonction pour signaler un commentaire (Phase 12.3)
+    function reportComment(commentId) {
+        const reason = prompt('Raison du signalement:\n1. Spam\n2. Harcèlement\n3. Arnaque/Fraude\n4. Contenu inapproprié\n5. Fausse information\n6. Violence\n7. Usurpation d\'identité\n8. Autre\n\nEntrez le numéro ou la raison:');
+        if (!reason || reason.trim() === '') return;
+        
+        const description = prompt('Description supplémentaire (optionnel):') || '';
+        
+        const formData = new FormData();
+        formData.append('reason', reason.trim());
+        formData.append('description', description.trim());
+        
+        fetch(`/connect/comments/${commentId}/report/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+            body: formData,
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message || 'Commentaire signalé. Notre équipe va examiner le signalement.');
+            } else {
+                alert(data.error || 'Erreur lors du signalement.');
+            }
+        })
+        .catch(err => {
+            console.error('Erreur:', err);
+            alert('Erreur lors du signalement.');
+        });
+    }
+    
+    function deletePost(postId) {
+        if (confirm('Êtes-vous sûr de vouloir supprimer ce post ?')) {
+            fetch(`/connect/posts/${postId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                }
+            });
+        }
+    }
+    
+    function connectUser(userId) {
+        fetch(`/connect/users/${userId}/connect/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert('Demande de connexion envoyée');
+                location.reload();
+            } else {
+                alert(data.error);
+            }
+        });
+    }
+    
+    function joinGroup(groupId) {
+        fetch(`/connect/groups/${groupId}/join/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert('Vous avez rejoint le groupe');
+                location.reload();
+            }
+        });
+    }
+    
+    // Formulaire de création de post
+    document.getElementById('create-post-form')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        
+        fetch('/connect/posts/create/', {
+            method: 'POST',
+            body: formData,
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.error);
+            }
+        });
+    });
+    
+    // Gestion de la visibilité
+    document.getElementById('post-visibility')?.addEventListener('change', function() {
+        const groupSelect = document.getElementById('post-group');
+        if (this.value === 'group') {
+            groupSelect.style.display = 'block';
+        } else {
+            groupSelect.style.display = 'none';
+        }
+    });
+    
+    // Gestion des filtres et tri
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const sort = this.getAttribute('data-sort');
+            const url = new URL(window.location);
+            url.searchParams.set('sort', sort);
+            window.location = url.toString();
+        });
+    });
+    
+    document.getElementById('filter-type')?.addEventListener('change', function() {
+        const url = new URL(window.location);
+        if (this.value) {
+            url.searchParams.set('filter_type', this.value);
+        } else {
+            url.searchParams.delete('filter_type');
+        }
+        window.location = url.toString();
+    });
+    
+    document.getElementById('filter-group')?.addEventListener('change', function() {
+        const url = new URL(window.location);
+        if (this.value) {
+            url.searchParams.set('filter_group', this.value);
+        } else {
+            url.searchParams.delete('filter_group');
+        }
+        window.location = url.toString();
+    });
+    
+    document.getElementById('filter-hashtag')?.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            const url = new URL(window.location);
+            if (this.value) {
+                url.searchParams.set('filter_hashtag', this.value);
+            } else {
+                url.searchParams.delete('filter_hashtag');
+            }
+            window.location = url.toString();
+        }
+    });
+
+    document.getElementById('filter-content-type')?.addEventListener('change', function() {
+        const url = new URL(window.location);
+        if (this.value) {
+            url.searchParams.set('filter_content_type', this.value);
+        } else {
+            url.searchParams.delete('filter_content_type');
+        }
+        window.location = url.toString();
+    });
+
+    // ========== MODÉRATION ASSISTÉE IA ==========
+    const postContentInput = document.getElementById('post-content');
+    if (postContentInput) {
+        let moderationTimeout;
+        postContentInput.addEventListener('input', function() {
+            clearTimeout(moderationTimeout);
+            moderationTimeout = setTimeout(() => {
+                checkAIModeration(this.value);
+            }, 1000);
+        });
+    }
+
+    function checkAIModeration(content) {
+        if (!content || content.length < 10) return;
+        
+        // Simulation d'une vérification IA (à remplacer par un vrai appel API)
+        const riskyWords = ['arnaque', 'fraude', 'escroquerie', 'mensonge', 'faux'];
+        const lowerContent = content.toLowerCase();
+        const foundRisky = riskyWords.some(word => lowerContent.includes(word));
+        
+        if (foundRisky) {
+            showModerationWarning('Votre message contient des termes qui pourraient être signalés. Veuillez vérifier votre contenu avant de publier.');
+        } else {
+            hideModerationWarning();
+        }
+    }
+
+    function showModerationWarning(message) {
+        const warning = document.getElementById('ai-moderation-warning');
+        const messageEl = document.getElementById('warning-message');
+        if (warning && messageEl) {
+            messageEl.textContent = message;
+            warning.style.display = 'flex';
+        }
+    }
+
+    function hideModerationWarning() {
+        const warning = document.getElementById('ai-moderation-warning');
+        if (warning) warning.style.display = 'none';
+    }
+
+    function editPostContent() {
+        hideModerationWarning();
+        postContentInput?.focus();
+    }
+
+    function ignoreWarning() {
+        hideModerationWarning();
+        // L'utilisateur peut publier quand même
+    }
+
+    // ========== RÉACTIONS AVANCÉES ==========
+    function showReactionsPicker(postId) {
+        const picker = document.getElementById(`reactions-picker-${postId}`);
+        if (picker) {
+            picker.style.display = 'flex';
+        }
+    }
+
+    function hideReactionsPicker(postId) {
+        setTimeout(() => {
+            const picker = document.getElementById(`reactions-picker-${postId}`);
+            if (picker) {
+                picker.style.display = 'none';
+            }
+        }, 200);
+    }
+
+    function addReaction(postId, emoji) {
+        fetch(`{% url 'api-add-reaction' %}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ post_id: postId, emoji: emoji }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                // Mettre à jour l'affichage des réactions sans recharger la page
+                const summaryEl = document.getElementById(`reactions-summary-${postId}`);
+                if (summaryEl && data.reactions_summary) {
+                    summaryEl.innerHTML = Object.entries(data.reactions_summary)
+                        .map(([emoji, count]) => `<span class="reaction-badge">${emoji} ${count}</span>`)
+                        .join('');
+                }
+            }
+        });
+    }
+
+    function showReactions(postId) {
+        const detail = document.getElementById(`reactions-detail-${postId}`);
+        if (detail) {
+            detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
+            if (detail.style.display === 'block') {
+                loadReactionsDetail(postId);
+            }
+        }
+    }
+
+    function loadReactionsDetail(postId) {
+        fetch(`{% url 'api-get-reactions' post_id=0 %}`.replace('0', postId))
+        .then(r => r.json())
+        .then(data => {
+            const list = document.getElementById(`reactions-list-${postId}`);
+            if (list && data.reactions) {
+                list.innerHTML = data.reactions.map(r => `
+                    <div class="reaction-item">
+                        <span class="reaction-emoji">${r.emoji}</span>
+                        <span>${r.user.username}</span>
+                    </div>
+                `).join('');
+            }
+        });
+    }
+
+    // ========== APERÇU DOCUMENTS ==========
+    function openDocumentPreview(url, title, type) {
+        const modal = document.createElement('div');
+        modal.className = 'document-preview-modal';
+        modal.innerHTML = `
+            <div class="document-preview-content">
+                <button class="document-preview-close" onclick="this.closest('.document-preview-modal').remove()">×</button>
+                ${type === 'pdf' ? `<iframe src="${url}"></iframe>` : `<img src="${url}" alt="${title}" style="max-width: 100%; max-height: 90vh;">`}
+            </div>
+        `;
+        document.body.appendChild(modal);
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) modal.remove();
+        });
+    }
+
+    function openImageModal(url) {
+        openDocumentPreview(url, '', 'image');
+    }
+
+    // ========== COMMENTAIRES ENRICHIS ==========
+    function showReplyForm(commentId, postId) {
+        const form = document.getElementById(`reply-form-${commentId}`);
+        if (form) {
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+    }
+
+    function createReply(e, commentId, postId) {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+        formData.append('parent_id', commentId);
+        
+        fetch(`/connect/posts/${postId}/comment/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+            },
+            body: formData,
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+
+    function loadMoreReplies(commentId) {
+        fetch(`{% url 'api-load-more-replies' comment_id=0 %}`.replace('0', commentId))
+        .then(r => r.json())
+        .then(data => {
+            const repliesDiv = document.getElementById(`replies-${commentId}`);
+            if (repliesDiv && data.replies) {
+                // Ajouter les réponses supplémentaires
+                data.replies.forEach(reply => {
+                    const replyEl = document.createElement('div');
+                    replyEl.className = 'comment-item comment-reply';
+                    replyEl.innerHTML = `
+                        <div class="comment-header">
+                            <div class="comment-avatar-placeholder">${reply.author.username[0]}</div>
+                            <div class="comment-info">
+                                <span class="comment-author">${reply.author.username}</span>
+                                <span class="comment-date">${new Date(reply.created_at).toLocaleString('fr-FR')}</span>
+                            </div>
+                        </div>
+                        <div class="comment-content">${reply.content}</div>
+                    `;
+                    repliesDiv.insertBefore(replyEl, repliesDiv.querySelector('.show-more-replies'));
+                });
+                if (!data.has_next) {
+                    repliesDiv.querySelector('.show-more-replies')?.remove();
+                }
+            }
+        });
+    }
+
+    // ========== POSTS COLLABORATIFS ==========
+    function joinCollaborativePost(postId) {
+        if (confirm('Voulez-vous participer à cette discussion collaborative ?')) {
+            fetch(`{% url 'api-join-collaborative-post' %}`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ post_id: postId }),
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Vous participez maintenant à cette discussion !');
+                    location.reload();
+                }
+            });
+        }
+    }
+
+    // ========== SCROLL INFINI ==========
+    let currentPage = 1;
+    let isLoading = false;
+    let hasMore = true;
+
+    function initInfiniteScroll() {
+        const feed = document.getElementById('posts-feed');
+        if (!feed) return;
+
+        window.addEventListener('scroll', function() {
+            if (isLoading || !hasMore) return;
+
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const windowHeight = window.innerHeight;
+            const documentHeight = document.documentElement.scrollHeight;
+
+            if (scrollTop + windowHeight >= documentHeight - 500) {
+                loadMorePosts();
+            }
+        });
+    }
+
+    function loadMorePosts() {
+        if (isLoading || !hasMore) return;
+        isLoading = true;
+
+        const loader = document.getElementById('infinite-scroll-loader');
+        if (loader) loader.style.display = 'block';
+
+        currentPage++;
+        const url = new URL(window.location);
+        url.searchParams.set('page', currentPage);
+
+        fetch(url.toString())
+        .then(r => r.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newPosts = doc.querySelectorAll('.post-card');
+            
+            if (newPosts.length === 0) {
+                hasMore = false;
+                const end = document.getElementById('infinite-scroll-end');
+                if (end) end.style.display = 'block';
+            } else {
+                const feed = document.getElementById('posts-feed');
+                newPosts.forEach(post => {
+                    feed.appendChild(post);
+                });
+            }
+            
+            if (loader) loader.style.display = 'none';
+            isLoading = false;
+        })
+        .catch(err => {
+            console.error('Erreur chargement posts:', err);
+            if (loader) loader.style.display = 'none';
+            isLoading = false;
+        });
+    }
+
+    // ========== RETURN TO TOP ==========
+    function initReturnToTop() {
+        const btn = document.getElementById('return-to-top');
+        if (!btn) return;
+
+        window.addEventListener('scroll', function() {
+            if (window.pageYOffset > 300) {
+                btn.style.display = 'flex';
+            } else {
+                btn.style.display = 'none';
+            }
+        });
+    }
+
+    function scrollToTop() {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    }
+
+    // ========== STORIES ==========
+    function openStoryCreator() {
+        alert('Créateur de story à venir');
+    }
+
+    function openStory(storyId) {
+        alert(`Ouverture de la story ${storyId}`);
+    }
+
+    // Initialisation
+    document.addEventListener('DOMContentLoaded', function() {
+        initInfiniteScroll();
+        initReturnToTop();
+    });
+</script>
+{% endblock %}
+

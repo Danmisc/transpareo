@@ -1,0 +1,512 @@
+{% extends 'core/admin/base_admin.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block page_title %}Projections Financières Avancées{% endblock %}
+
+{% block content %}
+<div class="financial-projections-page">
+    <!-- Header -->
+    <div class="financial-header">
+        <div class="header-left">
+            <h1 class="page-title-main">Projections Financières</h1>
+            <p class="page-subtitle">Dashboard financier complet avec projections, simulations et scénarios</p>
+        </div>
+        <div class="header-actions">
+            <button type="button" class="btn-secondary" onclick="exportToExcel()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Exporter Excel
+            </button>
+            <button type="button" class="btn-primary" onclick="exportToPDF()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                Exporter PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="financial-tabs">
+        <button class="tab-btn active" data-tab="income-statement" onclick="switchTab('income-statement')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="1" x2="12" y2="23"></line>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+            Compte de résultat
+        </button>
+        <button class="tab-btn" data-tab="cash-flow" onclick="switchTab('cash-flow')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 11 12 14 22 4"></polyline>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            </svg>
+            Flux de trésorerie
+        </button>
+        <button class="tab-btn" data-tab="balance-sheet" onclick="switchTab('balance-sheet')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="3" y1="9" x2="21" y2="9"></line>
+                <line x1="9" y1="21" x2="9" y2="9"></line>
+            </svg>
+            Bilan prévisionnel
+        </button>
+        <button class="tab-btn" data-tab="scenarios" onclick="switchTab('scenarios')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
+            Simulations & Scénarios
+        </button>
+        <button class="tab-btn" data-tab="kpis" onclick="switchTab('kpis')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 3v18h18"></path>
+                <path d="M18 7c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3z"></path>
+                <path d="M18 14c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3z"></path>
+                <path d="M3 10h15"></path>
+                <path d="M3 17h12"></path>
+            </svg>
+            Indicateurs clés
+        </button>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="financial-tab-content">
+        <!-- Tab 1: Compte de résultat -->
+        <div id="tab-income-statement" class="tab-panel active">
+            <div class="tab-header">
+                <h2>Compte de Résultat (3 ans)</h2>
+                <p class="tab-description">Projection des revenus, charges et résultats sur 3 ans (mensuel année 1, trimestriel années 2-3)</p>
+            </div>
+
+            <div class="financial-table-container">
+                <table class="financial-table" id="income-statement-table">
+                    <thead>
+                        <tr>
+                            <th class="sticky-col">Poste</th>
+                            <th>Année 1 - Mois 1</th>
+                            <th>Année 1 - Mois 2</th>
+                            <th>Année 1 - Mois 3</th>
+                            <th>...</th>
+                            <th>Année 1 - Total</th>
+                            <th>Année 2 - T1</th>
+                            <th>Année 2 - T2</th>
+                            <th>Année 2 - T3</th>
+                            <th>Année 2 - T4</th>
+                            <th>Année 2 - Total</th>
+                            <th>Année 3 - T1</th>
+                            <th>Année 3 - T2</th>
+                            <th>Année 3 - T3</th>
+                            <th>Année 3 - T4</th>
+                            <th>Année 3 - Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Section Revenus -->
+                        <tr class="section-header">
+                            <td class="sticky-col section-title" colspan="16">REVENUS</td>
+                        </tr>
+                        <tr class="data-row">
+                            <td class="sticky-col">Abonnements locataires</td>
+                            <td class="editable-cell"><input type="number" class="financial-input" data-field="revenue_subscriptions_tenants" data-period="y1_m1" step="0.01"></td>
+                            <td class="editable-cell"><input type="number" class="financial-input" data-field="revenue_subscriptions_tenants" data-period="y1_m2" step="0.01"></td>
+                            <td class="editable-cell"><input type="number" class="financial-input" data-field="revenue_subscriptions_tenants" data-period="y1_m3" step="0.01"></td>
+                            <td>...</td>
+                            <td class="calculated-cell" data-calc="sum" data-field="revenue_subscriptions_tenants" data-year="y1">0.00 €</td>
+                            <td class="editable-cell"><input type="number" class="financial-input" data-field="revenue_subscriptions_tenants" data-period="y2_q1" step="0.01"></td>
+                            <td class="editable-cell"><input type="number" class="financial-input" data-field="revenue_subscriptions_tenants" data-period="y2_q2" step="0.01"></td>
+                            <td class="editable-cell"><input type="number" class="financial-input" data-field="revenue_subscriptions_tenants" data-period="y2_q3" step="0.01"></td>
+                            <td class="editable-cell"><input type="number" class="financial-input" data-field="revenue_subscriptions_tenants" data-period="y2_q4" step="0.01"></td>
+                            <td class="calculated-cell" data-calc="sum" data-field="revenue_subscriptions_tenants" data-year="y2">0.00 €</td>
+                            <td class="editable-cell"><input type="number" class="financial-input" data-field="revenue_subscriptions_tenants" data-period="y3_q1" step="0.01"></td>
+                            <td class="editable-cell"><input type="number" class="financial-input" data-field="revenue_subscriptions_tenants" data-period="y3_q2" step="0.01"></td>
+                            <td class="editable-cell"><input type="number" class="financial-input" data-field="revenue_subscriptions_tenants" data-period="y3_q3" step="0.01"></td>
+                            <td class="editable-cell"><input type="number" class="financial-input" data-field="revenue_subscriptions_tenants" data-period="y3_q4" step="0.01"></td>
+                            <td class="calculated-cell" data-calc="sum" data-field="revenue_subscriptions_tenants" data-year="y3">0.00 €</td>
+                        </tr>
+                        <!-- Autres revenus similaires... -->
+                        <tr class="data-row">
+                            <td class="sticky-col"><strong>Total Revenus</strong></td>
+                            <td colspan="4" class="calculated-cell" data-calc="revenue_total" data-period="y1_m1">0.00 €</td>
+                            <td class="calculated-cell" data-calc="revenue_total" data-year="y1">0.00 €</td>
+                            <td colspan="4" class="calculated-cell" data-calc="revenue_total" data-period="y2_q1">0.00 €</td>
+                            <td class="calculated-cell" data-calc="revenue_total" data-year="y2">0.00 €</td>
+                            <td colspan="4" class="calculated-cell" data-calc="revenue_total" data-period="y3_q1">0.00 €</td>
+                            <td class="calculated-cell" data-calc="revenue_total" data-year="y3">0.00 €</td>
+                        </tr>
+
+                        <!-- Section Charges Variables -->
+                        <tr class="section-header">
+                            <td class="sticky-col section-title" colspan="16">CHARGES VARIABLES</td>
+                        </tr>
+                        <tr class="data-row">
+                            <td class="sticky-col">Commissions paiement (%)</td>
+                            <td colspan="15" class="editable-cell">
+                                <input type="number" class="financial-input" id="variable_cost_payment_commissions" value="{{ projection.variable_cost_payment_commissions|default:2.0 }}" step="0.01" min="0" max="100">
+                                <span>%</span>
+                            </td>
+                        </tr>
+                        <!-- Autres charges variables... -->
+
+                        <!-- Section Charges Fixes -->
+                        <tr class="section-header">
+                            <td class="sticky-col section-title" colspan="16">CHARGES FIXES</td>
+                        </tr>
+                        <!-- Charges fixes... -->
+
+                        <!-- Section Résultats -->
+                        <tr class="section-header">
+                            <td class="sticky-col section-title" colspan="16">RÉSULTATS</td>
+                        </tr>
+                        <tr class="data-row">
+                            <td class="sticky-col">Marge brute</td>
+                            <td colspan="15" class="calculated-cell">0.00 €</td>
+                        </tr>
+                        <tr class="data-row">
+                            <td class="sticky-col">EBITDA</td>
+                            <td colspan="15" class="calculated-cell">0.00 €</td>
+                        </tr>
+                        <tr class="data-row">
+                            <td class="sticky-col"><strong>Résultat net</strong></td>
+                            <td colspan="15" class="calculated-cell"><strong>0.00 €</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Graphiques -->
+            <div class="charts-section">
+                <div class="chart-card">
+                    <h3>Évolution CA vs Charges</h3>
+                    <canvas id="chart-revenue-costs" width="400" height="300"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Résultat Net</h3>
+                    <canvas id="chart-net-result" width="400" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Flux de trésorerie -->
+        <div id="tab-cash-flow" class="tab-panel">
+            <div class="tab-header">
+                <h2>Flux de Trésorerie (Année 1 - Mensuel)</h2>
+                <p class="tab-description">Encaissements, décaissements et évolution de la trésorerie mois par mois</p>
+            </div>
+
+            <div class="financial-table-container">
+                <table class="financial-table" id="cash-flow-table">
+                    <thead>
+                        <tr>
+                            <th class="sticky-col">Mois</th>
+                            <th>Solde initial</th>
+                            <th>Ventes</th>
+                            <th>Levées de fonds</th>
+                            <th>Prêts</th>
+                            <th>Total entrées</th>
+                            <th>Achats et charges</th>
+                            <th>Investissements</th>
+                            <th>Remboursements prêts</th>
+                            <th>Total sorties</th>
+                            <th>Variation</th>
+                            <th>Solde final</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cash_flow in cash_flows %}
+                        <tr class="data-row" data-month="{{ cash_flow.month }}">
+                            <td class="sticky-col"><strong>Mois {{ cash_flow.month }}</strong></td>
+                            <td class="calculated-cell" data-field="opening_balance">{{ cash_flow.opening_balance|floatformat:2 }} €</td>
+                            <td class="editable-cell"><input type="number" class="financial-input" data-field="inflows_sales" data-month="{{ cash_flow.month }}" value="{{ cash_flow.inflows_sales|floatformat:2 }}" step="0.01"></td>
+                            <td class="editable-cell"><input type="number" class="financial-input" data-field="inflows_funding" data-month="{{ cash_flow.month }}" value="{{ cash_flow.inflows_funding|floatformat:2 }}" step="0.01"></td>
+                            <td class="editable-cell"><input type="number" class="financial-input" data-field="inflows_loans" data-month="{{ cash_flow.month }}" value="{{ cash_flow.inflows_loans|floatformat:2 }}" step="0.01"></td>
+                            <td class="calculated-cell" data-field="total_inflows">{{ cash_flow.total_inflows|floatformat:2 }} €</td>
+                            <td class="editable-cell"><input type="number" class="financial-input" data-field="outflows_purchases_charges" data-month="{{ cash_flow.month }}" value="{{ cash_flow.outflows_purchases_charges|floatformat:2 }}" step="0.01"></td>
+                            <td class="editable-cell"><input type="number" class="financial-input" data-field="outflows_investments" data-month="{{ cash_flow.month }}" value="{{ cash_flow.outflows_investments|floatformat:2 }}" step="0.01"></td>
+                            <td class="editable-cell"><input type="number" class="financial-input" data-field="outflows_loan_repayments" data-month="{{ cash_flow.month }}" value="{{ cash_flow.outflows_loan_repayments|floatformat:2 }}" step="0.01"></td>
+                            <td class="calculated-cell" data-field="total_outflows">{{ cash_flow.total_outflows|floatformat:2 }} €</td>
+                            <td class="calculated-cell" data-field="variation">{{ cash_flow.variation|floatformat:2 }} €</td>
+                            <td class="calculated-cell {% if cash_flow.closing_balance < 0 %}negative{% endif %}" data-field="closing_balance">{{ cash_flow.closing_balance|floatformat:2 }} €</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Graphique -->
+            <div class="chart-card">
+                <h3>Évolution Trésorerie</h3>
+                <canvas id="chart-cash-flow" width="400" height="300"></canvas>
+            </div>
+        </div>
+
+        <!-- Tab 3: Bilan prévisionnel -->
+        <div id="tab-balance-sheet" class="tab-panel">
+            <div class="tab-header">
+                <h2>Bilan Prévisionnel (3 ans)</h2>
+                <p class="tab-description">Actif et passif prévisionnels avec vérification d'équilibre</p>
+            </div>
+
+            <div class="balance-sheets-grid">
+                {% for balance_sheet in balance_sheets %}
+                <div class="balance-sheet-card">
+                    <h3>Année {{ balance_sheet.year }}</h3>
+                    <table class="balance-sheet-table" data-year="{{ balance_sheet.year }}">
+                        <thead>
+                            <tr>
+                                <th>ACTIF</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Immobilisations</td>
+                                <td class="editable-cell"><input type="number" class="financial-input" data-field="assets_fixed_assets" data-year="{{ balance_sheet.year }}" value="{{ balance_sheet.assets_fixed_assets|floatformat:2 }}" step="0.01"></td>
+                            </tr>
+                            <tr>
+                                <td>Créances clients</td>
+                                <td class="editable-cell"><input type="number" class="financial-input" data-field="assets_receivables" data-year="{{ balance_sheet.year }}" value="{{ balance_sheet.assets_receivables|floatformat:2 }}" step="0.01"></td>
+                            </tr>
+                            <tr>
+                                <td>Trésorerie</td>
+                                <td class="editable-cell"><input type="number" class="financial-input" data-field="assets_cash" data-year="{{ balance_sheet.year }}" value="{{ balance_sheet.assets_cash|floatformat:2 }}" step="0.01"></td>
+                            </tr>
+                            <tr class="total-row">
+                                <td><strong>Total Actif</strong></td>
+                                <td class="calculated-cell" data-field="total_assets" data-year="{{ balance_sheet.year }}">{{ balance_sheet.total_assets|floatformat:2 }} €</td>
+                            </tr>
+                        </tbody>
+                        <thead>
+                            <tr>
+                                <th>PASSIF</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Capital social</td>
+                                <td class="editable-cell"><input type="number" class="financial-input" data-field="liabilities_share_capital" data-year="{{ balance_sheet.year }}" value="{{ balance_sheet.liabilities_share_capital|floatformat:2 }}" step="0.01"></td>
+                            </tr>
+                            <tr>
+                                <td>Réserves</td>
+                                <td class="calculated-cell" data-field="liabilities_reserves" data-year="{{ balance_sheet.year }}">{{ balance_sheet.liabilities_reserves|floatformat:2 }} €</td>
+                            </tr>
+                            <tr>
+                                <td>Dettes financières</td>
+                                <td class="editable-cell"><input type="number" class="financial-input" data-field="liabilities_financial_debt" data-year="{{ balance_sheet.year }}" value="{{ balance_sheet.liabilities_financial_debt|floatformat:2 }}" step="0.01"></td>
+                            </tr>
+                            <tr>
+                                <td>Dettes fournisseurs</td>
+                                <td class="calculated-cell" data-field="liabilities_trade_payables" data-year="{{ balance_sheet.year }}">{{ balance_sheet.liabilities_trade_payables|floatformat:2 }} €</td>
+                            </tr>
+                            <tr class="total-row">
+                                <td><strong>Total Passif</strong></td>
+                                <td class="calculated-cell {% if not balance_sheet.balance_check %}balance-error{% endif %}" data-field="total_liabilities" data-year="{{ balance_sheet.year }}">{{ balance_sheet.total_liabilities|floatformat:2 }} €</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="balance-check {% if not balance_sheet.balance_check %}error{% else %}success{% endif %}">
+                        {% if balance_sheet.balance_check %}
+                        <span>✓ Équilibre vérifié (Actif = Passif)</span>
+                        {% else %}
+                        <span>✗ Erreur: Actif ≠ Passif</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Tab 4: Simulations & Scénarios -->
+        <div id="tab-scenarios" class="tab-panel">
+            <div class="tab-header">
+                <h2>Simulations & Scénarios</h2>
+                <p class="tab-description">Comparez 3 scénarios (pessimiste, réaliste, optimiste) avec paramètres ajustables</p>
+            </div>
+
+            <div class="scenarios-grid">
+                {% for scenario in scenarios %}
+                <div class="scenario-card">
+                    <h3>Scénario {{ scenario.get_name_display }}</h3>
+                    <form class="scenario-form" data-scenario-id="{{ scenario.id }}">
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label>Taux croissance CA (%)</label>
+                                <input type="number" name="revenue_growth_rate" value="{{ scenario.revenue_growth_rate|floatformat:2 }}" step="0.01" class="input-field">
+                            </div>
+                            <div class="form-field">
+                                <label>Taux conversion locataires (%)</label>
+                                <input type="number" name="conversion_rate_tenants" value="{{ scenario.conversion_rate_tenants|floatformat:2 }}" step="0.01" class="input-field">
+                            </div>
+                            <div class="form-field">
+                                <label>Taux conversion propriétaires (%)</label>
+                                <input type="number" name="conversion_rate_owners" value="{{ scenario.conversion_rate_owners|floatformat:2 }}" step="0.01" class="input-field">
+                            </div>
+                            <div class="form-field">
+                                <label>Prix moyen abonnement (€)</label>
+                                <input type="number" name="avg_subscription_price" value="{{ scenario.avg_subscription_price|floatformat:2 }}" step="0.01" class="input-field">
+                            </div>
+                            <div class="form-field">
+                                <label>CAC (€)</label>
+                                <input type="number" name="cac" value="{{ scenario.cac|floatformat:2 }}" step="0.01" class="input-field">
+                            </div>
+                            <div class="form-field">
+                                <label>LTV (€)</label>
+                                <input type="number" name="ltv" value="{{ scenario.ltv|floatformat:2 }}" step="0.01" class="input-field">
+                            </div>
+                            <div class="form-field">
+                                <label>Multiplicateur coûts</label>
+                                <input type="number" name="cost_multiplier" value="{{ scenario.cost_multiplier|floatformat:2 }}" step="0.01" class="input-field">
+                            </div>
+                            <div class="form-field">
+                                <label>Utilisateurs mois 12</label>
+                                <input type="number" name="users_month_12" value="{{ scenario.users_month_12 }}" class="input-field">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary">Enregistrer</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Graphiques comparatifs -->
+            <div class="charts-section">
+                <div class="chart-card">
+                    <h3>Évolution CA - 3 Scénarios</h3>
+                    <canvas id="chart-scenarios-revenue" width="400" height="300"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Résultat Net - 3 Scénarios</h3>
+                    <canvas id="chart-scenarios-result" width="400" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 5: Indicateurs clés (KPIs) -->
+        <div id="tab-kpis" class="tab-panel">
+            <div class="tab-header">
+                <h2>Indicateurs Clés Financiers (KPIs)</h2>
+                <p class="tab-description">Métriques essentielles pour suivre la performance financière</p>
+            </div>
+
+            <form id="kpis-form" method="POST" action="{% url 'admin-kpis-save' %}">
+                {% csrf_token %}
+                <div class="kpis-grid">
+                    <!-- CAC Card -->
+                    <div class="kpi-card">
+                        <h3>CAC (Coût Acquisition Client)</h3>
+                        <div class="kpi-value">{{ kpis.cac_current|floatformat:2 }} €</div>
+                        <div class="kpi-input">
+                            <input type="number" name="cac_current" value="{{ kpis.cac_current|floatformat:2 }}" step="0.01" class="input-field">
+                            <span>Benchmark: {{ kpis.cac_sector_benchmark|floatformat:2 }} €</span>
+                        </div>
+                        <div class="kpi-chart-mini">
+                            <canvas id="chart-cac-mini" width="200" height="100"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- LTV Card -->
+                    <div class="kpi-card">
+                        <h3>LTV (Lifetime Value)</h3>
+                        <div class="kpi-value">{{ kpis.ltv_current|floatformat:2 }} €</div>
+                        <div class="kpi-input">
+                            <input type="number" name="ltv_current" value="{{ kpis.ltv_current|floatformat:2 }}" step="0.01" class="input-field">
+                        </div>
+                        <div class="kpi-ratio {% if kpis.ltv_cac_ratio < 3 %}warning{% endif %}">
+                            Ratio LTV/CAC: <strong>{{ kpis.ltv_cac_ratio|floatformat:2 }}</strong>
+                            {% if kpis.ltv_cac_ratio < 3 %}<span class="alert-badge">⚠ Alerte: Ratio < 3</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Churn Rate Card -->
+                    <div class="kpi-card">
+                        <h3>Churn Rate</h3>
+                        <div class="kpi-value">{{ kpis.churn_rate_monthly|floatformat:2 }} %</div>
+                        <div class="kpi-input">
+                            <input type="number" name="churn_rate_monthly" value="{{ kpis.churn_rate_monthly|floatformat:2 }}" step="0.01" class="input-field">
+                        </div>
+                        <div class="kpi-chart-mini">
+                            <canvas id="chart-churn-mini" width="200" height="100"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- MRR Card -->
+                    <div class="kpi-card">
+                        <h3>MRR (Monthly Recurring Revenue)</h3>
+                        <div class="kpi-value">{{ kpis.mrr_current|floatformat:2 }} €</div>
+                        <div class="kpi-input">
+                            <input type="number" name="mrr_current" value="{{ kpis.mrr_current|floatformat:2 }}" step="0.01" class="input-field">
+                        </div>
+                        <div class="kpi-chart-mini">
+                            <canvas id="chart-mrr-mini" width="200" height="100"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Burn Rate Card -->
+                    <div class="kpi-card">
+                        <h3>Burn Rate</h3>
+                        <div class="kpi-value">{{ kpis.burn_rate_monthly|floatformat:2 }} €/mois</div>
+                        <div class="kpi-input">
+                            <input type="number" name="burn_rate_monthly" value="{{ kpis.burn_rate_monthly|floatformat:2 }}" step="0.01" class="input-field">
+                        </div>
+                        <div class="kpi-runway">
+                            Runway: <strong>{{ kpis.runway_months }}</strong> mois
+                            <input type="number" name="runway_months" value="{{ kpis.runway_months }}" class="input-field-small">
+                        </div>
+                    </div>
+
+                    <!-- Seuil de Rentabilité Card -->
+                    <div class="kpi-card">
+                        <h3>Seuil de Rentabilité</h3>
+                        <div class="kpi-value">Mois {{ kpis.break_even_month|default:"-" }}</div>
+                        <div class="kpi-input">
+                            <input type="number" name="break_even_month" value="{{ kpis.break_even_month|default:'' }}" placeholder="Mois" class="input-field">
+                            <input type="number" name="break_even_revenue" value="{{ kpis.break_even_revenue|floatformat:2|default:'' }}" step="0.01" placeholder="CA nécessaire (€)" class="input-field">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="kpis-actions">
+                    <button type="submit" class="btn-primary">Enregistrer les KPIs</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Styles -->
+<link rel="stylesheet" href="{% static 'core/admin/financial-projections.css' %}">
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+<!-- JavaScript -->
+<script src="{% static 'core/admin/financial-projections.js' %}"></script>
+
+<script>
+    const projectionData = {{ projection_json|safe }};
+    const cashFlowsData = {{ cash_flows_json|safe }};
+    const scenariosData = {{ scenarios_json|safe }};
+    const saveProjectionUrl = '{% url "admin-financial-projection-save" %}';
+    const saveCashFlowUrl = '{% url "admin-cash-flow-save" %}';
+    const saveBalanceSheetUrl = '{% url "admin-balance-sheet-save" %}';
+    const saveScenarioUrl = '{% url "admin-scenario-save" %}';
+    const saveKpisUrl = '{% url "admin-kpis-save" %}';
+    const csrfToken = '{{ csrf_token }}';
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        initFinancialProjections();
+    });
+</script>
+{% endblock %}
+

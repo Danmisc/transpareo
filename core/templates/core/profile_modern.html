@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil - Transpareo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f7f7f7;
+            color: #222;
+            line-height: 1.6;
+        }
+        
+        .profile-container {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+        
+        /* Header Section */
+        .profile-header {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+        
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+        
+        .avatar-container {
+            position: relative;
+        }
+        
+        .avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .avatar-placeholder {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .avatar-edit-btn {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .avatar-edit-btn:hover {
+            border-color: #222;
+            transform: scale(1.05);
+        }
+        
+        .header-info {
+            flex: 1;
+        }
+        
+        .header-info h1 {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .verified-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            background: #d4edda;
+            color: #155724;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .header-info p {
+            color: #717171;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+        
+        .member-since {
+            color: #717171;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background: #222;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #000;
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #222;
+            border: 1px solid #ddd;
+        }
+        
+        .btn-secondary:hover {
+            border-color: #222;
+        }
+        
+        /* Tabs */
+        .tabs {
+            background: white;
+            border-radius: 12px;
+            padding: 0;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+            display: flex;
+            border-bottom: 1px solid #ebebeb;
+            overflow-x: auto;
+        }
+        
+        .tab {
+            padding: 20px 24px;
+            font-weight: 500;
+            font-size: 15px;
+            color: #717171;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+            background: none;
+            border: none;
+        }
+        
+        .tab:hover {
+            color: #222;
+            background: #f7f7f7;
+        }
+        
+        .tab.active {
+            color: #222;
+            border-bottom-color: #222;
+        }
+        
+        .badge-count {
+            display: inline-block;
+            background: #dc3545;
+            color: white;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 6px;
+            font-weight: 600;
+        }
+        
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            color: #717171;
+            font-size: 14px;
+        }
+        
+        /* Content Card */
+        .content-card {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+        
+        .content-card h2 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid #ebebeb;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            color: #717171;
+            font-size: 15px;
+        }
+        
+        .info-value {
+            font-weight: 500;
+            font-size: 15px;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        /* Login History */
+        .login-item {
+            padding: 16px 0;
+            border-bottom: 1px solid #ebebeb;
+        }
+        
+        .login-item:last-child {
+            border-bottom: none;
+        }
+        
+        .login-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .login-device {
+            font-weight: 600;
+            font-size: 15px;
+        }
+        
+        .login-time {
+            color: #717171;
+            font-size: 14px;
+        }
+        
+        .login-details {
+            color: #717171;
+            font-size: 14px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #717171;
+        }
+        
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        @media (max-width: 768px) {
+            .profile-container {
+                padding: 20px 16px;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .header-actions {
+                width: 100%;
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <!-- Header -->
+        <div class="profile-header">
+            <div class="header-content">
+                <div class="avatar-container">
+                    {% if user.avatar %}
+                        <img src="{{ user.avatar.url }}" alt="Avatar" class="avatar">
+                    {% else %}
+                        <div class="avatar-placeholder">{{ user.username.0|upper }}</div>
+                    {% endif %}
+                    <div class="avatar-edit-btn" onclick="document.getElementById('avatar-upload').click()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </div>
+                    <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
+                </div>
+                <div class="header-info">
+                    <h1>
+                        {{ user.username }}
+                        {% if user.email_verified %}
+                            <span class="verified-badge">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                </svg>
+                                Vérifié
+                            </span>
+                        {% endif %}
+                    </h1>
+                    <p>{{ user.email }}</p>
+                    {% if user.bio %}
+                        <p style="margin-top: 8px; color: #222;">{{ user.bio }}</p>
+                    {% endif %}
+                    <p class="member-since">Membre depuis {{ user.date_joined|date:"F Y" }}</p>
+                </div>
+                <div class="header-actions">
+                    <a href="{% url 'profile-edit' %}" class="btn btn-primary">Modifier le profil</a>
+                    <a href="{% url 'security-settings' %}" class="btn btn-secondary">Sécurité</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">{{ favoris_count }}</div>
+                <div class="stat-label">Favoris</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ logins_last_month }}</div>
+                <div class="stat-label">Connexions (30j)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ active_sessions|length }}</div>
+                <div class="stat-label">Sessions actives</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ user_badges|length }}</div>
+                <div class="stat-label">Badges obtenus</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ unread_notifications }}</div>
+                <div class="stat-label">Notifications</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ unread_alerts }}</div>
+                <div class="stat-label">Alertes sécurité</div>
+            </div>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('overview')">Vue d'ensemble</button>
+            <button class="tab" onclick="switchTab('badges')">Badges</button>
+            <button class="tab" onclick="switchTab('notifications')">
+                Notifications
+                {% if unread_notifications > 0 %}
+                    <span class="badge-count">{{ unread_notifications }}</span>
+                {% endif %}
+            </button>
+            <button class="tab" onclick="switchTab('info')">Informations</button>
+            <button class="tab" onclick="switchTab('activity')">Activité</button>
+            <button class="tab" onclick="switchTab('security')">Sécurité</button>
+        </div>
+        
+        <!-- Tab: Overview -->
+        <div id="overview" class="tab-content active">
+            <!-- Graphique d'activité -->
+            <div class="content-card">
+                <h2>Activité des 6 derniers mois</h2>
+                <canvas id="activityChart" style="max-height: 300px;"></canvas>
+                {{ monthly_stats|json_script:"monthly-stats" }}
+            </div>
+            
+            <!-- Statistiques -->
+            <div class="content-card">
+                <h2>Statistiques</h2>
+                <div class="info-row">
+                    <span class="info-label">Favoris enregistrés</span>
+                    <span class="info-value">{{ favoris_count }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Connexions (30 derniers jours)</span>
+                    <span class="info-value">{{ logins_last_month }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Sessions actives</span>
+                    <span class="info-value">{{ active_sessions|length }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Réclamations</span>
+                    <span class="info-value">{{ mes_reclamations.count }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Avis laissés</span>
+                    <span class="info-value">{{ mes_avis.count }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Badges obtenus</span>
+                    <span class="info-value">{{ user_badges|length }} / {{ badges_progress|floatformat:0 }}%</span>
+                </div>
+            </div>
+            
+            <!-- Alertes de sécurité récentes -->
+            {% if recent_alerts %}
+            <div class="content-card">
+                <h2>Alertes de sécurité récentes</h2>
+                {% for alert in recent_alerts|slice:":5" %}
+                <div class="alert-item" style="padding: 12px; border-left: 3px solid {% if alert.severity == 'critical' %}#dc3545{% elif alert.severity == 'high' %}#fd7e14{% elif alert.severity == 'medium' %}#ffc107{% else %}#28a745{% endif %}; margin-bottom: 12px; background: #f7f7f7; border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div>
+                            <strong>{{ alert.title }}</strong>
+                            <p style="margin: 4px 0 0; font-size: 13px; color: #717171;">{{ alert.message }}</p>
+                            <p style="margin: 4px 0 0; font-size: 12px; color: #999;">{{ alert.created_at|date:"d/m/Y H:i" }}</p>
+                        </div>
+                        {% if not alert.read %}
+                            <span style="width: 8px; height: 8px; background: #222; border-radius: 50%; display: inline-block; margin-top: 4px;"></span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+                <a href="{% url 'security-settings' %}" style="color: #222; text-decoration: underline; font-size: 14px;">Voir toutes les alertes →</a>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Tab: Badges -->
+        <div id="badges" class="tab-content">
+            <div class="content-card">
+                <h2>Mes badges</h2>
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 14px; color: #717171;">Progression</span>
+                        <span style="font-size: 14px; font-weight: 600;">{{ badges_progress }}%</span>
+                    </div>
+                    <div style="height: 8px; background: #ebebeb; border-radius: 4px; overflow: hidden;">
+                        <div style="height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); width: {{ badges_progress }}%; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+                
+                {% if user_badges %}
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-top: 24px;">
+                    {% for user_badge in user_badges %}
+                    <div style="padding: 20px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 12px; text-align: center; border: 2px solid {% if user_badge.badge.rarity == 'legendary' %}#ffd700{% elif user_badge.badge.rarity == 'epic' %}#9d4edd{% elif user_badge.badge.rarity == 'rare' %}#219ebc{% else %}#e0e0e0{% endif %};">
+                        <div style="font-size: 48px; margin-bottom: 12px;">{{ user_badge.badge.icon }}</div>
+                        <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">{{ user_badge.badge.name }}</h3>
+                        <p style="font-size: 13px; color: #717171; margin-bottom: 8px;">{{ user_badge.badge.description }}</p>
+                        <span style="font-size: 11px; padding: 4px 8px; background: white; border-radius: 12px; text-transform: capitalize;">
+                            {{ user_badge.badge.get_rarity_display }}
+                        </span>
+                        <p style="font-size: 11px; color: #999; margin-top: 8px;">Obtenu le {{ user_badge.earned_at|date:"d/m/Y" }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <p>Aucun badge obtenu pour le moment</p>
+                    <p style="font-size: 14px; color: #717171; margin-top: 8px;">Continuez à utiliser Transpareo pour débloquer des badges !</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Tab: Notifications -->
+        <div id="notifications" class="tab-content">
+            <div class="content-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>Notifications</h2>
+                    {% if unread_notifications > 0 %}
+                    <button onclick="markAllAsRead()" class="btn" style="padding: 8px 16px; font-size: 14px;">Tout marquer comme lu</button>
+                    {% endif %}
+                </div>
+                
+                {% if recent_notifications %}
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    {% for notification in recent_notifications %}
+                    <div class="notification-item" style="padding: 16px; background: {% if not notification.read %}#f0f7ff{% else %}#f7f7f7{% endif %}; border-radius: 8px; border-left: 3px solid {% if not notification.read %}#219ebc{% else %}#e0e0e0{% endif %}; cursor: pointer;" onclick="window.location='{{ notification.action_url|default:"#" }}'">
+                        <div style="display: flex; gap: 12px; align-items: start;">
+                            <div style="font-size: 24px;">{{ notification.icon }}</div>
+                            <div style="flex: 1;">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 4px;">
+                                    <strong style="font-size: 15px;">{{ notification.title }}</strong>
+                                    {% if not notification.read %}
+                                        <span style="width: 8px; height: 8px; background: #219ebc; border-radius: 50%; display: inline-block;"></span>
+                                    {% endif %}
+                                </div>
+                                <p style="font-size: 14px; color: #717171; margin: 0;">{{ notification.message }}</p>
+                                <p style="font-size: 12px; color: #999; margin-top: 8px;">{{ notification.created_at|date:"d/m/Y H:i" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <p>Aucune notification</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Tab: Info -->
+        <div id="info" class="tab-content">
+            <div class="content-card">
+                <h2>Informations personnelles</h2>
+                <div class="info-row">
+                    <span class="info-label">Email</span>
+                    <span class="info-value">{{ user.email }}</span>
+                </div>
+                {% if user.phone_number %}
+                <div class="info-row">
+                    <span class="info-label">Téléphone</span>
+                    <span class="info-value">{{ user.phone_number }}</span>
+                </div>
+                {% endif %}
+                {% if user.date_of_birth %}
+                <div class="info-row">
+                    <span class="info-label">Date de naissance</span>
+                    <span class="info-value">{{ user.date_of_birth|date:"d/m/Y" }}</span>
+                </div>
+                {% endif %}
+                <div class="info-row">
+                    <span class="info-label">Newsletter</span>
+                    <span class="status-badge {% if user.newsletter_subscribed %}status-active{% else %}status-inactive{% endif %}">
+                        {% if user.newsletter_subscribed %}Activée{% else %}Désactivée{% endif %}
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Notifications</span>
+                    <span class="status-badge {% if user.notifications_enabled %}status-active{% else %}status-inactive{% endif %}">
+                        {% if user.notifications_enabled %}Activées{% else %}Désactivées{% endif %}
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Authentification à deux facteurs</span>
+                    <span class="status-badge {% if user.two_factor_enabled %}status-active{% else %}status-inactive{% endif %}">
+                        {% if user.two_factor_enabled %}Activée{% else %}Désactivée{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tab: Activity -->
+        <div id="activity" class="tab-content">
+            <div class="content-card">
+                <h2>Historique de connexion</h2>
+                {% if recent_logins %}
+                    {% for login in recent_logins %}
+                    <div class="login-item">
+                        <div class="login-header">
+                            <div class="login-device">{{ login.device_type }} - {{ login.browser }}</div>
+                            <div class="login-time">{{ login.timestamp|date:"d/m/Y H:i" }}</div>
+                        </div>
+                        <div class="login-details">
+                            {{ login.ip_address }}{% if login.location %} • {{ login.location }}{% endif %}
+                            {% if login.success %}
+                                <span class="status-badge status-active" style="margin-left: 12px;">Réussi</span>
+                            {% elif login.suspicious %}
+                                <span class="status-badge" style="background: #fff3cd; color: #856404; margin-left: 12px;">Suspect</span>
+                            {% else %}
+                                <span class="status-badge status-inactive" style="margin-left: 12px;">Échoué</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <p>Aucun historique disponible</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Tab: Security -->
+        <div id="security" class="tab-content">
+            <div class="content-card">
+                <h2>Sessions actives</h2>
+                {% if active_sessions %}
+                    {% for session in active_sessions %}
+                    <div class="login-item">
+                        <div class="login-header">
+                            <div class="login-device">{{ session.device_type }} - {{ session.browser }}</div>
+                            {% if session.session_key == request.session.session_key %}
+                                <span class="status-badge status-active">Session actuelle</span>
+                            {% else %}
+                                <a href="{% url 'revoke-session' session.id %}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px;">Révoquer</a>
+                            {% endif %}
+                        </div>
+                        <div class="login-details">
+                            {{ session.ip_address }} • {{ session.created_at|date:"d/m/Y H:i" }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <p>Aucune session active</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+        
+        // Avatar upload
+        document.getElementById('avatar-upload')?.addEventListener('change', function(e) {
+            if (e.target.files && e.target.files[0]) {
+                const formData = new FormData();
+                formData.append('avatar', e.target.files[0]);
+                
+                fetch('{% url "profile-edit" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    }
+                });
+            }
+        });
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Graphique d'activité
+        const monthlyStatsEl = document.getElementById('monthly-stats');
+        if (monthlyStatsEl) {
+            const ctx = document.getElementById('activityChart');
+            if (ctx) {
+                const monthlyData = JSON.parse(monthlyStatsEl.textContent);
+                new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: monthlyData.map(m => m.month),
+                    datasets: [{
+                        label: 'Connexions',
+                        data: monthlyData.map(m => m.logins),
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function markAllAsRead() {
+            fetch('{% url "profile" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({action: 'mark_all_read'})
+            })
+            .then(() => location.reload());
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+</body>
+</html>
+

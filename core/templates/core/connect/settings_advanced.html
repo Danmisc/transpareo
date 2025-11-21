@@ -1,0 +1,933 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="connect-settings-page">
+    <div class="settings-container">
+        <!-- En-tête -->
+        <div class="page-header">
+            <h1>Paramètres personnels avancés</h1>
+            <p class="page-subtitle">Gérez votre confidentialité, sécurité et journal d'activité</p>
+        </div>
+
+        <!-- Onglets -->
+        <div class="settings-tabs">
+            <a href="?tab=profile" class="tab-item {% if active_tab == 'profile' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                Profil
+            </a>
+            <a href="?tab=privacy" class="tab-item {% if active_tab == 'privacy' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                Confidentialité
+            </a>
+            <a href="?tab=security" class="tab-item {% if active_tab == 'security' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                Sécurité & 2FA
+            </a>
+            <a href="?tab=activity" class="tab-item {% if active_tab == 'activity' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
+                Journal d'activité
+            </a>
+            <a href="{% url 'connect-notification-settings' %}" class="tab-item {% if active_tab == 'notifications' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 0 0 1-3.46 0"></path>
+                </svg>
+                Notifications
+            </a>
+        </div>
+
+        <!-- Contenu des onglets -->
+        <div class="settings-content">
+            {% if active_tab == 'profile' %}
+                <!-- Onglet Profil -->
+                <div class="profile-settings-tab">
+                    <form id="profile-settings-form" method="post" action="{% url 'update-profile-settings' %}">
+                        {% csrf_token %}
+                        
+                        <!-- Visibilité du profil -->
+                        <div class="settings-section">
+                            <h2 class="section-title">Visibilité du profil</h2>
+                            <p class="section-description">Contrôlez qui peut voir votre profil Transpareo Connect</p>
+                            
+                            <div class="radio-group">
+                                <label class="radio-label">
+                                    <input type="radio" name="profil_visibility" value="public" {% if user.profil_visibility == 'public' or not user.profil_visibility %}checked{% endif %}>
+                                    <div class="radio-content">
+                                        <span class="radio-title">Public</span>
+                                        <span class="radio-description">Visible par tous les utilisateurs</span>
+                                    </div>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="profil_visibility" value="connections" {% if user.profil_visibility == 'connections' %}checked{% endif %}>
+                                    <div class="radio-content">
+                                        <span class="radio-title">Connexions uniquement</span>
+                                        <span class="radio-description">Visible uniquement par mes connexions</span>
+                                    </div>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="profil_visibility" value="private" {% if user.profil_visibility == 'private' %}checked{% endif %}>
+                                    <div class="radio-content">
+                                        <span class="radio-title">Privé</span>
+                                        <span class="radio-description">Invisible, uniquement recherche par nom</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Qui peut me contacter -->
+                        <div class="settings-section">
+                            <h2 class="section-title">Qui peut me contacter</h2>
+                            <p class="section-description">Définissez qui peut vous envoyer des messages</p>
+                            
+                            <div class="radio-group">
+                                <label class="radio-label">
+                                    <input type="radio" name="who_can_message" value="everyone" {% if user.who_can_message == 'everyone' or not user.who_can_message %}checked{% endif %}>
+                                    <div class="radio-content">
+                                        <span class="radio-title">Tout le monde</span>
+                                        <span class="radio-description">Tous les utilisateurs peuvent m'envoyer un message</span>
+                                    </div>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="who_can_message" value="connections" {% if user.who_can_message == 'connections' %}checked{% endif %}>
+                                    <div class="radio-content">
+                                        <span class="radio-title">Mes connexions uniquement</span>
+                                        <span class="radio-description">Seulement mes connexions peuvent m'envoyer un message</span>
+                                    </div>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="who_can_message" value="verified" {% if user.who_can_message == 'verified' %}checked{% endif %}>
+                                    <div class="radio-content">
+                                        <span class="radio-title">Utilisateurs vérifiés uniquement</span>
+                                        <span class="radio-description">Seulement les utilisateurs vérifiés peuvent m'envoyer un message</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Affichage -->
+                        <div class="settings-section">
+                            <h2 class="section-title">Affichage</h2>
+                            <p class="section-description">Choisissez quelles informations afficher sur votre profil</p>
+                            
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="afficher_statut_online" value="true" {% if user.afficher_statut_online %}checked{% endif %}>
+                                    <div class="checkbox-content">
+                                        <span class="checkbox-title">Afficher mon statut en ligne</span>
+                                        <span class="checkbox-description">Les autres utilisateurs verront si vous êtes en ligne</span>
+                                    </div>
+                                </label>
+                                {% if user.is_proprietaire %}
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="afficher_logements_profil" value="true" {% if user.afficher_logements_profil %}checked{% endif %}>
+                                    <div class="checkbox-content">
+                                        <span class="checkbox-title">Afficher mes logements sur mon profil</span>
+                                        <span class="checkbox-description">Vos logements seront visibles sur votre profil</span>
+                                    </div>
+                                </label>
+                                {% endif %}
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="afficher_activite_recente" value="true" {% if user.afficher_activite_recente %}checked{% endif %}>
+                                    <div class="checkbox-content">
+                                        <span class="checkbox-title">Afficher mon activité récente</span>
+                                        <span class="checkbox-description">Vos dernières publications seront visibles sur votre profil</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="settings-actions">
+                            <button type="submit" class="btn-primary">Enregistrer les modifications</button>
+                        </div>
+                    </form>
+                </div>
+
+            {% elif active_tab == 'privacy' %}
+                <!-- Onglet Confidentialité - Contrôle micro-niveau -->
+                <div class="privacy-settings-tab">
+                    <form id="privacy-settings-form" method="post" action="{% url 'update-privacy-settings' %}">
+                        {% csrf_token %}
+                        
+                        <div class="settings-section">
+                            <h2 class="section-title">Contrôle de confidentialité micro-niveau</h2>
+                            <p class="section-description">Contrôlez précisément ce qui est visible sur votre profil</p>
+                            
+                            <div class="privacy-controls-grid">
+                                <label class="privacy-control-item">
+                                    <input type="checkbox" name="cacher_activite_reseau" value="true" {% if user.cacher_activite_reseau %}checked{% endif %}>
+                                    <div class="privacy-control-content">
+                                        <span class="privacy-control-title">🔒 Cacher mon activité réseau</span>
+                                        <span class="privacy-control-description">Masquer vos connexions, follows et abonnements</span>
+                                    </div>
+                                </label>
+                                
+                                <label class="privacy-control-item">
+                                    <input type="checkbox" name="cacher_logements_mais_garder_profil" value="true" {% if user.cacher_logements_mais_garder_profil %}checked{% endif %}>
+                                    <div class="privacy-control-content">
+                                        <span class="privacy-control-title">🏠 Cacher mes logements mais garder le profil</span>
+                                        <span class="privacy-control-description">Votre profil reste visible mais vos logements sont cachés</span>
+                                    </div>
+                                </label>
+                                
+                                <label class="privacy-control-item">
+                                    <input type="checkbox" name="cacher_uniquement_timeline" value="true" {% if user.cacher_uniquement_timeline %}checked{% endif %}>
+                                    <div class="privacy-control-content">
+                                        <span class="privacy-control-title">📅 Cacher uniquement la timeline</span>
+                                        <span class="privacy-control-description">Masquer votre timeline d'activité mais garder le reste visible</span>
+                                    </div>
+                                </label>
+                                
+                                <label class="privacy-control-item">
+                                    <input type="checkbox" name="cacher_statistiques" value="true" {% if user.cacher_statistiques %}checked{% endif %}>
+                                    <div class="privacy-control-content">
+                                        <span class="privacy-control-title">📊 Cacher mes statistiques</span>
+                                        <span class="privacy-control-description">Masquer vos vues, likes, et autres statistiques</span>
+                                    </div>
+                                </label>
+                                
+                                <label class="privacy-control-item">
+                                    <input type="checkbox" name="cacher_badges" value="true" {% if user.cacher_badges %}checked{% endif %}>
+                                    <div class="privacy-control-content">
+                                        <span class="privacy-control-title">🏆 Cacher mes badges</span>
+                                        <span class="privacy-control-description">Masquer vos badges et récompenses</span>
+                                    </div>
+                                </label>
+                                
+                                <label class="privacy-control-item">
+                                    <input type="checkbox" name="cacher_recommandations" value="true" {% if user.cacher_recommandations %}checked{% endif %}>
+                                    <div class="privacy-control-content">
+                                        <span class="privacy-control-title">⭐ Cacher les recommandations</span>
+                                        <span class="privacy-control-description">Masquer les recommandations reçues</span>
+                                    </div>
+                                </label>
+                                
+                                <label class="privacy-control-item">
+                                    <input type="checkbox" name="cacher_historique_publications" value="true" {% if user.cacher_historique_publications %}checked{% endif %}>
+                                    <div class="privacy-control-content">
+                                        <span class="privacy-control-title">📝 Cacher mon historique de publications</span>
+                                        <span class="privacy-control-description">Masquer vos anciens posts et publications</span>
+                                    </div>
+                                </label>
+                                
+                                <label class="privacy-control-item">
+                                    <input type="checkbox" name="cacher_groupes" value="true" {% if user.cacher_groupes %}checked{% endif %}>
+                                    <div class="privacy-control-content">
+                                        <span class="privacy-control-title">👥 Cacher les groupes</span>
+                                        <span class="privacy-control-description">Masquer les groupes auxquels vous participez</span>
+                                    </div>
+                                </label>
+                                
+                                <label class="privacy-control-item">
+                                    <input type="checkbox" name="cacher_commentaires" value="true" {% if user.cacher_commentaires %}checked{% endif %}>
+                                    <div class="privacy-control-content">
+                                        <span class="privacy-control-title">💬 Cacher mes commentaires</span>
+                                        <span class="privacy-control-description">Masquer vos commentaires sur les posts</span>
+                                    </div>
+                                </label>
+                                
+                                <label class="privacy-control-item">
+                                    <input type="checkbox" name="cacher_reactions" value="true" {% if user.cacher_reactions %}checked{% endif %}>
+                                    <div class="privacy-control-content">
+                                        <span class="privacy-control-title">👍 Cacher mes réactions</span>
+                                        <span class="privacy-control-description">Masquer vos likes et autres réactions</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="settings-actions">
+                            <button type="submit" class="btn-primary">Enregistrer les paramètres de confidentialité</button>
+                        </div>
+                    </form>
+                </div>
+
+            {% elif active_tab == 'security' %}
+                <!-- Onglet Sécurité & 2FA -->
+                <div class="security-settings-tab">
+                    <!-- Authentification à 2 facteurs -->
+                    <div class="settings-section">
+                        <h2 class="section-title">Authentification à deux facteurs (2FA)</h2>
+                        <p class="section-description">Sécurisez votre compte avec une authentification mobile/app</p>
+                        
+                        <div class="security-status-box">
+                            {% if tab_data.two_factor_enabled %}
+                                <div class="status-badge status-active">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    2FA Activé
+                                </div>
+                                <p class="status-description">Votre compte est protégé par l'authentification à deux facteurs.</p>
+                                <div class="security-actions">
+                                    <a href="{% url 'setup-2fa' %}" class="btn-secondary">Gérer 2FA</a>
+                                    <a href="{% url '2fa-backup-codes' %}" class="btn-secondary">Voir codes de récupération</a>
+                                </div>
+                            {% else %}
+                                <div class="status-badge status-inactive">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                    </svg>
+                                    2FA Non activé
+                                </div>
+                                <p class="status-description">Activez l'authentification à deux facteurs pour renforcer la sécurité de votre compte.</p>
+                                <div class="security-actions">
+                                    <a href="{% url 'setup-2fa' %}" class="btn-primary">Activer 2FA</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="info-box">
+                            <strong>Comment ça marche ?</strong>
+                            <ul>
+                                <li>Installez une application d'authentification (Google Authenticator, Authy, Microsoft Authenticator)</li>
+                                <li>Scannez le QR code affiché lors de la configuration</li>
+                                <li>Entrez le code à 6 chiffres à chaque connexion</li>
+                                <li>Conservez vos codes de récupération en lieu sûr</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Historique des connexions -->
+                    {% if tab_data.login_history %}
+                    <div class="settings-section">
+                        <h2 class="section-title">Historique des connexions</h2>
+                        <p class="section-description">Dernières connexions à votre compte</p>
+                        
+                        <div class="login-history-list">
+                            {% for login in tab_data.login_history|slice:":10" %}
+                            <div class="login-history-item">
+                                <div class="login-info">
+                                    <div class="login-date">{{ login.timestamp|naturaltime }}</div>
+                                    <div class="login-details">
+                                        {% if login.ip_address %}{{ login.ip_address }}{% endif %}
+                                        {% if login.user_agent %}<span class="login-device">{{ login.user_agent|truncatechars:50 }}</span>{% endif %}
+                                    </div>
+                                </div>
+                                <div class="login-status">
+                                    {% if login.success %}
+                                        <span class="status-success">✓ Réussi</span>
+                                    {% else %}
+                                        <span class="status-failed">✗ Échoué</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Sessions actives -->
+                    {% if tab_data.active_sessions %}
+                    <div class="settings-section">
+                        <h2 class="section-title">Sessions actives</h2>
+                        <p class="section-description">Appareils connectés à votre compte</p>
+                        
+                        <div class="sessions-list">
+                            {% for session in tab_data.active_sessions %}
+                            <div class="session-item">
+                                <div class="session-info">
+                                    <div class="session-device">
+                                        <strong>{{ session.device_info|default:"Appareil inconnu" }}</strong>
+                                    </div>
+                                    <div class="session-details">
+                                        {% if session.ip_address %}{{ session.ip_address }}{% endif %}
+                                        <span class="session-last-activity">Dernière activité : {{ session.last_activity|naturaltime }}</span>
+                                    </div>
+                                </div>
+                                {% if session.id != request.session.session_key %}
+                                <a href="{% url 'terminate-session' session.id %}" class="btn-danger-sm">Terminer la session</a>
+                                {% else %}
+                                <span class="current-session-badge">Session actuelle</span>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+            {% elif active_tab == 'activity' %}
+                <!-- Onglet Journal d'activité -->
+                <div class="activity-journal-tab">
+                    <div class="journal-header">
+                        <div class="journal-stats">
+                            <div class="stat-item">
+                                <span class="stat-value">{{ tab_data.total_entries|default:0 }}</span>
+                                <span class="stat-label">Entrées totales</span>
+                            </div>
+                        </div>
+                        <div class="journal-actions">
+                            <a href="{% url 'export-activity-journal' %}?format=csv" class="btn-secondary">📥 Exporter CSV</a>
+                            <a href="{% url 'export-activity-journal' %}?format=json" class="btn-secondary">📥 Exporter JSON</a>
+                        </div>
+                    </div>
+
+                    <!-- Filtres -->
+                    <div class="journal-filters">
+                        <form method="get" action="{% url 'connect-settings' %}" class="filter-form">
+                            <input type="hidden" name="tab" value="activity">
+                            
+                            <div class="filter-group">
+                                <label>Type d'activité</label>
+                                <select name="filter_type" class="form-control">
+                                    <option value="all" {% if tab_data.filter_type == 'all' %}selected{% endif %}>Tous les types</option>
+                                    {% for type_code, type_label in tab_data.activity_types %}
+                                    <option value="{{ type_code }}" {% if tab_data.filter_type == type_code %}selected{% endif %}>{{ type_label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="filter-group">
+                                <label>Date de début</label>
+                                <input type="date" name="date_from" value="{{ tab_data.date_from }}" class="form-control">
+                            </div>
+                            
+                            <div class="filter-group">
+                                <label>Date de fin</label>
+                                <input type="date" name="date_to" value="{{ tab_data.date_to }}" class="form-control">
+                            </div>
+                            
+                            <div class="filter-group">
+                                <button type="submit" class="btn-primary">Filtrer</button>
+                                <a href="?tab=activity" class="btn-secondary">Réinitialiser</a>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Liste des entrées -->
+                    <div class="journal-entries-list">
+                        {% if tab_data.journal_entries %}
+                            {% for entry in tab_data.journal_entries %}
+                            <div class="journal-entry-item">
+                                <div class="entry-icon">
+                                    {% if entry.type_activite == 'login' %}🔐
+                                    {% elif entry.type_activite == 'post_created' %}📝
+                                    {% elif entry.type_activite == 'message_sent' %}💬
+                                    {% elif entry.type_activite == 'settings_updated' %}⚙️
+                                    {% elif entry.type_activite == 'privacy_updated' %}🔒
+                                    {% else %}📌{% endif %}
+                                </div>
+                                <div class="entry-content">
+                                    <div class="entry-title">{{ entry.get_type_activite_display }}</div>
+                                    <div class="entry-description">{{ entry.description }}</div>
+                                    <div class="entry-meta">
+                                        <span class="entry-date">{{ entry.created_at|date:"d/m/Y à H:i" }}</span>
+                                        {% if entry.ip_address %}
+                                        <span class="entry-ip">IP: {{ entry.ip_address }}</span>
+                                        {% endif %}
+                                        {% if entry.device_info %}
+                                        <span class="entry-device">{{ entry.device_info }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            
+                            <!-- Pagination -->
+                            {% if tab_data.journal_entries.has_other_pages %}
+                            <div class="pagination">
+                                {% if tab_data.journal_entries.has_previous %}
+                                <a href="?tab=activity&page={{ tab_data.journal_entries.previous_page_number }}" class="pagination-link">← Précédent</a>
+                                {% endif %}
+                                <span class="pagination-info">Page {{ tab_data.journal_entries.number }} sur {{ tab_data.journal_entries.paginator.num_pages }}</span>
+                                {% if tab_data.journal_entries.has_next %}
+                                <a href="?tab=activity&page={{ tab_data.journal_entries.next_page_number }}" class="pagination-link">Suivant →</a>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="empty-state">
+                                <p>Aucune activité enregistrée</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.connect-settings-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--space-4);
+}
+
+.settings-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.page-header {
+    padding: var(--space-6);
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.page-header h1 {
+    font-size: 28px;
+    margin: 0 0 8px 0;
+}
+
+.page-subtitle {
+    color: #666;
+    margin: 0;
+}
+
+.settings-tabs {
+    display: flex;
+    border-bottom: 1px solid #e0e0e0;
+    overflow-x: auto;
+}
+
+.tab-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 24px;
+    text-decoration: none;
+    color: #666;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.tab-item:hover {
+    background: #f7f7f7;
+    color: #222;
+}
+
+.tab-item.active {
+    color: #222;
+    border-bottom-color: #222;
+    font-weight: 600;
+}
+
+.settings-content {
+    padding: var(--space-6);
+}
+
+.settings-section {
+    margin-bottom: 32px;
+}
+
+.section-title {
+    font-size: 20px;
+    margin: 0 0 8px 0;
+}
+
+.section-description {
+    color: #666;
+    margin: 0 0 24px 0;
+}
+
+.radio-group, .checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.radio-label, .checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.radio-label:hover, .checkbox-label:hover {
+    border-color: #222;
+    background: #f7f7f7;
+}
+
+.radio-content, .checkbox-content {
+    flex: 1;
+}
+
+.radio-title, .checkbox-title {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.radio-description, .checkbox-description {
+    display: block;
+    font-size: 14px;
+    color: #666;
+}
+
+.privacy-controls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+.privacy-control-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.privacy-control-item:hover {
+    border-color: #222;
+    background: #f7f7f7;
+}
+
+.privacy-control-title {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.privacy-control-description {
+    display: block;
+    font-size: 13px;
+    color: #666;
+}
+
+.security-status-box {
+    padding: 24px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 24px;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.status-active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-inactive {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-description {
+    margin: 0 0 16px 0;
+    color: #666;
+}
+
+.security-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.info-box {
+    background: #f0f7ff;
+    border: 1px solid #b3d9ff;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+}
+
+.info-box ul {
+    margin: 8px 0 0 0;
+    padding-left: 20px;
+}
+
+.info-box li {
+    margin-bottom: 4px;
+}
+
+.journal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.journal-stats {
+    display: flex;
+    gap: 24px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    display: block;
+    font-size: 24px;
+    font-weight: 600;
+    color: #222;
+}
+
+.stat-label {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+}
+
+.journal-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.journal-filters {
+    background: #f7f7f7;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+}
+
+.filter-form {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.filter-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+}
+
+.journal-entries-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.journal-entry-item {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.journal-entry-item:hover {
+    border-color: #222;
+    background: #f7f7f7;
+}
+
+.entry-icon {
+    font-size: 24px;
+}
+
+.entry-content {
+    flex: 1;
+}
+
+.entry-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.entry-description {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.entry-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: #999;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.pagination-link {
+    padding: 8px 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #222;
+    transition: all 0.2s;
+}
+
+.pagination-link:hover {
+    border-color: #222;
+    background: #f7f7f7;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 48px;
+    color: #666;
+}
+
+.settings-actions {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.btn-primary, .btn-secondary, .btn-danger-sm {
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: #222;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #000;
+}
+
+.btn-secondary {
+    background: #f7f7f7;
+    color: #222;
+    border: 1px solid #e0e0e0;
+}
+
+.btn-secondary:hover {
+    background: #e0e0e0;
+}
+
+.btn-danger-sm {
+    background: #dc3545;
+    color: white;
+    font-size: 12px;
+    padding: 6px 12px;
+}
+
+.btn-danger-sm:hover {
+    background: #c82333;
+}
+
+.form-control {
+    padding: 8px 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #222;
+}
+
+@media (max-width: 768px) {
+    .privacy-controls-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .journal-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .filter-form {
+        flex-direction: column;
+    }
+    
+    .filter-group {
+        width: 100%;
+    }
+}
+</style>
+
+<script>
+// Soumission des formulaires
+document.getElementById('profile-settings-form')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('Paramètres enregistrés avec succès !');
+        } else {
+            alert('Erreur : ' + (data.error || 'Une erreur est survenue'));
+        }
+    });
+});
+
+document.getElementById('privacy-settings-form')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('Paramètres de confidentialité enregistrés avec succès !');
+        } else {
+            alert('Erreur : ' + (data.error || 'Une erreur est survenue'));
+        }
+    });
+});
+</script>
+{% endblock %}
+

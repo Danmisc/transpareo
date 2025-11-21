@@ -1,0 +1,206 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="rgpd-page">
+    <div class="rgpd-container">
+        <h1>Comment fonctionnent nos algorithmes de recommandation</h1>
+        <p class="rgpd-last-updated">Transparence sur nos systèmes algorithmiques</p>
+
+        <div class="rgpd-content">
+            <section class="rgpd-section">
+                <h2>1. Introduction</h2>
+                <p>Chez Transpareo Connect, nous croyons en la transparence. Cette page explique comment nos algorithmes fonctionnent pour personnaliser votre expérience sur la plateforme.</p>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>2. Suggestions de Connexions</h2>
+                <p>Nos algorithmes suggèrent des connexions basées sur :</p>
+                <ul>
+                    <li><strong>Localisation</strong> : Utilisateurs de la même ville ou région</li>
+                    <li><strong>Type d'utilisateur</strong> : Mise en relation locataires/propriétaires</li>
+                    <li><strong>Connexions communes</strong> : Personnes avec qui vous avez des amis en commun</li>
+                    <li><strong>Groupes</strong> : Membres des mêmes groupes que vous</li>
+                    <li><strong>Intérêts</strong> : Profils similaires en fonction de votre activité</li>
+                </ul>
+                <p><strong>Contrôle utilisateur</strong> : Vous pouvez accepter, refuser ou ignorer les suggestions. Aucune connexion n'est créée sans votre consentement explicite.</p>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>3. Fil d'Actualité (Feed)</h2>
+                <p>Votre fil d'actualité est organisé selon plusieurs critères :</p>
+                <ul>
+                    <li><strong>Recents</strong> (par défaut) : Posts les plus récents en premier</li>
+                    <li><strong>Populaires</strong> : Posts avec le plus de likes et commentaires</li>
+                    <li><strong>Connexions</strong> : Uniquement les posts de vos connexions</li>
+                </ul>
+                <p><strong>Filtres disponibles</strong> : Vous pouvez filtrer par type d'utilisateur, groupe, localisation ou hashtag.</p>
+                <p><strong>Quarantaine</strong> : Les posts détectés comme spam ou inappropriés sont automatiquement mis en quarantaine et ne s'affichent pas dans votre feed.</p>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>4. Groupes Suggérés</h2>
+                <p>Les groupes suggérés sont basés sur :</p>
+                <ul>
+                    <li>Votre localisation</li>
+                    <li>Votre type d'utilisateur (locataire/propriétaire)</li>
+                    <li>Vos intérêts exprimés dans votre profil</li>
+                    <li>La popularité du groupe (nombre de membres)</li>
+                </ul>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>5. Détection Automatique</h2>
+                <h3>5.1 Système de Détection</h3>
+                <p>Nous utilisons des algorithmes de détection automatique pour :</p>
+                <ul>
+                    <li><strong>Spam</strong> : Détection de mots-clés suspects, liens raccourcis, répétition excessive</li>
+                    <li><strong>Arnaques</strong> : Détection de demandes d'argent, mots-clés frauduleux</li>
+                    <li><strong>Contenus inappropriés</strong> : Détection d'insultes, menaces, violence</li>
+                    <li><strong>Bots</strong> : Détection de comptes suspects (comptes récents, emails jetables)</li>
+                </ul>
+
+                <h3>5.2 Quarantaine Automatique</h3>
+                <p>Les contenus avec un score de sécurité élevé sont automatiquement mis en quarantaine et nécessitent une validation manuelle par un administrateur avant d'être visibles.</p>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>6. Pas de Profilage Automatique</h2>
+                <p>Nous ne créons pas de profils automatisés pour des décisions légales ou administratives. Nos algorithmes sont uniquement utilisés pour :</p>
+                <ul>
+                    <li>Personnaliser votre expérience utilisateur</li>
+                    <li>Détecter les contenus inappropriés</li>
+                    <li>Améliorer la sécurité de la plateforme</li>
+                </ul>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>7. Vos Données Utilisées</h2>
+                <p>Nos algorithmes utilisent uniquement :</p>
+                <ul>
+                    <li>Les informations que vous avez volontairement partagées dans votre profil</li>
+                    <li>Votre activité sur la plateforme (posts, likes, commentaires)</li>
+                    <li>Vos préférences et paramètres</li>
+                </ul>
+                <p><strong>Nous ne vendons jamais vos données</strong> et ne les partageons pas avec des tiers à des fins publicitaires.</p>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>8. Contrôle Utilisateur</h2>
+                <p>Vous avez le contrôle total sur :</p>
+                <ul>
+                    <li>Les connexions que vous acceptez ou refusez</li>
+                    <li>Les groupes auxquels vous participez</li>
+                    <li>Le tri et les filtres de votre fil d'actualité</li>
+                    <li>Les paramètres de visibilité de votre profil</li>
+                    <li>Les notifications que vous recevez</li>
+                </ul>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>9. Amélioration Continue</h2>
+                <p>Nos algorithmes évoluent constamment pour améliorer votre expérience. Nous analysons les interactions des utilisateurs (de manière agrégée et anonymisée) pour optimiser nos systèmes.</p>
+            </section>
+
+            <section class="rgpd-section">
+                <h2>10. Questions</h2>
+                <p>Pour toute question sur nos algorithmes, contactez-nous via le support de la plateforme.</p>
+            </section>
+        </div>
+    </div>
+</div>
+
+<style>
+    .rgpd-page {
+        min-height: calc(100vh - 70px);
+        background: #f5f5f5;
+        padding: 40px 20px;
+    }
+
+    .rgpd-container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 12px;
+        padding: 40px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .rgpd-page h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 10px;
+    }
+
+    .rgpd-last-updated {
+        color: #666;
+        font-size: 14px;
+        margin-bottom: 40px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #e5e5e5;
+    }
+
+    .rgpd-content {
+        line-height: 1.8;
+        color: #333;
+    }
+
+    .rgpd-section {
+        margin-bottom: 40px;
+    }
+
+    .rgpd-section h2 {
+        font-size: 24px;
+        font-weight: 700;
+        color: #D3580B;
+        margin-bottom: 16px;
+        margin-top: 32px;
+    }
+
+    .rgpd-section h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-top: 24px;
+        margin-bottom: 12px;
+    }
+
+    .rgpd-section p {
+        margin-bottom: 16px;
+        color: #555;
+    }
+
+    .rgpd-section ul {
+        margin-left: 20px;
+        margin-bottom: 16px;
+    }
+
+    .rgpd-section li {
+        margin-bottom: 8px;
+        color: #555;
+    }
+
+    .rgpd-section strong {
+        color: #333;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .rgpd-container {
+            padding: 24px;
+        }
+
+        .rgpd-page h1 {
+            font-size: 24px;
+        }
+
+        .rgpd-section h2 {
+            font-size: 20px;
+        }
+    }
+</style>
+{% endblock %}
+

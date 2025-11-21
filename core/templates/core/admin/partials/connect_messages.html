@@ -1,0 +1,229 @@
+{% load humanize %}
+<!-- Filtres Messages -->
+<div class="filters-section">
+    <div class="filters-header">
+        <h3>Filtres</h3>
+    </div>
+    <div class="filters-content">
+        <form method="GET" action="{% url 'admin-connect' %}">
+            <input type="hidden" name="view" value="messages">
+            <div class="filter-row">
+                <div class="filter-field filter-search">
+                    <label>Recherche</label>
+                    <div class="search-input-wrapper">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        <input type="text" name="search" value="{{ filters.search }}" 
+                               placeholder="Contenu, expéditeur..." class="filter-input">
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn-primary">Rechercher</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tableau Conversations -->
+<div class="table-section">
+    <div class="table-header">
+        <h3>Conversations</h3>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="col-checkbox">Checkbox</th>
+                    <th class="col-participants">Participants</th>
+                    <th class="col-message">Dernier message</th>
+                    <th class="col-date">Date</th>
+                    <th class="col-count">Messages</th>
+                    <th class="col-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for conversation in conversations %}
+                <tr>
+                    <td><input type="checkbox" value="{{ conversation.id }}"></td>
+                    <td>
+                        <div class="participants-avatars">
+                            {% for participant in conversation.participants.all|slice:":4" %}
+                            <div class="avatar-tiny">
+                                {% if participant.avatar %}
+                                <img src="{{ participant.avatar.url }}" alt="{{ participant.username }}">
+                                {% else %}
+                                <div class="avatar-placeholder">{{ participant.username|first|upper }}</div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                            {% if conversation.participants.count > 4 %}
+                            <span class="more-participants">+{{ conversation.participants.count|add:"-4" }}</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        {% if conversation.last_message %}
+                        <div class="message-apercu">{{ conversation.last_message.content|truncatewords:15 }}</div>
+                        {% else %}
+                        <span class="text-muted">Aucun message</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ conversation.updated_at|timesince }}</td>
+                    <td>{{ conversation.messages.count }}</td>
+                    <td>
+                        <div class="actions-dropdown">
+                            <button class="actions-btn" onclick="toggleActionsDropdown(this)">⋯</button>
+                            <div class="dropdown-menu">
+                                <a href="#" class="dropdown-item" onclick="openConversationDetail({{ conversation.id }})">Voir fil complet</a>
+                                <a href="#" class="dropdown-item">Archiver</a>
+                                <a href="#" class="dropdown-item dropdown-danger">Supprimer</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="empty-state">Aucune conversation trouvée</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if conversations.has_other_pages %}
+    <div class="pagination-wrapper">
+        <div class="pagination-info">
+            <span class="pagination-text">
+                Affichage {{ conversations.start_index }}-{{ conversations.end_index }} sur {{ conversations.paginator.count|intcomma }} conversations
+            </span>
+        </div>
+        <div class="pagination-controls">
+            {% if conversations.has_previous %}
+            <a href="?page={{ conversations.previous_page_number }}&view=messages" class="page-link">Précédent</a>
+            {% endif %}
+            {% if conversations.has_next %}
+            <a href="?page={{ conversations.next_page_number }}&view=messages" class="page-link">Suivant</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Filtres Messages -->
+<div class="filters-section">
+    <div class="filters-header">
+        <h3>Filtres</h3>
+    </div>
+    <div class="filters-content">
+        <form method="GET" action="{% url 'admin-connect' %}">
+            <input type="hidden" name="view" value="messages">
+            <div class="filter-row">
+                <div class="filter-field filter-search">
+                    <label>Recherche</label>
+                    <div class="search-input-wrapper">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        <input type="text" name="search" value="{{ filters.search }}" 
+                               placeholder="Contenu, expéditeur..." class="filter-input">
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn-primary">Rechercher</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tableau Conversations -->
+<div class="table-section">
+    <div class="table-header">
+        <h3>Conversations</h3>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="col-checkbox">Checkbox</th>
+                    <th class="col-participants">Participants</th>
+                    <th class="col-message">Dernier message</th>
+                    <th class="col-date">Date</th>
+                    <th class="col-count">Messages</th>
+                    <th class="col-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for conversation in conversations %}
+                <tr>
+                    <td><input type="checkbox" value="{{ conversation.id }}"></td>
+                    <td>
+                        <div class="participants-avatars">
+                            {% for participant in conversation.participants.all|slice:":4" %}
+                            <div class="avatar-tiny">
+                                {% if participant.avatar %}
+                                <img src="{{ participant.avatar.url }}" alt="{{ participant.username }}">
+                                {% else %}
+                                <div class="avatar-placeholder">{{ participant.username|first|upper }}</div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                            {% if conversation.participants.count > 4 %}
+                            <span class="more-participants">+{{ conversation.participants.count|add:"-4" }}</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        {% if conversation.last_message %}
+                        <div class="message-apercu">{{ conversation.last_message.content|truncatewords:15 }}</div>
+                        {% else %}
+                        <span class="text-muted">Aucun message</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ conversation.updated_at|timesince }}</td>
+                    <td>{{ conversation.messages.count }}</td>
+                    <td>
+                        <div class="actions-dropdown">
+                            <button class="actions-btn" onclick="toggleActionsDropdown(this)">⋯</button>
+                            <div class="dropdown-menu">
+                                <a href="#" class="dropdown-item" onclick="openConversationDetail({{ conversation.id }})">Voir fil complet</a>
+                                <a href="#" class="dropdown-item">Archiver</a>
+                                <a href="#" class="dropdown-item dropdown-danger">Supprimer</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="empty-state">Aucune conversation trouvée</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if conversations.has_other_pages %}
+    <div class="pagination-wrapper">
+        <div class="pagination-info">
+            <span class="pagination-text">
+                Affichage {{ conversations.start_index }}-{{ conversations.end_index }} sur {{ conversations.paginator.count|intcomma }} conversations
+            </span>
+        </div>
+        <div class="pagination-controls">
+            {% if conversations.has_previous %}
+            <a href="?page={{ conversations.previous_page_number }}&view=messages" class="page-link">Précédent</a>
+            {% endif %}
+            {% if conversations.has_next %}
+            <a href="?page={{ conversations.next_page_number }}&view=messages" class="page-link">Suivant</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+

@@ -1,0 +1,44 @@
+{% load static %}
+{% load humanize %}
+
+<div class="logement-card" data-quick-actions='[{"icon": "❤️", "label": "Ajouter aux favoris", "action": "addToFavorites"}, {"icon": "💬", "label": "Contacter", "url": "/logement/{{ logement.id }}/contact/"}, {"icon": "📋", "label": "Candidater", "url": "/logement/{{ logement.id }}/candidater/"}]'>
+    {% if logement.images.first %}
+        <img src="{{ logement.images.first.image.url }}" alt="{{ logement.titre }}" class="logement-card-image">
+    {% else %}
+        <div class="logement-card-image" style="background: var(--color-bg-secondary); display: flex; align-items: center; justify-content: center; color: var(--color-text-tertiary);">
+            🏠
+        </div>
+    {% endif %}
+    
+    <div class="logement-card-content">
+        <h3 class="logement-card-title">
+            <a href="{% url 'logement-detail' logement.id %}" style="text-decoration: none; color: inherit;">
+                {{ logement.titre }}
+            </a>
+        </h3>
+        
+        <div class="logement-card-price">
+            {{ logement.prix|floatformat:0 }}€/mois
+        </div>
+        
+        <div class="logement-card-location">
+            📍 {{ logement.adresse|truncatechars:50 }}
+        </div>
+        
+        {% if logement.note_moyenne %}
+            <div style="margin-top: var(--space-2); display: flex; align-items: center; gap: var(--space-2);">
+                <span style="color: var(--color-accent); font-weight: 600;">⭐ {{ logement.note_moyenne|floatformat:1 }}</span>
+                <span style="color: var(--color-text-secondary); font-size: var(--font-size-sm);">
+                    ({{ logement.nombre_avis }} avis)
+                </span>
+            </div>
+        {% endif %}
+        
+        {% if logement.tags %}
+            <div style="margin-top: var(--space-3);">
+                {% include "core/components/tags.html" with tags=logement.tags_list %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+

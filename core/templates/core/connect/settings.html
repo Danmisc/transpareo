@@ -1,0 +1,1074 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="connect-settings-page">
+    <div class="settings-container">
+        <!-- En-tête -->
+        <div class="page-header">
+            <h1>Paramètres Connect</h1>
+            <p class="page-subtitle">Gérez vos paramètres de profil, confidentialité et sécurité</p>
+        </div>
+
+        <!-- Onglets -->
+        <div class="settings-tabs">
+            <a href="?tab=profile" class="tab-item {% if active_tab == 'profile' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                Profil
+            </a>
+            <a href="?tab=privacy" class="tab-item {% if active_tab == 'privacy' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                Confidentialité
+            </a>
+            <a href="?tab=security" class="tab-item {% if active_tab == 'security' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                Sécurité
+            </a>
+            <a href="{% url 'connect-notification-settings' %}" class="tab-item {% if active_tab == 'notifications' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 0 0 1-3.46 0"></path>
+                </svg>
+                Notifications
+            </a>
+        </div>
+
+        <!-- Contenu des onglets -->
+        <div class="settings-content">
+            {% if active_tab == 'profile' %}
+                <!-- Onglet Profil -->
+                <div class="profile-settings-tab">
+                    <form id="profile-settings-form" method="post" action="{% url 'update-profile-settings' %}">
+                        {% csrf_token %}
+                        
+                        <!-- Visibilité du profil -->
+                        <div class="settings-section">
+                            <h2 class="section-title">Visibilité du profil</h2>
+                            <p class="section-description">Contrôlez qui peut voir votre profil Transpareo Connect</p>
+                            
+                            <div class="radio-group">
+                                <label class="radio-label">
+                                    <input type="radio" name="profil_visibility" value="public" {% if user.profil_visibility == 'public' or not user.profil_visibility %}checked{% endif %}>
+                                    <div class="radio-content">
+                                        <span class="radio-title">Public</span>
+                                        <span class="radio-description">Visible par tous les utilisateurs</span>
+                                    </div>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="profil_visibility" value="connections" {% if user.profil_visibility == 'connections' %}checked{% endif %}>
+                                    <div class="radio-content">
+                                        <span class="radio-title">Connexions uniquement</span>
+                                        <span class="radio-description">Visible uniquement par mes connexions</span>
+                                    </div>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="profil_visibility" value="private" {% if user.profil_visibility == 'private' %}checked{% endif %}>
+                                    <div class="radio-content">
+                                        <span class="radio-title">Privé</span>
+                                        <span class="radio-description">Invisible, uniquement recherche par nom</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Qui peut me contacter -->
+                        <div class="settings-section">
+                            <h2 class="section-title">Qui peut me contacter</h2>
+                            <p class="section-description">Définissez qui peut vous envoyer des messages</p>
+                            
+                            <div class="radio-group">
+                                <label class="radio-label">
+                                    <input type="radio" name="who_can_message" value="everyone" {% if user.who_can_message == 'everyone' or not user.who_can_message %}checked{% endif %}>
+                                    <div class="radio-content">
+                                        <span class="radio-title">Tout le monde</span>
+                                        <span class="radio-description">Tous les utilisateurs peuvent m'envoyer un message</span>
+                                    </div>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="who_can_message" value="connections" {% if user.who_can_message == 'connections' %}checked{% endif %}>
+                                    <div class="radio-content">
+                                        <span class="radio-title">Mes connexions uniquement</span>
+                                        <span class="radio-description">Seulement mes connexions peuvent m'envoyer un message</span>
+                                    </div>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="who_can_message" value="verified" {% if user.who_can_message == 'verified' %}checked{% endif %}>
+                                    <div class="radio-content">
+                                        <span class="radio-title">Propriétaires/Locataires vérifiés uniquement</span>
+                                        <span class="radio-description">Seulement les utilisateurs vérifiés peuvent m'envoyer un message</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Affichage -->
+                        <div class="settings-section">
+                            <h2 class="section-title">Affichage</h2>
+                            <p class="section-description">Choisissez quelles informations afficher sur votre profil</p>
+                            
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="afficher_statut_online" value="true" {% if user.afficher_statut_online %}checked{% endif %}>
+                                    <div class="checkbox-content">
+                                        <span class="checkbox-title">Afficher mon statut en ligne</span>
+                                        <span class="checkbox-description">Les autres utilisateurs verront si vous êtes en ligne</span>
+                                    </div>
+                                </label>
+                                {% if user.is_proprietaire %}
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="afficher_logements_profil" value="true" {% if user.afficher_logements_profil %}checked{% endif %}>
+                                    <div class="checkbox-content">
+                                        <span class="checkbox-title">Afficher mes logements sur mon profil</span>
+                                        <span class="checkbox-description">Vos logements seront visibles sur votre profil</span>
+                                    </div>
+                                </label>
+                                {% endif %}
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="afficher_activite_recente" value="true" {% if user.afficher_activite_recente %}checked{% endif %}>
+                                    <div class="checkbox-content">
+                                        <span class="checkbox-title">Afficher mon activité récente</span>
+                                        <span class="checkbox-description">Vos dernières publications seront visibles sur votre profil</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="settings-actions">
+                            <button type="submit" class="btn-primary">Enregistrer les modifications</button>
+                        </div>
+                    </form>
+                </div>
+
+            {% elif active_tab == 'privacy' %}
+                <!-- Onglet Confidentialité -->
+                <div class="privacy-settings-tab">
+                    <!-- Blocage -->
+                    <div class="settings-section">
+                        <h2 class="section-title">Utilisateurs bloqués</h2>
+                        <p class="section-description">Les utilisateurs bloqués ne pourront pas vous contacter</p>
+                        
+                        {% if tab_data.blocked_users %}
+                        <div class="blocked-users-list">
+                            {% for block in tab_data.blocked_users %}
+                            <div class="blocked-user-card">
+                                <div class="blocked-user-info">
+                                    {% if block.blocked.avatar %}
+                                        <img src="{{ block.blocked.avatar.url }}" alt="{{ block.blocked.username }}" class="blocked-user-avatar">
+                                    {% else %}
+                                        <div class="blocked-user-avatar-placeholder">{{ block.blocked.username|first|upper }}</div>
+                                    {% endif %}
+                                    <div>
+                                        <div class="blocked-user-name">{{ block.blocked.get_full_name|default:block.blocked.username }}</div>
+                                        <div class="blocked-user-date">Bloqué le {{ block.created_at|date:"d/m/Y" }}</div>
+                                    </div>
+                                </div>
+                                <button class="btn-secondary-sm" onclick="unblockUser({{ block.blocked.id }})">
+                                    Débloquer
+                                </button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="empty-state">
+                            <p>Aucun utilisateur bloqué</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Export données RGPD -->
+                    <div class="settings-section">
+                        <h2 class="section-title">Données personnelles</h2>
+                        <p class="section-description">Téléchargez vos données Transpareo Connect (conformité RGPD)</p>
+                        
+                        <div class="data-export-box">
+                            <div class="export-info">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                <div>
+                                    <strong>Télécharger mes données</strong>
+                                    <p>Obtenez un export complet de toutes vos données Transpareo Connect (profil, connexions, messages, publications, etc.) au format JSON.</p>
+                                </div>
+                            </div>
+                            <a href="{% url 'export-gdpr-data' %}" class="btn-primary" onclick="return confirm('Le téléchargement va commencer...')">
+                                Télécharger mes données
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Désactivation du profil -->
+                    <div class="settings-section danger-zone">
+                        <h2 class="section-title">Désactiver mon profil Connect</h2>
+                        <p class="section-description">Désactiver votre profil rendra votre compte Connect inaccessible. Vos données seront conservées et vous pourrez réactiver votre profil à tout moment.</p>
+                        
+                        <form id="disable-profile-form" method="post" action="{% url 'disable-connect-profile' %}" class="disable-form">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label for="disable-password" class="form-label">Confirmer avec votre mot de passe</label>
+                                <input type="password" id="disable-password" name="password" class="form-input" required placeholder="Votre mot de passe">
+                            </div>
+                            <button type="submit" class="btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir désactiver votre profil Connect ? Cette action peut être annulée en vous reconnectant.')">
+                                Désactiver mon profil
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+            {% elif active_tab == 'security' %}
+                <!-- Onglet Sécurité -->
+                <div class="security-settings-tab">
+                    <!-- Sessions actives -->
+                    <div class="settings-section">
+                        <h2 class="section-title">Sessions actives</h2>
+                        <p class="section-description">Gérez vos sessions actives sur différents appareils</p>
+                        
+                        {% if tab_data.active_sessions %}
+                        <div class="sessions-list">
+                            {% for session in tab_data.active_sessions %}
+                            <div class="session-card {% if session.is_current %}current-session{% endif %}">
+                                <div class="session-info">
+                                    <div class="session-icon">
+                                        {% if 'Mobile' in session.device_type or 'iPhone' in session.device_type or 'Android' in session.device_type %}
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                                                <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                                            </svg>
+                                        {% else %}
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                                <line x1="8" y1="21" x2="16" y2="21"></line>
+                                                <line x1="12" y1="17" x2="12" y2="21"></line>
+                                            </svg>
+                                        {% endif %}
+                                    </div>
+                                    <div class="session-details">
+                                        <div class="session-device">{{ session.device_type|default:"Appareil inconnu" }}</div>
+                                        <div class="session-location">{{ session.ip_address }}</div>
+                                        <div class="session-time">Dernière activité : {{ session.last_activity|timesince }}</div>
+                                        {% if session.is_current %}
+                                        <span class="session-badge current">Session actuelle</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% if not session.is_current %}
+                                <button class="btn-danger-sm" onclick="terminateSession({{ session.id }})">
+                                    Terminer la session
+                                </button>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="empty-state">
+                            <p>Aucune session active</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Historique des connexions -->
+                    <div class="settings-section">
+                        <h2 class="section-title">Historique des connexions</h2>
+                        <p class="section-description">Consultez l'historique de vos connexions (100 dernières)</p>
+                        
+                        {% if tab_data.login_history %}
+                        <div class="login-history-table">
+                            <div class="table-header">
+                                <div class="table-cell">Date et heure</div>
+                                <div class="table-cell">Appareil</div>
+                                <div class="table-cell">Adresse IP</div>
+                                <div class="table-cell">Statut</div>
+                            </div>
+                            {% for login in tab_data.login_history %}
+                            <div class="table-row">
+                                <div class="table-cell">
+                                    <div class="login-date">{{ login.login_time|date:"d/m/Y" }}</div>
+                                    <div class="login-time">{{ login.login_time|date:"H:i" }}</div>
+                                </div>
+                                <div class="table-cell">{{ login.device_type|default:"Inconnu" }}</div>
+                                <div class="table-cell">{{ login.ip_address }}</div>
+                                <div class="table-cell">
+                                    {% if login.success %}
+                                    <span class="status-badge success">Succès</span>
+                                    {% else %}
+                                    <span class="status-badge failed">Échec</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="empty-state">
+                            <p>Aucun historique de connexion</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Changer mot de passe -->
+                    <div class="settings-section">
+                        <h2 class="section-title">Changer mon mot de passe</h2>
+                        <p class="section-description">Mettez à jour votre mot de passe pour sécuriser votre compte</p>
+                        
+                        <form method="post" action="{% url 'account_change_password' %}" class="password-form">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label for="old_password" class="form-label">Mot de passe actuel</label>
+                                <input type="password" id="old_password" name="oldpassword" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="new_password1" class="form-label">Nouveau mot de passe</label>
+                                <input type="password" id="new_password1" name="password1" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="new_password2" class="form-label">Confirmer le nouveau mot de passe</label>
+                                <input type="password" id="new_password2" name="password2" class="form-input" required>
+                            </div>
+                            <button type="submit" class="btn-primary">Changer mon mot de passe</button>
+                        </form>
+                    </div>
+
+                    <!-- Authentification à deux facteurs (2FA) -->
+                    <div class="settings-section">
+                        <h2 class="section-title">Authentification à deux facteurs (2FA)</h2>
+                        <p class="section-description">Ajoutez une couche de sécurité supplémentaire à votre compte</p>
+                        
+                        <div class="two-factor-box">
+                            {% if user.totp_enabled %}
+                            <div class="two-factor-status enabled">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                                <div>
+                                    <strong>2FA activée</strong>
+                                    <p>L'authentification à deux facteurs est activée sur votre compte.</p>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="two-factor-status disabled">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                                <div>
+                                    <strong>2FA non activée</strong>
+                                    <p>Activez l'authentification à deux facteurs pour renforcer la sécurité de votre compte.</p>
+                                </div>
+                                <a href="{% url 'setup-2fa' %}" class="btn-primary">Activer la 2FA</a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .connect-settings-page {
+        min-height: calc(100vh - 70px);
+        background: #f5f5f5;
+        padding-top: 70px;
+    }
+
+    .settings-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 32px 24px;
+    }
+
+    .page-header {
+        margin-bottom: 32px;
+        text-align: center;
+    }
+
+    .page-header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0 0 8px 0;
+    }
+
+    .page-subtitle {
+        font-size: 15px;
+        color: #666;
+        margin: 0;
+    }
+
+    /* Onglets */
+    .settings-tabs {
+        display: flex;
+        gap: 8px;
+        padding: 16px;
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        overflow-x: auto;
+    }
+
+    .tab-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 500;
+        color: #666;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .tab-item:hover {
+        background: #f5f5f5;
+        color: #333;
+    }
+
+    .tab-item.active {
+        background: #D3580B;
+        color: white;
+    }
+
+    /* Contenu */
+    .settings-content {
+        background: white;
+        border-radius: 12px;
+        padding: 32px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .settings-section {
+        margin-bottom: 48px;
+        padding-bottom: 48px;
+        border-bottom: 1px solid #e5e5e5;
+    }
+
+    .settings-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .settings-section.danger-zone {
+        border: 2px solid #f8d7da;
+        border-radius: 12px;
+        padding: 24px;
+        background: #fff5f5;
+    }
+
+    .section-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0 0 8px 0;
+    }
+
+    .section-description {
+        font-size: 14px;
+        color: #666;
+        margin: 0 0 24px 0;
+        line-height: 1.5;
+    }
+
+    /* Radio buttons */
+    .radio-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .radio-label {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 16px;
+        border: 2px solid #e5e5e5;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .radio-label:hover {
+        border-color: #D3580B;
+        background: rgba(211, 88, 11, 0.02);
+    }
+
+    .radio-label input[type="radio"]:checked + .radio-content {
+        color: #D3580B;
+    }
+
+    .radio-label input[type="radio"]:checked ~ .radio-content {
+        color: #D3580B;
+    }
+
+    .radio-label input[type="radio"] {
+        margin-top: 4px;
+        accent-color: #D3580B;
+        cursor: pointer;
+    }
+
+    .radio-content {
+        flex: 1;
+    }
+
+    .radio-title {
+        display: block;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 4px;
+    }
+
+    .radio-description {
+        display: block;
+        font-size: 13px;
+        color: #666;
+        line-height: 1.4;
+    }
+
+    /* Checkboxes */
+    .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .checkbox-label {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 16px;
+        border: 2px solid #e5e5e5;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .checkbox-label:hover {
+        border-color: #D3580B;
+        background: rgba(211, 88, 11, 0.02);
+    }
+
+    .checkbox-label input[type="checkbox"]:checked + .checkbox-content .checkbox-title {
+        color: #D3580B;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+        margin-top: 4px;
+        accent-color: #D3580B;
+        cursor: pointer;
+    }
+
+    .checkbox-content {
+        flex: 1;
+    }
+
+    .checkbox-title {
+        display: block;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 4px;
+    }
+
+    .checkbox-description {
+        display: block;
+        font-size: 13px;
+        color: #666;
+        line-height: 1.4;
+    }
+
+    /* Utilisateurs bloqués */
+    .blocked-users-list {
+        display: grid;
+        gap: 16px;
+    }
+
+    .blocked-user-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px;
+        background: #fafafa;
+        border-radius: 8px;
+        border: 1px solid #e5e5e5;
+    }
+
+    .blocked-user-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .blocked-user-avatar,
+    .blocked-user-avatar-placeholder {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .blocked-user-avatar-placeholder {
+        background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 18px;
+    }
+
+    .blocked-user-name {
+        font-weight: 600;
+        color: #1a1a1a;
+    }
+
+    .blocked-user-date {
+        font-size: 12px;
+        color: #999;
+    }
+
+    /* Export données */
+    .data-export-box {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 24px;
+        background: #e7f3ff;
+        border-left: 4px solid #0066cc;
+        border-radius: 8px;
+        gap: 24px;
+        flex-wrap: wrap;
+    }
+
+    .export-info {
+        display: flex;
+        gap: 16px;
+        flex: 1;
+    }
+
+    .export-info svg {
+        color: #0066cc;
+        flex-shrink: 0;
+    }
+
+    .export-info strong {
+        display: block;
+        margin-bottom: 8px;
+        color: #1a1a1a;
+    }
+
+    .export-info p {
+        margin: 0;
+        color: #666;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    /* Sessions */
+    .sessions-list {
+        display: grid;
+        gap: 16px;
+    }
+
+    .session-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        background: #fafafa;
+        border-radius: 8px;
+        border: 1px solid #e5e5e5;
+        gap: 20px;
+    }
+
+    .session-card.current-session {
+        border: 2px solid #D3580B;
+        background: rgba(211, 88, 11, 0.02);
+    }
+
+    .session-info {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex: 1;
+    }
+
+    .session-icon {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 8px;
+        color: #666;
+    }
+
+    .session-details {
+        flex: 1;
+    }
+
+    .session-device {
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 4px;
+    }
+
+    .session-location {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 4px;
+    }
+
+    .session-time {
+        font-size: 12px;
+        color: #999;
+    }
+
+    .session-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-top: 8px;
+    }
+
+    .session-badge.current {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    /* Historique connexions */
+    .login-history-table {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .table-header {
+        display: grid;
+        grid-template-columns: 2fr 2fr 1fr 1fr;
+        gap: 16px;
+        padding: 12px 0;
+        border-bottom: 2px solid #e5e5e5;
+        font-weight: 600;
+        font-size: 13px;
+        color: #666;
+        text-transform: uppercase;
+    }
+
+    .table-row {
+        display: grid;
+        grid-template-columns: 2fr 2fr 1fr 1fr;
+        gap: 16px;
+        padding: 16px 0;
+        border-bottom: 1px solid #f0f0f0;
+        align-items: center;
+    }
+
+    .table-cell {
+        font-size: 14px;
+        color: #333;
+    }
+
+    .login-date {
+        font-weight: 600;
+        color: #1a1a1a;
+    }
+
+    .login-time {
+        font-size: 12px;
+        color: #999;
+    }
+
+    .status-badge {
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .status-badge.success {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-badge.failed {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    /* Formulaire */
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 8px;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        font-size: 15px;
+        font-family: inherit;
+        transition: all 0.2s ease;
+        box-sizing: border-box;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #D3580B;
+        box-shadow: 0 0 0 3px rgba(211, 88, 11, 0.1);
+    }
+
+    /* 2FA */
+    .two-factor-box {
+        padding: 24px;
+        background: #fafafa;
+        border-radius: 8px;
+    }
+
+    .two-factor-status {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+    }
+
+    .two-factor-status.enabled {
+        padding: 20px;
+        background: #d4edda;
+        border-radius: 8px;
+        border-left: 4px solid #28a745;
+    }
+
+    .two-factor-status.disabled {
+        padding: 20px;
+        background: #fff3cd;
+        border-radius: 8px;
+        border-left: 4px solid #ffc107;
+    }
+
+    .two-factor-status svg {
+        color: #28a745;
+        flex-shrink: 0;
+    }
+
+    .two-factor-status.disabled svg {
+        color: #856404;
+    }
+
+    .two-factor-status strong {
+        display: block;
+        margin-bottom: 8px;
+        color: #1a1a1a;
+    }
+
+    .two-factor-status p {
+        margin: 0;
+        color: #666;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    /* Boutons */
+    .settings-actions {
+        display: flex;
+        gap: 12px;
+        padding-top: 24px;
+        border-top: 1px solid #e5e5e5;
+        margin-top: 24px;
+    }
+
+    .btn-primary,
+    .btn-secondary-sm,
+    .btn-danger,
+    .btn-danger-sm {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: none;
+    }
+
+    .btn-primary {
+        background: #D3580B;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #c4510a;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(211, 88, 11, 0.3);
+    }
+
+    .btn-secondary-sm {
+        padding: 8px 16px;
+        background: white;
+        color: #333;
+        border: 1px solid #e5e5e5;
+        font-size: 14px;
+    }
+
+    .btn-secondary-sm:hover {
+        background: #f5f5f5;
+        border-color: #ddd;
+    }
+
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #c82333;
+    }
+
+    .btn-danger-sm {
+        padding: 8px 16px;
+        background: white;
+        color: #dc3545;
+        border: 1px solid #e5e5e5;
+        font-size: 14px;
+    }
+
+    .btn-danger-sm:hover {
+        background: #f8d7da;
+        border-color: #dc3545;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 24px;
+        color: #999;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .settings-container {
+            padding: 16px;
+        }
+
+        .settings-content {
+            padding: 20px;
+        }
+
+        .settings-tabs {
+            flex-wrap: wrap;
+        }
+
+        .table-header,
+        .table-row {
+            grid-template-columns: 1fr;
+        }
+
+        .data-export-box {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .session-card {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+
+<script>
+    // Mise à jour des paramètres de profil
+    document.getElementById('profile-settings-form')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        fetch('{% url "update-profile-settings" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Paramètres mis à jour avec succès !');
+            } else {
+                alert(data.error || 'Erreur lors de la mise à jour');
+            }
+        });
+    });
+
+    // Débloquer un utilisateur
+    function unblockUser(userId) {
+        if (!confirm('Débloquer cet utilisateur ?')) return;
+        
+        fetch(`{% url 'unblock-user' 0 %}`.replace('0', userId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.error || 'Erreur lors du déblocage');
+            }
+        });
+    }
+
+    // Terminer une session
+    function terminateSession(sessionId) {
+        if (!confirm('Terminer cette session ?')) return;
+        
+        fetch(`{% url 'terminate-session' 0 %}`.replace('0', sessionId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.error || 'Erreur lors de la terminaison de la session');
+            }
+        });
+    }
+</script>
+{% endblock %}
+

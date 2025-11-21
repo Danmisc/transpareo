@@ -12,8 +12,8 @@
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #ffffff;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -21,124 +21,337 @@
             padding: 20px;
         }
         
+        /* Container principal avec bords arrondis */
         .auth-container {
-            background: white;
-            padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-            max-width: 480px;
+            display: flex;
             width: 100%;
-            animation: slideUp 0.3s ease-out;
+            max-width: 1200px;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+            max-height: calc(100vh - 40px);
+            align-items: stretch;
         }
         
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* Left Side - Form */
+        .auth-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 32px 40px;
+            background: #ffffff;
+            overflow: hidden;
+            max-height: calc(100vh - 40px);
+            justify-content: center;
+            align-items: center;
         }
         
+        .auth-left-inner {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            width: 100%;
+            max-width: 380px;
+        }
+        
+        /* Right Side - Image */
+        .auth-right {
+            flex: 1;
+            position: relative;
+            display: none;
+            padding: 20px 20px 20px 0;
+            background: #f5f5f5;
+            align-items: stretch;
+        }
+        
+        .auth-right-image {
+            width: 100%;
+            height: 100%;
+            border-radius: 16px;
+            object-fit: cover;
+            background: url('https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=1400&q=90&auto=format&fit=crop') center/cover;
+        }
+        
+        /* Logo - Identique à landing page */
         .logo {
-            text-align: center;
-            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 24px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            align-self: flex-start;
         }
         
-        .logo h1 {
-            font-size: 32px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+        .logo:hover {
+            transform: translateY(-2px);
+        }
+        
+        .logo-text {
+            font-weight: 800;
+            font-size: 20px;
+            background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            font-weight: 800;
+            background-clip: text;
         }
         
-        h2 {
-            color: #333;
-            margin-bottom: 10px;
+        /* Heading */
+        h1 {
             font-size: 26px;
             font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 5px;
+            line-height: 1.2;
+            letter-spacing: -0.01em;
         }
         
         .subtitle {
+            font-size: 13px;
             color: #666;
-            margin-bottom: 30px;
-            font-size: 14px;
+            margin-bottom: 24px;
+            line-height: 1.4;
+        }
+        
+        /* Form */
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
         }
         
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 14px;
         }
         
         label {
             display: block;
-            margin-bottom: 8px;
-            color: #333;
+            margin-bottom: 5px;
+            color: #1a1a1a;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 12px;
+        }
+        
+        .input-wrapper {
+            position: relative;
         }
         
         .form-control {
             width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e0e0e0;
+            padding: 11px 13px;
+            border: 1.5px solid #e5e5e5;
             border-radius: 8px;
-            font-size: 15px;
-            transition: all 0.3s;
+            font-size: 14px;
+            transition: all 0.2s ease;
             font-family: inherit;
+            background: #fafafa;
+        }
+        
+        .form-control::placeholder {
+            color: #999;
         }
         
         .form-control:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #D3580B;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(211, 88, 11, 0.1);
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 11px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #666;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            transition: color 0.2s;
+        }
+        
+        .password-toggle:hover {
+            color: #1a1a1a;
+        }
+        
+        .password-toggle svg {
+            width: 18px;
+            height: 18px;
         }
         
         .form-check {
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 15px;
+            gap: 7px;
+            margin-bottom: 18px;
         }
         
         .form-check-input {
-            width: 18px;
-            height: 18px;
+            width: 15px;
+            height: 15px;
             cursor: pointer;
+            accent-color: #D3580B;
         }
         
         .form-check label {
             margin: 0;
             font-weight: 400;
-            font-size: 14px;
+            font-size: 12px;
             cursor: pointer;
+            color: #666;
         }
         
+        /* Button */
         .btn {
             width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 12px;
+            background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
             color: white;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
-            margin-top: 10px;
+            transition: all 0.2s ease;
+            margin-bottom: 14px;
+            box-shadow: 0 2px 8px rgba(211, 88, 11, 0.2);
         }
         
         .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(211, 88, 11, 0.3);
         }
         
         .btn:active {
             transform: translateY(0);
         }
         
-        .alert {
-            padding: 12px 16px;
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Divider */
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 16px 0;
+            color: #999;
+            font-size: 12px;
+        }
+        
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e5e5e5;
+        }
+        
+        .divider span {
+            padding: 0 12px;
+        }
+        
+        /* Social Login */
+        .social-login {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+            margin-bottom: 16px;
+        }
+        
+        .social-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            padding: 11px 16px;
+            border: 1.5px solid #e5e5e5;
             border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            line-height: 1.5;
+            background: white;
+            color: #1a1a1a;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 13px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .social-btn:hover {
+            border-color: #d0d0d0;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+        }
+        
+        .social-btn svg {
+            flex-shrink: 0;
+            width: 17px;
+            height: 17px;
+        }
+        
+        /* Links */
+        .auth-links {
+            text-align: center;
+            margin-top: 14px;
+        }
+        
+        .auth-links a {
+            color: #D3580B;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 500;
+            transition: color 0.2s;
+            display: inline-block;
+            margin: 3px 5px;
+        }
+        
+        .auth-links a:hover {
+            color: #c4510a;
+            text-decoration: underline;
+        }
+        
+        /* Footer */
+        .auth-footer {
+            margin-top: auto;
+            padding-top: 16px;
+            border-top: 1px solid #e5e5e5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 10px;
+            color: #999;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        
+        .auth-footer-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .auth-footer-links a {
+            color: #999;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .auth-footer-links a:hover {
+            color: #666;
+        }
+        
+        /* Alerts */
+        .alert {
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-bottom: 14px;
+            font-size: 12px;
+            line-height: 1.4;
         }
         
         .alert-success {
@@ -165,72 +378,217 @@
             border: 1px solid #bee5eb;
         }
         
-        .links {
+        .rate-limited {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-bottom: 14px;
             text-align: center;
-            margin-top: 25px;
-            padding-top: 25px;
-            border-top: 1px solid #e0e0e0;
-        }
-        
-        .links a {
-            color: #667eea;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-        
-        .links a:hover {
-            color: #764ba2;
-            text-decoration: underline;
-        }
-        
-        .help-text {
             font-size: 12px;
-            color: #999;
-            margin-top: 6px;
-            line-height: 1.4;
         }
         
+        .rate-limited strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        /* Error List */
         .errorlist {
             list-style: none;
             padding: 0;
-            margin: 8px 0 0 0;
+            margin: 4px 0 0 0;
         }
         
         .errorlist li {
             color: #dc3545;
-            font-size: 13px;
-            margin-top: 4px;
+            font-size: 11px;
+            margin-top: 2px;
         }
         
-        /* Password strength indicator */
-        .password-strength {
-            margin-top: 8px;
-            height: 4px;
-            background: #e0e0e0;
-            border-radius: 2px;
-            overflow: hidden;
+        /* Real-time validation */
+        .real-time-validation,
+        .real-time-feedback {
+            font-size: 10px;
+            margin-top: 3px;
+            min-height: 14px;
+        }
+        
+        .validation-success,
+        .feedback-success {
+            color: #28a745;
+        }
+        
+        .validation-error,
+        .feedback-error {
+            color: #dc3545;
+        }
+        
+        /* Loading spinner */
+        .loading-spinner {
             display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
         }
         
-        .password-strength-bar {
-            height: 100%;
-            width: 0%;
-            transition: all 0.3s;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         
-        .strength-weak { background: #dc3545; width: 33%; }
-        .strength-medium { background: #ffc107; width: 66%; }
-        .strength-strong { background: #28a745; width: 100%; }
-        
-        .g-recaptcha {
-            margin: 20px 0;
+        /* Magic Link */
+        .magic-link-section {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid #e5e5e5;
         }
         
-        @media (max-width: 500px) {
+        .magic-link-btn {
+            width: 100%;
+            padding: 11px;
+            background: transparent;
+            border: 1.5px solid #e5e5e5;
+            border-radius: 8px;
+            color: #1a1a1a;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            font-size: 12px;
+        }
+        
+        .magic-link-btn:hover {
+            border-color: #D3580B;
+            background: #fafafa;
+            color: #D3580B;
+        }
+        
+        .magic-link-btn svg {
+            width: 15px;
+            height: 15px;
+        }
+        
+        .magic-link-sent {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-bottom: 14px;
+            text-align: center;
+            font-size: 12px;
+        }
+        
+        /* Help text */
+        .help-text {
+            font-size: 10px;
+            color: #999;
+            margin-top: 3px;
+            line-height: 1.3;
+        }
+        
+        /* Responsive */
+        @media (min-width: 1024px) {
+            .auth-right {
+                display: flex;
+            }
+        }
+        
+        @media (max-width: 1023px) {
             .auth-container {
-                padding: 30px 20px;
+                max-width: 550px;
+            }
+            
+            .auth-left {
+                padding: 24px 32px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            .logo {
+                margin-bottom: 20px;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            body {
+                padding: 16px;
+            }
+            
+            .auth-container {
+                border-radius: 12px;
+                max-height: calc(100vh - 32px);
+            }
+            
+            .auth-left {
+                padding: 20px 20px;
+                max-height: calc(100vh - 32px);
+            }
+            
+            .logo {
+                margin-bottom: 16px;
+            }
+            
+            h1 {
+                font-size: 22px;
+                margin-bottom: 4px;
+            }
+            
+            .subtitle {
+                font-size: 12px;
+                margin-bottom: 20px;
+            }
+            
+            .form-group {
+                margin-bottom: 12px;
+            }
+            
+            .btn {
+                padding: 11px;
+                font-size: 13px;
+                margin-bottom: 12px;
+            }
+            
+            .divider {
+                margin: 14px 0;
+            }
+            
+            .social-login {
+                gap: 8px;
+                margin-bottom: 14px;
+            }
+            
+            .social-btn {
+                padding: 10px 14px;
+                font-size: 12px;
+            }
+            
+            .auth-links {
+                margin-top: 12px;
+            }
+            
+            .auth-footer {
+                padding-top: 14px;
+                flex-direction: column;
+                gap: 6px;
+                text-align: center;
+            }
+            
+            .auth-footer-links {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 8px;
             }
         }
     </style>
@@ -238,19 +596,39 @@
 </head>
 <body>
     <div class="auth-container">
-        <div class="logo">
-            <h1>🏠 Transpareo</h1>
+        <!-- Left Side - Form -->
+        <div class="auth-left">
+            <div class="auth-left-inner">
+                <a href="{% url 'landing-page' %}" class="logo">
+                    <span class="logo-text">Transpareo</span>
+                </a>
+                
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
+                {% block content %}{% endblock %}
+                
+                <div class="auth-footer">
+                    <div>© 2025 Transpareo. Tous droits réservés.</div>
+                    <div class="auth-footer-links">
+                        <a href="#">Mentions légales</a>
+                        <a href="#">CGU</a>
+                        <a href="#">CGV</a>
+                        <a href="#">Politique de confidentialité</a>
+                    </div>
+                </div>
+            </div>
         </div>
         
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-        
-        {% block content %}{% endblock %}
+        <!-- Right Side - Image -->
+        <div class="auth-right">
+            <div class="auth-right-image"></div>
+        </div>
     </div>
     
     <script>

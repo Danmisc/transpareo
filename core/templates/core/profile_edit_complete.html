@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifier le profil - Transpareo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --linkedin-blue: #0A66C2;
+            --linkedin-blue-dark: #004182;
+            --linkedin-blue-light: #E7F3FF;
+            --text-primary: #000000E6;
+            --text-secondary: #00000099;
+            --text-tertiary: #00000075;
+            --border-color: #E0E0E0;
+            --bg-white: #FFFFFF;
+            --bg-gray: #F3F2EF;
+            --bg-hover: #F5F5F5;
+            --shadow-sm: 0 0 0 1px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.08);
+            --shadow-md: 0 0 0 1px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.16);
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-gray);
+            color: var(--text-primary);
+            line-height: 1.5;
+            font-size: 14px;
+        }
+        
+        .edit-container {
+            max-width: 1128px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        .edit-header {
+            background: var(--bg-white);
+            border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .edit-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .edit-header p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        .edit-sections {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .edit-section {
+            background: var(--bg-white);
+            border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+        
+        .section-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-hover);
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .section-content {
+            padding: 24px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        
+        @media (max-width: 767px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+        
+        .form-label .required {
+            color: #D3580B;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #D3580B;
+            box-shadow: 0 0 0 2px rgba(211, 88, 11, 0.1);
+        }
+        
+        .form-control:disabled {
+            background: var(--bg-hover);
+            cursor: not-allowed;
+        }
+        
+        .form-help {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+        }
+        
+        .form-check {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .form-check input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .form-check label {
+            font-size: 14px;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+        
+        .image-upload {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .image-preview {
+            width: 200px;
+            height: 200px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 2px solid var(--border-color);
+            margin-top: 12px;
+        }
+        
+        .cover-preview {
+            width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 2px solid var(--border-color);
+            margin-top: 12px;
+        }
+        
+        .form-actions {
+            background: var(--bg-white);
+            border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+            padding: 20px 24px;
+            margin-top: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 10px 24px;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: #D3580B;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #c4510a;
+        }
+        
+        .btn-secondary {
+            background: var(--bg-white);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+        }
+        
+        .char-count {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            text-align: right;
+            margin-top: 4px;
+        }
+        
+        .errorlist {
+            list-style: none;
+            padding: 0;
+            margin: 4px 0 0 0;
+            color: #B24020;
+            font-size: 12px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 8px;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 24px;
+            overflow-x: auto;
+        }
+        
+        .tab {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            white-space: nowrap;
+            margin-bottom: -2px;
+        }
+        
+        .tab:hover {
+            color: var(--text-primary);
+        }
+        
+        .tab.active {
+            color: #D3580B;
+            border-bottom-color: #D3580B;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="edit-container">
+        <div class="edit-header">
+            <h1>Modifier le profil</h1>
+            <p>Mettez à jour vos informations pour améliorer votre visibilité sur Transpareo</p>
+        </div>
+        
+        <!-- Messages Django -->
+        {% if messages %}
+        <div class="messages-container" style="margin-bottom: 24px;">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}" style="padding: 12px 16px; border-radius: 8px; margin-bottom: 12px; {% if message.tags == 'success' %}background: #d4edda; color: #155724; border: 1px solid #c3e6cb;{% elif message.tags == 'error' %}background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;{% else %}background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb;{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- Erreurs de formulaire globales -->
+        {% if form.non_field_errors %}
+        <div class="alert alert-error" style="padding: 12px 16px; border-radius: 8px; margin-bottom: 24px; background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+        
+        <form method="post" enctype="multipart/form-data" id="profileEditForm" action="{% url 'profile-edit' %}">
+            {% csrf_token %}
+            
+            <!-- Tabs -->
+            <div class="tabs">
+                <button type="button" class="tab active" onclick="switchTab('basic')">Informations de base</button>
+                <button type="button" class="tab" onclick="switchTab('professional')">Professionnel</button>
+                <button type="button" class="tab" onclick="switchTab('contact')">Contact & Localisation</button>
+                <button type="button" class="tab" onclick="switchTab('social')">Réseaux sociaux</button>
+                <button type="button" class="tab" onclick="switchTab('privacy')">Confidentialité</button>
+            </div>
+            
+            <!-- Tab: Informations de base -->
+            <div id="basic" class="tab-content active">
+                <div class="edit-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Photo de profil et couverture</h2>
+                    </div>
+                    <div class="section-content">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Photo de profil</label>
+                                <input type="file" name="avatar" class="form-control" accept="image/*" onchange="previewImage(this, 'avatarPreview', 'avatar')">
+                                {% if user.avatar %}
+                                <img src="{{ user.avatar.url }}" alt="Avatar actuel" class="image-preview" id="avatarPreview">
+                                {% else %}
+                                <div id="avatarPreview"></div>
+                                {% endif %}
+                                <div class="form-help">Format recommandé: JPG, PNG. Taille max: 5MB</div>
+                                {% if form.avatar.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.avatar.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Photo de couverture</label>
+                                <input type="file" name="cover_image" class="form-control" accept="image/*" onchange="previewImage(this, 'coverPreview', 'cover')">
+                                {% if user.cover_image %}
+                                <img src="{{ user.cover_image.url }}" alt="Couverture actuelle" class="cover-preview" id="coverPreview">
+                                {% else %}
+                                <div id="coverPreview"></div>
+                                {% endif %}
+                                <div class="form-help">Format recommandé: 1200x300px. Taille max: 5MB</div>
+                                {% if form.cover_image.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.cover_image.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="edit-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Informations personnelles</h2>
+                    </div>
+                    <div class="section-content">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Prénom <span class="required">*</span></label>
+                                <input type="text" name="first_name" class="form-control" value="{{ user.first_name|default:'' }}" data-required="true">
+                                {% if form.first_name.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.first_name.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Nom <span class="required">*</span></label>
+                                <input type="text" name="last_name" class="form-control" value="{{ user.last_name|default:'' }}" data-required="true">
+                                {% if form.last_name.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.last_name.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Nom d'utilisateur <span class="required">*</span></label>
+                                <input type="text" name="username" class="form-control" value="{{ user.username|default:'' }}" data-required="true">
+                                {% if form.username.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.username.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Email <span class="required">*</span></label>
+                                <input type="email" name="email" class="form-control" value="{{ user.email|default:'' }}" data-required="true">
+                                {% if form.email.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.email.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Téléphone</label>
+                                <input type="text" name="phone_number" class="form-control" value="{{ user.phone_number|default:'' }}">
+                                {% if form.phone_number.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.phone_number.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Date de naissance</label>
+                                <input type="date" name="date_of_birth" class="form-control" value="{% if user.date_of_birth %}{{ user.date_of_birth|date:'Y-m-d' }}{% endif %}">
+                                {% if form.date_of_birth.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.date_of_birth.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-group full-width">
+                                <label class="form-label">À propos de vous</label>
+                                <textarea name="bio" class="form-control" rows="5" maxlength="500" oninput="updateCharCount(this, 'bioCount')">{{ user.bio|default:'' }}</textarea>
+                                <div class="char-count">
+                                    <span id="bioCount">{{ user.bio|length|default:0 }}</span>/500 caractères
+                                </div>
+                                {% if form.bio.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.bio.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Professionnel -->
+            <div id="professional" class="tab-content">
+                <div class="edit-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Informations professionnelles</h2>
+                    </div>
+                    <div class="section-content">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Profession</label>
+                                <input type="text" name="profession" class="form-control" value="{{ user.profession|default:'' }}" placeholder="Ex: Développeur web">
+                                {% if form.profession.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.profession.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Employeur</label>
+                                <input type="text" name="employeur" class="form-control" value="{{ user.employeur|default:'' }}" placeholder="Ex: Google">
+                                {% if form.employeur.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.employeur.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Situation professionnelle</label>
+                                <select name="situation_professionnelle" class="form-control">
+                                    <option value="">Sélectionner...</option>
+                                    <option value="cdi" {% if user.situation_professionnelle == 'cdi' %}selected{% endif %}>CDI</option>
+                                    <option value="cdd" {% if user.situation_professionnelle == 'cdd' %}selected{% endif %}>CDD</option>
+                                    <option value="freelance" {% if user.situation_professionnelle == 'freelance' %}selected{% endif %}>Freelance</option>
+                                    <option value="etudiant" {% if user.situation_professionnelle == 'etudiant' %}selected{% endif %}>Étudiant</option>
+                                    <option value="retraite" {% if user.situation_professionnelle == 'retraite' %}selected{% endif %}>Retraité</option>
+                                    <option value="autre" {% if user.situation_professionnelle == 'autre' %}selected{% endif %}>Autre</option>
+                                </select>
+                                {% if form.situation_professionnelle.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.situation_professionnelle.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Heures de disponibilité</label>
+                                <input type="text" name="heures_disponibilite" class="form-control" value="{{ user.heures_disponibilite|default:'' }}" placeholder="Ex: Disponible en soirée et WE">
+                                {% if form.heures_disponibilite.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.heures_disponibilite.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-group full-width">
+                                <label class="form-label">Rôle sur Transpareo</label>
+                                <div style="display: flex; gap: 24px; margin-top: 8px;">
+                                    <div class="form-check">
+                                        <input type="checkbox" name="is_proprietaire" id="id_is_proprietaire" {% if user.is_proprietaire %}checked{% endif %}>
+                                        <label for="id_is_proprietaire">Je suis propriétaire</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input type="checkbox" name="is_locataire" id="id_is_locataire" {% if user.is_locataire %}checked{% endif %}>
+                                        <label for="id_is_locataire">Je suis locataire</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Contact & Localisation -->
+            <div id="contact" class="tab-content">
+                <div class="edit-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Localisation</h2>
+                    </div>
+                    <div class="section-content">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Ville</label>
+                                <input type="text" name="ville" class="form-control" value="{{ user.ville|default:'' }}" placeholder="Ex: Paris">
+                                {% if form.ville.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.ville.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Région</label>
+                                <input type="text" name="region" class="form-control" value="{{ user.region|default:'' }}" placeholder="Ex: Île-de-France">
+                                {% if form.region.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.region.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-group full-width">
+                                <label class="form-label">Adresse complète (privée)</label>
+                                <textarea name="adresse_complete" class="form-control" rows="2">{{ user.adresse_complete|default:'' }}</textarea>
+                                <div class="form-help">Cette adresse n'est visible que par vous</div>
+                                {% if form.adresse_complete.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.adresse_complete.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Réseaux sociaux -->
+            <div id="social" class="tab-content">
+                <div class="edit-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Réseaux sociaux</h2>
+                    </div>
+                    <div class="section-content">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">LinkedIn</label>
+                                <input type="url" name="linkedin_url" class="form-control" value="{{ user.linkedin_url|default:'' }}" placeholder="https://linkedin.com/in/...">
+                                {% if form.linkedin_url.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.linkedin_url.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Facebook</label>
+                                <input type="url" name="facebook_url" class="form-control" value="{{ user.facebook_url|default:'' }}" placeholder="https://facebook.com/...">
+                                {% if form.facebook_url.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.facebook_url.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Instagram</label>
+                                <input type="url" name="instagram_url" class="form-control" value="{{ user.instagram_url|default:'' }}" placeholder="https://instagram.com/...">
+                                {% if form.instagram_url.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.instagram_url.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Confidentialité -->
+            <div id="privacy" class="tab-content">
+                <div class="edit-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Paramètres de confidentialité</h2>
+                    </div>
+                    <div class="section-content">
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input type="checkbox" name="profil_public" id="id_profil_public" {% if user.profil_public %}checked{% endif %}>
+                                <label for="id_profil_public">Rendre mon profil public</label>
+                            </div>
+                            <div class="form-help">Si désactivé, seuls les utilisateurs connectés peuvent voir votre profil</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input type="checkbox" name="afficher_statut_online" id="id_afficher_statut_online" {% if user.afficher_statut_online %}checked{% endif %}>
+                                <label for="id_afficher_statut_online">Afficher mon statut en ligne</label>
+                            </div>
+                            <div class="form-help">Affiche un indicateur vert lorsque vous êtes connecté</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input type="checkbox" name="afficher_derniere_visite" id="id_afficher_derniere_visite" {% if user.afficher_derniere_visite %}checked{% endif %}>
+                                <label for="id_afficher_derniere_visite">Afficher ma dernière visite</label>
+                            </div>
+                            <div class="form-help">Affiche la date de votre dernière connexion sur votre profil</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input type="checkbox" name="newsletter_subscribed" id="id_newsletter_subscribed" {% if user.newsletter_subscribed %}checked{% endif %}>
+                                <label for="id_newsletter_subscribed">S'abonner à la newsletter</label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input type="checkbox" name="notifications_enabled" id="id_notifications_enabled" {% if user.notifications_enabled %}checked{% endif %}>
+                                <label for="id_notifications_enabled">Activer les notifications</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="form-actions">
+                <a href="{% url 'profile' %}" class="btn btn-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary" id="submitBtn">Enregistrer les modifications</button>
+            </div>
+        </form>
+    </div>
+    
+    <script>
+        function switchTab(tabName) {
+            // Masquer tous les onglets
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Afficher l'onglet sélectionné
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        function previewImage(input, previewId, type) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById(previewId);
+                    if (type === 'avatar') {
+                        preview.innerHTML = `<img src="${e.target.result}" class="image-preview">`;
+                    } else {
+                        preview.innerHTML = `<img src="${e.target.result}" class="cover-preview">`;
+                    }
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        
+        function updateCharCount(textarea, countId) {
+            const count = document.getElementById(countId);
+            if (count) {
+                count.textContent = textarea.value.length;
+            }
+        }
+        
+        // Initialiser le compteur de caractères
+        const bioTextarea = document.querySelector('textarea[name="bio"]');
+        if (bioTextarea) {
+            updateCharCount(bioTextarea, 'bioCount');
+        }
+
+        // Gérer la soumission du formulaire
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('profileEditForm');
+            const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
+            
+            console.log('Formulaire:', form);
+            console.log('Bouton submit:', submitBtn);
+            
+            if (form && submitBtn) {
+                // Événement sur le bouton (en plus du submit natif)
+                submitBtn.addEventListener('click', function(e) {
+                    console.log('Bouton submit cliqué');
+                    // Ne pas empêcher la soumission par défaut
+                    // La validation HTML5 se fera automatiquement
+                });
+                
+                // Événement sur le formulaire - Validation manuelle pour gérer les onglets
+                form.addEventListener('submit', function(e) {
+                    console.log('Formulaire en cours de soumission...');
+                    e.preventDefault(); // Empêcher la soumission par défaut pour validation manuelle
+                    
+                    // Récupérer tous les champs requis (même ceux dans des onglets cachés)
+                    const requiredFields = form.querySelectorAll('[data-required="true"]');
+                    let isValid = true;
+                    let firstInvalidField = null;
+                    let invalidFields = [];
+                    
+                    // Vérifier chaque champ requis
+                    requiredFields.forEach(function(field) {
+                        const fieldValue = field.value ? field.value.trim() : '';
+                        
+                        // Vérifier si le champ est dans un onglet caché
+                        const tabContent = field.closest('.tab-content');
+                        const isInHiddenTab = tabContent && !tabContent.classList.contains('active');
+                        
+                        if (!fieldValue) {
+                            isValid = false;
+                            field.style.borderColor = '#dc3545';
+                            if (!firstInvalidField) {
+                                firstInvalidField = field;
+                            }
+                            
+                            // Si le champ est dans un onglet caché, activer cet onglet
+                            if (isInHiddenTab && tabContent) {
+                                const tabId = tabContent.id;
+                                console.log('Champ manquant dans onglet caché:', tabId, field.name);
+                                
+                                // Activer l'onglet directement
+                                // Masquer tous les onglets
+                                document.querySelectorAll('.tab-content').forEach(tab => {
+                                    tab.classList.remove('active');
+                                });
+                                document.querySelectorAll('.tab').forEach(tab => {
+                                    tab.classList.remove('active');
+                                });
+                                
+                                // Afficher l'onglet sélectionné
+                                if (document.getElementById(tabId)) {
+                                    document.getElementById(tabId).classList.add('active');
+                                }
+                                
+                                // Trouver et activer le bouton d'onglet correspondant
+                                const tabButtons = document.querySelectorAll('.tab');
+                                tabButtons.forEach(function(btn) {
+                                    if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(tabId)) {
+                                        btn.classList.add('active');
+                                    }
+                                });
+                            }
+                            
+                            invalidFields.push(field.name || field.id);
+                        } else {
+                            field.style.borderColor = '';
+                        }
+                    });
+                    
+                    // Vérifier aussi les champs email pour le format
+                    const emailFields = form.querySelectorAll('input[type="email"]');
+                    emailFields.forEach(function(field) {
+                        if (field.value && !field.validity.valid) {
+                            isValid = false;
+                            field.style.borderColor = '#dc3545';
+                            if (!firstInvalidField) {
+                                firstInvalidField = field;
+                            }
+                        }
+                    });
+                    
+                    if (!isValid) {
+                        console.log('Champs invalides:', invalidFields);
+                        
+                        // Attendre un peu pour que l'onglet s'active si nécessaire
+                        setTimeout(function() {
+                            if (firstInvalidField) {
+                                firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                firstInvalidField.focus();
+                            }
+                        }, 300);
+                        
+                        alert('Veuillez remplir tous les champs obligatoires (marqués avec *).\nChamps manquants : ' + invalidFields.join(', '));
+                        return false;
+                    }
+                    
+                    // Si valide, afficher un indicateur de chargement et soumettre
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Enregistrement en cours...';
+                    
+                    console.log('Formulaire valide, soumission...');
+                    
+                    // Soumettre le formulaire manuellement
+                    form.submit();
+                    return true;
+                });
+                
+                // S'assurer que le formulaire peut être soumis même en cas de problème JavaScript
+                console.log('Gestionnaire de soumission ajouté avec succès');
+            } else {
+                console.error('Formulaire ou bouton submit introuvable!');
+                console.error('Form:', form);
+                console.error('SubmitBtn:', submitBtn);
+            }
+            
+        });
+    </script>
+</body>
+</html>
+

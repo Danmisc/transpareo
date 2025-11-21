@@ -1,0 +1,412 @@
+{% extends 'core/admin/base_admin.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block page_title %}Vérifications - Identité{% endblock %}
+
+{% block content %}
+<div class="admin-page-content">
+                <div class="page-header">
+            <div>
+                <h2>Vérifications - Identité</h2>
+                <p class="page-subtitle">Gérer les demandes de vérification d'identité</p>
+            </div>
+            <div class="header-stats">
+                {% if total_pending > 0 %}
+                <span class="badge-alert">{{ total_pending }} en attente</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Filtres -->
+        <div class="filters-section">
+            <form method="get" class="filter-form">
+                <select name="statut" class="status-filter">
+                    <option value="en_attente" {% if statut_filter == 'en_attente' %}selected{% endif %}>En attente</option>
+                    <option value="approuve" {% if statut_filter == 'approuve' %}selected{% endif %}>Approuvé</option>
+                    <option value="refuse" {% if statut_filter == 'refuse' %}selected{% endif %}>Refusé</option>
+                    <option value="all" {% if statut_filter == 'all' %}selected{% endif %}>Tous</option>
+                </select>
+                <button type="submit" class="btn-filter">Filtrer</button>
+            </form>
+        </div>
+
+        <!-- Liste des demandes -->
+        <div class="requests-list">
+            {% for request in requests %}
+            <div class="request-card">
+                <div class="request-header">
+                    <div class="user-info">
+                        {% if request.user.avatar %}
+                            <img src="{{ request.user.avatar.url }}" alt="{{ request.user.username }}" class="user-avatar">
+                        {% else %}
+                            <div class="user-avatar-placeholder">{{ request.user.username|first|upper }}</div>
+                        {% endif %}
+                        <div>
+                            <div class="user-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+                            <div class="user-email">{{ request.user.email }}</div>
+                            <a href="{% url 'admin-user-detail' request.user.id %}" class="user-link">Voir le profil</a>
+                        </div>
+                    </div>
+                    <div class="request-status">
+                        <span class="status-badge status-{{ request.statut }}">{{ request.get_statut_display }}</span>
+                        <div class="request-date">Demandé le {{ request.created_at|date:"d/m/Y à H:i" }}</div>
+                    </div>
+                </div>
+
+                <div class="request-documents">
+                    <h4>Documents fournis:</h4>
+                    <div class="documents-grid">
+                        {% if request.piece_identite_recto %}
+                        <div class="document-item">
+                            <a href="{{ request.piece_identite_recto.url }}" target="_blank" class="document-link">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                                Pièce d'identité - Recto
+                            </a>
+                        </div>
+                        {% endif %}
+                        {% if request.piece_identite_verso %}
+                        <div class="document-item">
+                            <a href="{{ request.piece_identite_verso.url }}" target="_blank" class="document-link">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                                Pièce d'identité - Verso
+                            </a>
+                        </div>
+                        {% endif %}
+                        {% if request.selfie %}
+                        <div class="document-item">
+                            <a href="{{ request.selfie.url }}" target="_blank" class="document-link">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                    <circle cx="12" cy="13" r="4"></circle>
+                                </svg>
+                                Selfie avec pièce d'identité
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if request.message %}
+                <div class="request-message">
+                    <strong>Message de l'utilisateur:</strong>
+                    <p>{{ request.message }}</p>
+                </div>
+                {% endif %}
+
+                {% if request.statut == 'en_attente' %}
+                <div class="request-actions">
+                    <form method="post" action="{% url 'admin-approve-verification' request.id %}" class="action-form-inline" onsubmit="return confirm('Approuver cette vérification d\'identité ?');">
+                        {% csrf_token %}
+                        <textarea name="commentaire" placeholder="Commentaire admin (optionnel)" rows="2" style="width: 100%; margin-bottom: 8px;"></textarea>
+                        <button type="submit" class="btn-action btn-approve">Approuver</button>
+                    </form>
+                    <form method="post" action="{% url 'admin-reject-verification' request.id %}" class="action-form-inline">
+                        {% csrf_token %}
+                        <textarea name="raison" placeholder="Raison du refus (requis)" rows="3" required style="width: 100%; margin-bottom: 8px;"></textarea>
+                        <button type="submit" class="btn-action btn-reject">Refuser</button>
+                    </form>
+                </div>
+                {% else %}
+                <div class="request-processed">
+                    {% if request.traite_par %}
+                    <p><strong>Traité par:</strong> {{ request.traite_par.username }} le {{ request.traite_le|date:"d/m/Y à H:i" }}</p>
+                    {% endif %}
+                    {% if request.commentaire_admin %}
+                    <p><strong>Commentaire:</strong> {{ request.commentaire_admin }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <p>Aucune demande de vérification d'identité</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if requests.has_other_pages %}
+        <div class="pagination">
+            {% if requests.has_previous %}
+                <a href="?page={{ requests.previous_page_number }}{% if statut_filter != 'all' %}&statut={{ statut_filter }}{% endif %}" class="page-link">Précédent</a>
+            {% endif %}
+            <span class="page-info">Page {{ requests.number }} sur {{ requests.paginator.num_pages }}</span>
+            {% if requests.has_next %}
+                <a href="?page={{ requests.next_page_number }}{% if statut_filter != 'all' %}&statut={{ statut_filter }}{% endif %}" class="page-link">Suivant</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .badge-alert {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 16px;
+        background: #dc3545;
+        color: white;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .requests-list {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .request-card {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .request-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #e5e5e5;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .user-avatar, .user-avatar-placeholder {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .user-avatar-placeholder {
+        background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 24px;
+    }
+
+    .user-name {
+        font-weight: 600;
+        color: #1a1a1a;
+        font-size: 18px;
+    }
+
+    .user-email {
+        font-size: 14px;
+        color: #666;
+        margin: 4px 0;
+    }
+
+    .user-link {
+        font-size: 13px;
+        color: #D3580B;
+        text-decoration: none;
+    }
+
+    .user-link:hover {
+        text-decoration: underline;
+    }
+
+    .request-status {
+        text-align: right;
+    }
+
+    .status-badge {
+        padding: 6px 16px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-block;
+        margin-bottom: 8px;
+    }
+
+    .status-badge.status-en_attente {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .status-badge.status-approuve {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-badge.status-refuse {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .request-date {
+        font-size: 12px;
+        color: #666;
+    }
+
+    .request-documents {
+        margin-bottom: 20px;
+    }
+
+    .request-documents h4 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+        margin: 0 0 16px 0;
+    }
+
+    .documents-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+    }
+
+    .document-item {
+        background: #fafafa;
+        padding: 16px;
+        border-radius: 8px;
+        border: 1px solid #e5e5e5;
+    }
+
+    .document-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        color: #333;
+        font-weight: 500;
+    }
+
+    .document-link:hover {
+        color: #D3580B;
+    }
+
+    .document-link svg {
+        color: #D3580B;
+    }
+
+    .request-message {
+        background: #f0f9ff;
+        padding: 16px;
+        border-left: 4px solid #17a2b8;
+        border-radius: 6px;
+        margin-bottom: 20px;
+    }
+
+    .request-message strong {
+        display: block;
+        margin-bottom: 8px;
+        color: #0c5460;
+    }
+
+    .request-message p {
+        margin: 0;
+        color: #0c5460;
+    }
+
+    .request-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .action-form-inline {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .btn-action {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-approve {
+        background: #28a745;
+        color: white;
+    }
+
+    .btn-approve:hover {
+        background: #218838;
+    }
+
+    .btn-reject {
+        background: #dc3545;
+        color: white;
+    }
+
+    .btn-reject:hover {
+        background: #c82333;
+    }
+
+    .request-processed {
+        padding: 16px;
+        background: #d4edda;
+        border-left: 4px solid #28a745;
+        border-radius: 6px;
+        margin-top: 20px;
+    }
+
+    .request-processed p {
+        margin: 8px 0;
+        color: #155724;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #999;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 16px;
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .page-link {
+        padding: 8px 16px;
+        border-radius: 6px;
+        text-decoration: none;
+        color: #D3580B;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .page-link:hover {
+        background: #f5f5f5;
+    }
+
+    .page-info {
+        font-size: 14px;
+        color: #666;
+    }
+</style>
+{% endblock %}
+

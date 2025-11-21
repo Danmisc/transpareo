@@ -1,0 +1,39 @@
+{% load static %}
+{% load humanize %}
+<a href="/profile/{{ user.id }}/" class="search-result-card">
+    <div style="display: flex; gap: 16px; align-items: flex-start;">
+        {% if user.avatar %}
+        <img src="{{ user.avatar.url }}" alt="{{ user.get_full_name|default:user.username }}" 
+             style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover;">
+        {% else %}
+        <div style="width: 64px; height: 64px; border-radius: 50%; background: #D3580B; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 24px;">
+            {{ user.get_full_name|default:user.username|first|upper }}
+        </div>
+        {% endif %}
+        <div style="flex: 1;">
+            <h3 style="margin: 0 0 4px 0; font-size: 18px; font-weight: 600; color: #111827;">
+                {{ user.get_full_name|default:user.username }}
+                {% if user.identity_verified or user.proprietaire_verified %}
+                <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; background: rgba(211, 88, 11, 0.1); color: #D3580B; border-radius: 12px; font-size: 11px; font-weight: 600; margin-left: 8px;">✓ Vérifié</span>
+                {% endif %}
+            </h3>
+            {% if user.profession %}
+            <p style="margin: 0 0 4px 0; font-size: 14px; color: #6B7280;">
+                {{ user.profession }}{% if user.employeur %} chez {{ user.employeur }}{% endif %}
+            </p>
+            {% endif %}
+            {% if user.ville %}
+            <p style="margin: 0 0 8px 0; font-size: 13px; color: #6B7280;">
+                📍 {{ user.ville }}
+            </p>
+            {% endif %}
+            <div style="display: flex; gap: 16px; font-size: 13px; color: #6B7280;">
+                {% if user.connections_count %}
+                <span>{{ user.connections_count }} connexion{{ user.connections_count|pluralize }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</a>
+
+

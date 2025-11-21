@@ -1,0 +1,158 @@
+{% extends 'core/admin/base_admin.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block page_title %}Ticket #{{ ticket.ticket_id }}{% endblock %}
+
+{% block content %}
+<div class="ticket-detail-page">
+    <!-- Header -->
+    <div class="ticket-detail-header">
+        <div class="header-left">
+            <h1 class="page-title-main">Ticket #{{ ticket.ticket_id }}</h1>
+            <p class="page-subtitle">{{ ticket.title }}</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'admin-support-tickets' %}" class="btn-secondary">Retour à la liste</a>
+        </div>
+    </div>
+
+    <!-- Ticket Info -->
+    <div class="ticket-info-card">
+        <div class="ticket-info-grid">
+            <div class="info-item">
+                <label>Utilisateur</label>
+                <a href="{% url 'admin-user-detail' ticket.user.id %}" class="user-link">
+                    {% if ticket.user.profile.avatar %}
+                    <img src="{{ ticket.user.profile.avatar.url }}" alt="{{ ticket.user.username }}" class="user-avatar-small">
+                    {% else %}
+                    <div class="user-avatar-small-initial">{{ ticket.user.username|first|upper }}</div>
+                    {% endif %}
+                    {{ ticket.user.get_full_name|default:ticket.user.username }}
+                </a>
+            </div>
+            <div class="info-item">
+                <label>Catégorie</label>
+                <span class="category-badge category-{{ ticket.category }}">{{ ticket.get_category_display }}</span>
+            </div>
+            <div class="info-item">
+                <label>Priorité</label>
+                <span class="priority-badge priority-{{ ticket.priority }}">{{ ticket.get_priority_display }}</span>
+            </div>
+            <div class="info-item">
+                <label>Statut</label>
+                <select id="ticket-status" class="status-select" onchange="updateTicketStatus('{{ ticket.ticket_id }}', this.value)">
+                    <option value="open" {% if ticket.status == 'open' %}selected{% endif %}>Ouvert</option>
+                    <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>En cours</option>
+                    <option value="resolved" {% if ticket.status == 'resolved' %}selected{% endif %}>Résolu</option>
+                    <option value="closed" {% if ticket.status == 'closed' %}selected{% endif %}>Fermé</option>
+                </select>
+            </div>
+            <div class="info-item">
+                <label>Assigné à</label>
+                <select id="ticket-assigned" class="assign-select" onchange="assignTicket('{{ ticket.ticket_id }}', this.value)">
+                    <option value="">Non assigné</option>
+                    {% for admin in admins %}
+                    <option value="{{ admin.id }}" {% if ticket.assigned_to == admin %}selected{% endif %}>{{ admin.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="info-item">
+                <label>Date d'ouverture</label>
+                <span>{{ ticket.created_at|date:"d/m/Y H:i" }}</span>
+            </div>
+            {% if ticket.last_reply_at %}
+            <div class="info-item">
+                <label>Dernière réponse</label>
+                <span>{{ ticket.last_reply_at|date:"d/m/Y H:i" }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Description -->
+    <div class="ticket-description-card">
+        <h3>Description</h3>
+        <div class="ticket-description">{{ ticket.description|linebreaks }}</div>
+    </div>
+
+    <!-- Fil de conversation -->
+    <div class="ticket-conversation">
+        <h3>Conversation</h3>
+        <div class="conversation-thread">
+            {% for reply in replies %}
+            <div class="conversation-message {% if reply.is_admin_reply %}message-admin{% else %}message-user{% endif %}">
+                <div class="message-header">
+                    <div class="message-author">
+                        {% if reply.author.profile.avatar %}
+                        <img src="{{ reply.author.profile.avatar.url }}" alt="{{ reply.author.username }}" class="user-avatar-small">
+                        {% else %}
+                        <div class="user-avatar-small-initial">{{ reply.author.username|first|upper }}</div>
+                        {% endif %}
+                        <span class="author-name">{{ reply.author.get_full_name|default:reply.author.username }}</span>
+                        {% if reply.is_admin_reply %}
+                        <span class="admin-badge">Admin</span>
+                        {% endif %}
+                    </div>
+                    <span class="message-date">{{ reply.created_at|date:"d/m/Y H:i" }}</span>
+                </div>
+                <div class="message-content">{{ reply.content|linebreaks }}</div>
+            </div>
+            {% empty %}
+            <div class="empty-conversation">
+                <p>Aucune réponse pour l'instant</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Zone de réponse -->
+    <div class="ticket-reply-section">
+        <h3>Répondre au ticket</h3>
+        <form id="ticket-reply-form" method="POST" action="{% url 'admin-support-ticket-reply' ticket.ticket_id %}">
+            {% csrf_token %}
+            <div class="reply-controls">
+                <div class="template-selector">
+                    <label for="reply-template">Template de réponse</label>
+                    <select id="reply-template" class="template-select" onchange="loadTemplate(this.value)">
+                        <option value="">Choisir un template...</option>
+                        {% for template in reply_templates %}
+                        <option value="{{ template.id }}">{{ template.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <textarea id="reply-content" name="content" class="reply-textarea" rows="8" placeholder="Tapez votre réponse..."></textarea>
+            <div class="reply-actions">
+                <button type="submit" class="btn-primary">Envoyer la réponse</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Styles -->
+<link rel="stylesheet" href="{% static 'core/admin/support-tickets.css' %}">
+
+<!-- JavaScript -->
+<script src="{% static 'core/admin/support-tickets.js' %}"></script>
+
+<script>
+    const ticketId = '{{ ticket.ticket_id }}';
+    const updateStatusUrl = '{% url "admin-support-ticket-update-status" ticket.ticket_id %}';
+    const replyUrl = '{% url "admin-support-ticket-reply" ticket.ticket_id %}';
+    const assignUrl = '{% url "admin-support-ticket-assign" ticket.ticket_id %}';
+    const csrfToken = '{{ csrf_token }}';
+    const templates = {
+        {% for template in reply_templates %}
+        {{ template.id }}: {{ template.content|escapejs }},
+        {% endfor %}
+    };
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        initTicketDetail();
+    });
+</script>
+{% endblock %}
+

@@ -1,0 +1,41 @@
+{% load static %}
+{% load humanize %}
+
+<div class="card" data-quick-actions='[{"icon": "👁️", "label": "Voir le groupe", "url": "/connect/groups/{{ group.id }}/"}, {"icon": "➕", "label": "Rejoindre", "action": "joinGroup"}]'>
+    <div style="display: flex; align-items: start; gap: var(--space-4);">
+        {% if group.cover_image %}
+            <img src="{{ group.cover_image.url }}" alt="{{ group.name }}" 
+                 style="width: 80px; height: 80px; border-radius: var(--radius-lg); object-fit: cover;">
+        {% else %}
+            <div style="width: 80px; height: 80px; border-radius: var(--radius-lg); background: var(--color-accent-light); display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+                {{ group.icon|default:"👥" }}
+            </div>
+        {% endif %}
+        
+        <div style="flex: 1;">
+            <h3 style="font-size: var(--font-size-lg); font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-2);">
+                <a href="{% url 'connect-group-detail' group.id %}" style="text-decoration: none; color: inherit;">
+                    {{ group.name }}
+                </a>
+            </h3>
+            
+            {% if group.description %}
+                <p style="color: var(--color-text-secondary); line-height: var(--line-height-normal); margin-bottom: var(--space-3);">
+                    {{ group.description|truncatechars:150 }}
+                </p>
+            {% endif %}
+            
+            <div style="display: flex; gap: var(--space-4); font-size: var(--font-size-sm); color: var(--color-text-secondary);">
+                <span>👥 {{ group.get_members_count }} membres</span>
+                <span>📝 {{ group.get_posts_count }} posts</span>
+            </div>
+            
+            {% if group.tags %}
+                <div style="margin-top: var(--space-3);">
+                    {% include "core/components/tags.html" with tags=group.tags_list %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+

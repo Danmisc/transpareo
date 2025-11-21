@@ -1,0 +1,351 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Laisser un avis - {{ proprietaire.get_full_name|default:proprietaire.username }}{% endblock %}
+
+{% block content %}
+<div class="add-review-page">
+    <div class="container">
+        <div class="card">
+            <h1>Laisser un avis</h1>
+            <p class="subtitle">Vous laissez un avis sur le profil Connect de <strong>{{ proprietaire.get_full_name|default:proprietaire.username }}</strong></p>
+            
+            <form method="post" class="review-form">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="logement_id">Choisir le logement concerné *</label>
+                    <select name="logement_id" id="logement_id" required class="form-control">
+                        <option value="">Sélectionner un logement...</option>
+                        {% for bail in baux_termines %}
+                        {% if bail.logement %}
+                        <option value="{{ bail.logement.id }}">
+                            {{ bail.logement.titre }} - {{ bail.logement.adresse }}
+                            (Bail du {{ bail.date_debut|date:"d/m/Y" }} au {% if bail.date_fin %}{{ bail.date_fin|date:"d/m/Y" }}{% else %}...{% endif %})
+                        </option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                    <small class="form-help">Choisissez le logement pour lequel vous souhaitez laisser un avis. Le justificatif du bail sera utilisé automatiquement.</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Note globale *</label>
+                    <div class="star-rating" id="star-rating">
+                        <span class="star" data-rating="1">★</span>
+                        <span class="star" data-rating="2">★</span>
+                        <span class="star" data-rating="3">★</span>
+                        <span class="star" data-rating="4">★</span>
+                        <span class="star" data-rating="5">★</span>
+                    </div>
+                    <input type="hidden" name="note" id="note" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="titre">Titre de l'avis *</label>
+                    <input type="text" name="titre" id="titre" required class="form-control" placeholder="Ex: Excellent propriétaire, très réactif">
+                </div>
+                
+                <div class="form-group">
+                    <label for="commentaire">Commentaire détaillé *</label>
+                    <textarea name="commentaire" id="commentaire" required class="form-control" rows="6" placeholder="Décrivez votre expérience avec ce propriétaire..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Critères détaillés (optionnel)</label>
+                    <div class="criteria-grid">
+                        <div class="criteria-item">
+                            <label for="note_proprete">Propreté</label>
+                            <select name="note_proprete" id="note_proprete" class="form-control">
+                                <option value="">--</option>
+                                <option value="1">1★</option>
+                                <option value="2">2★</option>
+                                <option value="3">3★</option>
+                                <option value="4">4★</option>
+                                <option value="5">5★</option>
+                            </select>
+                        </div>
+                        <div class="criteria-item">
+                            <label for="note_equipements">Équipements</label>
+                            <select name="note_equipements" id="note_equipements" class="form-control">
+                                <option value="">--</option>
+                                <option value="1">1★</option>
+                                <option value="2">2★</option>
+                                <option value="3">3★</option>
+                                <option value="4">4★</option>
+                                <option value="5">5★</option>
+                            </select>
+                        </div>
+                        <div class="criteria-item">
+                            <label for="note_localisation">Localisation</label>
+                            <select name="note_localisation" id="note_localisation" class="form-control">
+                                <option value="">--</option>
+                                <option value="1">1★</option>
+                                <option value="2">2★</option>
+                                <option value="3">3★</option>
+                                <option value="4">4★</option>
+                                <option value="5">5★</option>
+                            </select>
+                        </div>
+                        <div class="criteria-item">
+                            <label for="note_bailleur">Relation avec le propriétaire</label>
+                            <select name="note_bailleur" id="note_bailleur" class="form-control">
+                                <option value="">--</option>
+                                <option value="1">1★</option>
+                                <option value="2">2★</option>
+                                <option value="3">3★</option>
+                                <option value="4">4★</option>
+                                <option value="5">5★</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <a href="{% url 'profile-user' proprietaire.id %}" class="btn-secondary">Annuler</a>
+                    <button type="submit" class="btn-primary">Publier l'avis</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .add-review-page {
+        min-height: calc(100vh - 70px);
+        background: #f5f7fa;
+        padding: 40px 20px;
+    }
+
+    .container {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .card {
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    h1 {
+        font-size: 28px;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .subtitle {
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 14px;
+    }
+
+    .subtitle strong {
+        color: #D3580B;
+        font-weight: 600;
+    }
+
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #333;
+        font-size: 14px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #D3580B;
+        box-shadow: 0 0 0 3px rgba(211, 88, 11, 0.1);
+    }
+
+    select.form-control {
+        cursor: pointer;
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 120px;
+        font-family: inherit;
+    }
+
+    .form-help {
+        display: block;
+        margin-top: 6px;
+        font-size: 12px;
+        color: #666;
+        font-style: italic;
+    }
+
+    .star-rating {
+        display: flex;
+        gap: 8px;
+        font-size: 32px;
+        margin-bottom: 15px;
+    }
+
+    .star {
+        cursor: pointer;
+        color: #ddd;
+        transition: color 0.2s;
+        user-select: none;
+    }
+
+    .star:hover,
+    .star.active {
+        color: #FFC107;
+    }
+
+    .criteria-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-top: 12px;
+    }
+
+    .criteria-item label {
+        font-size: 13px;
+        margin-bottom: 6px;
+    }
+
+    .criteria-item select {
+        width: 100%;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .btn-primary {
+        background: #D3580B;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #c4510a;
+    }
+
+    .btn-secondary {
+        background: white;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+
+    .btn-secondary:hover {
+        background: #f5f5f5;
+        border-color: #ccc;
+    }
+
+    @media (max-width: 768px) {
+        .add-review-page {
+            padding: 20px 12px;
+        }
+
+        .card {
+            padding: 24px;
+        }
+
+        .criteria-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn-primary,
+        .btn-secondary {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+
+<script>
+    // Gestion du système d'étoiles
+    const stars = document.querySelectorAll('.star');
+    const noteInput = document.getElementById('note');
+
+    stars.forEach((star, index) => {
+        star.addEventListener('click', () => {
+            const rating = index + 1;
+            noteInput.value = rating;
+            
+            stars.forEach((s, i) => {
+                if (i < rating) {
+                    s.classList.add('active');
+                } else {
+                    s.classList.remove('active');
+                }
+            });
+        });
+
+        star.addEventListener('mouseenter', () => {
+            const rating = index + 1;
+            stars.forEach((s, i) => {
+                if (i < rating) {
+                    s.style.color = '#FFC107';
+                } else {
+                    s.style.color = '#ddd';
+                }
+            });
+        });
+    });
+
+    // Réinitialiser au survol de la zone
+    document.querySelector('.star-rating').addEventListener('mouseleave', () => {
+        const currentRating = parseInt(noteInput.value) || 0;
+        stars.forEach((s, i) => {
+            if (i < currentRating) {
+                s.style.color = '#FFC107';
+            } else {
+                s.style.color = '#ddd';
+            }
+        });
+    });
+
+    // Validation du formulaire
+    document.querySelector('.review-form').addEventListener('submit', function(e) {
+        if (!noteInput.value) {
+            e.preventDefault();
+            alert('Veuillez sélectionner une note en cliquant sur les étoiles.');
+            return false;
+        }
+    });
+</script>
+{% endblock %}
+

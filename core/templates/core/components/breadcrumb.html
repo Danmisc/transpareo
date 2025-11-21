@@ -1,0 +1,20 @@
+{% load static %}
+
+<nav class="breadcrumb" aria-label="Fil d'Ariane">
+    <div class="breadcrumb-item">
+        <a href="{% url 'landing-page' %}" class="breadcrumb-link">Accueil</a>
+    </div>
+    {% if breadcrumb_items %}
+        {% for item in breadcrumb_items %}
+            <span class="breadcrumb-separator" aria-hidden="true">›</span>
+            <div class="breadcrumb-item {% if forloop.last %}breadcrumb-current{% endif %}">
+                {% if not forloop.last %}
+                    <a href="{{ item.url }}" class="breadcrumb-link">{{ item.title }}</a>
+                {% else %}
+                    <span class="breadcrumb-current">{{ item.title }}</span>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% endif %}
+</nav>
+

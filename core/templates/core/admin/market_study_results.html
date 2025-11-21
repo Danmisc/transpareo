@@ -1,0 +1,210 @@
+{% extends 'core/admin/base_admin.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block page_title %}Résultats - {{ study.title }}{% endblock %}
+
+{% block content %}
+<div class="market-study-results-page">
+    <!-- Header -->
+    <div class="results-header">
+        <div class="header-left">
+            <h1 class="page-title-main">{{ study.title }}</h1>
+            <p class="page-subtitle">Analyse des réponses collectées</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'admin-market-study-export-csv' study.id %}" class="btn-secondary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Exporter CSV
+            </a>
+            <a href="{% url 'admin-market-study-export-excel' study.id %}" class="btn-secondary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                Exporter Excel
+            </a>
+        </div>
+    </div>
+
+    <!-- Vue d'ensemble -->
+    <div class="overview-section">
+        <h2 class="section-title">Vue d'ensemble</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon stat-blue">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ total_responses }}</div>
+                    <div class="stat-label">Réponses totales</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon stat-green">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ completion_rate }}%</div>
+                    <div class="stat-label">Taux de complétion</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon stat-orange">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ average_duration }} min</div>
+                    <div class="stat-label">Durée moyenne</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon stat-purple">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">{% if study.date_start %}{{ study.date_start|date:"d/m/Y" }}{% else %}N/A{% endif %}</div>
+                    <div class="stat-label">Période active</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphiques par question -->
+    <div class="questions-results-section">
+        <h2 class="section-title">Résultats par question</h2>
+        
+        {% for stat in questions_stats %}
+        <div class="question-result-card">
+            <div class="question-result-header">
+                <h3 class="question-result-title">{{ stat.question.label }}</h3>
+                <span class="question-result-type">{{ stat.question.get_question_type_display }}</span>
+            </div>
+            
+            {% if stat.question.question_type == 'single_choice' %}
+            <!-- Pie Chart ou Bar Chart pour choix unique -->
+            {% if stat.options_count %}
+            <div class="chart-container">
+                <canvas id="chart-{{ stat.question.id }}" width="400" height="200"></canvas>
+            </div>
+            {% else %}
+            <div class="empty-chart">Aucune réponse pour cette question</div>
+            {% endif %}
+            
+            {% elif stat.question.question_type == 'multiple_choice' %}
+            <!-- Bar Chart pour choix multiple -->
+            {% if stat.options_count %}
+            <div class="chart-container">
+                <canvas id="chart-{{ stat.question.id }}" width="400" height="200"></canvas>
+            </div>
+            {% else %}
+            <div class="empty-chart">Aucune réponse pour cette question</div>
+            {% endif %}
+            
+            {% elif stat.question.question_type == 'scale' %}
+            <!-- Bar Chart distribution + moyenne pour échelle -->
+            {% if stat.scale_values %}
+            <div class="scale-stats">
+                <div class="scale-average">
+                    <span class="average-label">Moyenne:</span>
+                    <span class="average-value">{{ stat.average }}</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="chart-{{ stat.question.id }}" width="400" height="200"></canvas>
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-chart">Aucune réponse pour cette question</div>
+            {% endif %}
+            
+            {% elif stat.question.question_type == 'nps' %}
+            <!-- Score NPS + répartition -->
+            <div class="nps-stats">
+                <div class="nps-score">
+                    <div class="nps-value">{{ stat.nps_score }}</div>
+                    <div class="nps-label">Score NPS</div>
+                </div>
+                <div class="nps-breakdown">
+                    <div class="nps-item nps-detractors">
+                        <span class="nps-count">{{ stat.detractors }}</span>
+                        <span class="nps-label">Détracteurs (0-6)</span>
+                    </div>
+                    <div class="nps-item nps-passives">
+                        <span class="nps-count">{{ stat.passives }}</span>
+                        <span class="nps-label">Passifs (7-8)</span>
+                    </div>
+                    <div class="nps-item nps-promoters">
+                        <span class="nps-count">{{ stat.promoters }}</span>
+                        <span class="nps-label">Promoteurs (9-10)</span>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="chart-{{ stat.question.id }}" width="400" height="200"></canvas>
+                </div>
+            </div>
+            
+            {% elif stat.question.question_type in 'text_short,text_long' %}
+            <!-- Liste réponses texte avec search/filter -->
+            <div class="text-answers-section">
+                <div class="text-answers-header">
+                    <input type="text" class="text-search-input" placeholder="Rechercher dans les réponses..." oninput="filterTextAnswers(this, {{ stat.question.id }})">
+                </div>
+                <div class="text-answers-list" id="text-answers-{{ stat.question.id }}">
+                    {% for answer in stat.text_answers %}
+                    <div class="text-answer-item">
+                        <p class="text-answer-content">{{ answer }}</p>
+                    </div>
+                    {% empty %}
+                    <div class="empty-text-answers">Aucune réponse texte</div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <p>Aucune question dans cette étude</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+<!-- Styles -->
+<link rel="stylesheet" href="{% static 'core/admin/market-studies.css' %}">
+<link rel="stylesheet" href="{% static 'core/admin/market-study-results.css' %}">
+
+<!-- JavaScript -->
+<script src="{% static 'core/admin/market-study-results.js' %}"></script>
+
+<script>
+    const questionsStats = {{ questions_stats_json|safe }};
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        initCharts();
+    });
+</script>
+{% endblock %}
+

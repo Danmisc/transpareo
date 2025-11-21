@@ -136,7 +136,7 @@ class LoginForm(AuthenticationForm):
         label="Email",
         widget=forms.EmailInput(attrs={
             'class': 'form-control',
-            'placeholder': 'votre.email@exemple.com',
+            'placeholder': 'votre@email.com',
             'autocomplete': 'email',
             'autofocus': True
         })
@@ -229,19 +229,48 @@ class PasswordResetForm(forms.Form):
 
 
 class ProfileUpdateForm(forms.ModelForm):
-    """Formulaire de mise à jour du profil"""
+    """Formulaire de mise à jour du profil complet"""
+    
+    # Définir explicitement les BooleanField pour qu'ils soient optionnels
+    is_proprietaire = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+    is_locataire = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+    newsletter_subscribed = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+    notifications_enabled = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+    profil_public = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+    afficher_statut_online = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+    afficher_derniere_visite = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
     
     class Meta:
         model = User
-        fields = ['username', 'email', 'phone_number', 'bio', 'date_of_birth', 
-                  'avatar', 'newsletter_subscribed', 'notifications_enabled']
+        fields = [
+            'first_name', 'last_name', 'username', 'email', 'phone_number', 
+            'bio', 'date_of_birth', 'avatar', 'cover_image',
+            'ville', 'region', 'adresse_complete',
+            'profession', 'employeur', 'situation_professionnelle',
+            'linkedin_url', 'facebook_url', 'instagram_url',
+            'heures_disponibilite',
+            'is_proprietaire', 'is_locataire',
+            'newsletter_subscribed', 'notifications_enabled',
+            'profil_public', 'afficher_statut_online', 'afficher_derniere_visite'
+        ]
         widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
             'username': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
             'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
-            'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 5, 'maxlength': 500}),
             'date_of_birth': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'avatar': forms.FileInput(attrs={'class': 'form-control'}),
-            'newsletter_subscribed': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'notifications_enabled': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'avatar': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
+            'cover_image': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
+            'ville': forms.TextInput(attrs={'class': 'form-control'}),
+            'region': forms.TextInput(attrs={'class': 'form-control'}),
+            'adresse_complete': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'profession': forms.TextInput(attrs={'class': 'form-control'}),
+            'employeur': forms.TextInput(attrs={'class': 'form-control'}),
+            'situation_professionnelle': forms.Select(attrs={'class': 'form-control'}),
+            'linkedin_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://linkedin.com/in/...'}),
+            'facebook_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://facebook.com/...'}),
+            'instagram_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://instagram.com/...'}),
+            'heures_disponibilite': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: Disponible en soirée et WE'}),
         }

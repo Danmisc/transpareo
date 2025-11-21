@@ -1,0 +1,414 @@
+{% extends 'core/auth_base.html' %}
+{% load socialaccount %}
+
+{% block title %}Inscription - Transpareo{% endblock %}
+
+{% block extra_css %}
+<style>
+    .password-strength {
+        margin-top: 6px;
+        height: 3px;
+        background: #e5e5e5;
+        border-radius: 2px;
+        overflow: hidden;
+        display: none;
+    }
+    
+    .password-strength-bar {
+        height: 100%;
+        width: 0%;
+        transition: all 0.3s;
+        border-radius: 2px;
+    }
+    
+    .strength-weak { background: #dc3545; width: 33%; }
+    .strength-medium { background: #ffc107; width: 66%; }
+    .strength-strong { background: #28a745; width: 100%; }
+    
+    .password-requirements {
+        margin-top: 12px;
+        font-size: 12px;
+        color: #666;
+        line-height: 1.6;
+    }
+    
+    .requirement {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 4px;
+        transition: color 0.2s;
+        font-size: 12px;
+    }
+    
+    .requirement.met {
+        color: #28a745;
+    }
+    
+    .requirement-icon {
+        width: 14px;
+        height: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        flex-shrink: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-form">
+    <h1>Rejoignez Transpareo</h1>
+    <p class="subtitle">Créez votre compte et trouvez votre logement idéal</p>
+
+    <form method="post" novalidate id="signup-form">
+        {% csrf_token %}
+        
+        <!-- Email -->
+        <div class="form-group">
+            <label for="{{ form.email.id_for_label }}">Email</label>
+            <div class="input-wrapper">
+                {{ form.email }}
+            </div>
+            <div class="real-time-validation" id="email-validation"></div>
+            {% if form.email.errors %}
+                <ul class="errorlist">
+                    {% for error in form.email.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        
+        <!-- Username -->
+        <div class="form-group">
+            <label for="{{ form.username.id_for_label }}">Nom d'utilisateur</label>
+            <div class="input-wrapper">
+                {{ form.username }}
+            </div>
+            <div class="real-time-validation" id="username-validation"></div>
+            {% if form.username.errors %}
+                <ul class="errorlist">
+                    {% for error in form.username.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        
+        <!-- Phone (optional) -->
+        <div class="form-group">
+            <label for="{{ form.phone_number.id_for_label }}">Téléphone <span style="color: #999; font-weight: normal; font-size: 13px;">(optionnel)</span></label>
+            <div class="input-wrapper">
+                {{ form.phone_number }}
+            </div>
+            {% if form.phone_number.errors %}
+                <ul class="errorlist">
+                    {% for error in form.phone_number.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        
+        <!-- Password -->
+        <div class="form-group">
+            <label for="{{ form.password1.id_for_label }}">Mot de passe</label>
+            <div class="input-wrapper">
+                {{ form.password1 }}
+                <button type="button" class="password-toggle" onclick="togglePassword('{{ form.password1.id_for_label }}')">
+                    <svg id="eye-{{ form.password1.id_for_label }}" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </button>
+            </div>
+            <div class="password-strength">
+                <div class="password-strength-bar"></div>
+            </div>
+            <div class="password-requirements" id="password-requirements">
+                <div class="requirement" id="req-length">
+                    <span class="requirement-icon">○</span>
+                    <span>Minimum 8 caractères</span>
+                </div>
+                <div class="requirement" id="req-uppercase">
+                    <span class="requirement-icon">○</span>
+                    <span>Au moins une majuscule</span>
+                </div>
+                <div class="requirement" id="req-lowercase">
+                    <span class="requirement-icon">○</span>
+                    <span>Au moins une minuscule</span>
+                </div>
+                <div class="requirement" id="req-number">
+                    <span class="requirement-icon">○</span>
+                    <span>Au moins un chiffre</span>
+                </div>
+                <div class="requirement" id="req-special">
+                    <span class="requirement-icon">○</span>
+                    <span>Au moins un caractère spécial</span>
+                </div>
+            </div>
+            {% if form.password1.errors %}
+                <ul class="errorlist">
+                    {% for error in form.password1.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        
+        <!-- Confirm Password -->
+        <div class="form-group">
+            <label for="{{ form.password2.id_for_label }}">Confirmer le mot de passe</label>
+            <div class="input-wrapper">
+                {{ form.password2 }}
+                <button type="button" class="password-toggle" onclick="togglePassword('{{ form.password2.id_for_label }}')">
+                    <svg id="eye-{{ form.password2.id_for_label }}" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </button>
+            </div>
+            <div class="real-time-validation" id="password-match-validation"></div>
+            {% if form.password2.errors %}
+                <ul class="errorlist">
+                    {% for error in form.password2.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        
+        <!-- Terms -->
+        <div class="form-check">
+            {{ form.terms_accepted }}
+            <label for="{{ form.terms_accepted.id_for_label }}">
+                {{ form.terms_accepted.label }}
+            </label>
+        </div>
+        {% if form.terms_accepted.errors %}
+            <ul class="errorlist">
+                {% for error in form.terms_accepted.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        
+        <!-- Newsletter -->
+        <div class="form-check">
+            {{ form.newsletter }}
+            <label for="{{ form.newsletter.id_for_label }}">
+                {{ form.newsletter.label }}
+            </label>
+        </div>
+        
+        <!-- Submit -->
+        <button type="submit" class="btn" id="submit-btn">
+            <span id="submit-text">Créer mon compte</span>
+            <div class="loading-spinner" id="loading-spinner"></div>
+        </button>
+    </form>
+
+    <div class="divider">
+        <span>ou</span>
+    </div>
+
+    <!-- Bouton Google uniquement -->
+    <div class="social-login">
+        <a href="{% provider_login_url 'google' %}" class="social-btn social-google">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+                <path d="M9 18c2.43 0 4.467-.806 5.965-2.18l-2.908-2.258c-.806.54-1.837.86-3.057.86-2.35 0-4.34-1.587-5.053-3.72H.957v2.332C2.438 15.983 5.482 18 9 18z" fill="#34A853"/>
+                <path d="M3.947 10.702c-.18-.54-.282-1.117-.282-1.702s.102-1.162.282-1.702V4.966H.957C.348 6.175 0 7.55 0 9s.348 2.825.957 4.034l2.99-2.332z" fill="#FBBC05"/>
+                <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.966L3.947 7.3C4.66 5.163 6.65 3.58 9 3.58z" fill="#EA4335"/>
+            </svg>
+            Continuer avec Google
+        </a>
+    </div>
+
+    <div class="auth-links">
+        <span style="color: #666; font-size: 13px;">Déjà un compte ? </span><a href="{% url 'login' %}">Se connecter</a>
+    </div>
+</div>
+
+<script>
+// Validation email en temps réel
+document.getElementById('{{ form.email.id_for_label }}').addEventListener('blur', function() {
+    const email = this.value.trim();
+    const validation = document.getElementById('email-validation');
+    
+    if (!email) {
+        validation.innerHTML = '';
+        return;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (emailRegex.test(email)) {
+        validation.innerHTML = '<span class="validation-success">✓ Format email valide</span>';
+    } else {
+        validation.innerHTML = '<span class="validation-error">Format email invalide</span>';
+    }
+});
+
+// Validation username en temps réel
+document.getElementById('{{ form.username.id_for_label }}').addEventListener('input', function() {
+    const username = this.value;
+    const validation = document.getElementById('username-validation');
+    
+    if (username.length === 0) {
+        validation.innerHTML = '';
+        return;
+    }
+    
+    if (username.length < 3) {
+        validation.innerHTML = '<span class="validation-error">Minimum 3 caractères</span>';
+    } else if (username.length > 150) {
+        validation.innerHTML = '<span class="validation-error">Maximum 150 caractères</span>';
+    } else {
+        validation.innerHTML = '<span class="validation-success">✓ Nom d\'utilisateur valide</span>';
+    }
+});
+
+// Validation en temps réel du mot de passe
+const passwordInput = document.getElementById('{{ form.password1.id_for_label }}');
+const confirmPasswordInput = document.getElementById('{{ form.password2.id_for_label }}');
+const strengthBar = document.querySelector('.password-strength-bar');
+const strengthContainer = document.querySelector('.password-strength');
+
+if (passwordInput) {
+    passwordInput.addEventListener('input', function() {
+        const password = this.value;
+        checkPasswordStrength(password);
+        checkPasswordMatch();
+    });
+}
+
+if (confirmPasswordInput) {
+    confirmPasswordInput.addEventListener('input', function() {
+        checkPasswordMatch();
+    });
+}
+
+function checkPasswordStrength(password) {
+    const requirements = {
+        length: password.length >= 8,
+        uppercase: /[A-Z]/.test(password),
+        lowercase: /[a-z]/.test(password),
+        number: /\d/.test(password),
+        special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    };
+    
+    // Mettre à jour les indicateurs
+    updateRequirement('req-length', requirements.length);
+    updateRequirement('req-uppercase', requirements.uppercase);
+    updateRequirement('req-lowercase', requirements.lowercase);
+    updateRequirement('req-number', requirements.number);
+    updateRequirement('req-special', requirements.special);
+    
+    // Calculer la force
+    const metCount = Object.values(requirements).filter(v => v).length;
+    const strength = metCount / 5;
+    
+    // Afficher la barre de force
+    if (password.length > 0) {
+        strengthContainer.style.display = 'block';
+        strengthBar.style.width = (strength * 100) + '%';
+        
+        strengthBar.className = 'password-strength-bar';
+        if (strength < 0.4) {
+            strengthBar.classList.add('strength-weak');
+        } else if (strength < 0.7) {
+            strengthBar.classList.add('strength-medium');
+        } else {
+            strengthBar.classList.add('strength-strong');
+        }
+    } else {
+        strengthContainer.style.display = 'none';
+    }
+}
+
+function updateRequirement(id, met) {
+    const req = document.getElementById(id);
+    if (req) {
+        const icon = req.querySelector('.requirement-icon');
+        if (met) {
+            req.classList.add('met');
+            icon.textContent = '✓';
+        } else {
+            req.classList.remove('met');
+            icon.textContent = '○';
+        }
+    }
+}
+
+function checkPasswordMatch() {
+    const password = passwordInput ? passwordInput.value : '';
+    const confirm = confirmPasswordInput ? confirmPasswordInput.value : '';
+    const validation = document.getElementById('password-match-validation');
+    
+    if (confirm.length === 0) {
+        validation.innerHTML = '';
+        return;
+    }
+    
+    if (password === confirm) {
+        validation.innerHTML = '<span class="validation-success">✓ Les mots de passe correspondent</span>';
+    } else {
+        validation.innerHTML = '<span class="validation-error">Les mots de passe ne correspondent pas</span>';
+    }
+}
+
+// Toggle password visibility
+function togglePassword(inputId) {
+    const input = document.getElementById(inputId);
+    const eye = document.getElementById('eye-' + inputId);
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        eye.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+    } else {
+        input.type = 'password';
+        eye.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+    }
+}
+
+// Loading state on form submit
+document.getElementById('signup-form').addEventListener('submit', function(e) {
+    const email = document.getElementById('{{ form.email.id_for_label }}').value.trim();
+    const username = document.getElementById('{{ form.username.id_for_label }}').value.trim();
+    const password = document.getElementById('{{ form.password1.id_for_label }}').value;
+    const confirmPassword = document.getElementById('{{ form.password2.id_for_label }}').value;
+    
+    // Validation côté client
+    if (!email || !username || !password || !confirmPassword) {
+        e.preventDefault();
+        alert('Veuillez remplir tous les champs obligatoires.');
+        return;
+    }
+    
+    // Validation format email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        e.preventDefault();
+        alert('Format email invalide.');
+        return;
+    }
+    
+    // Validation correspondance des mots de passe
+    if (password !== confirmPassword) {
+        e.preventDefault();
+        alert('Les mots de passe ne correspondent pas.');
+        return;
+    }
+    
+    const btn = document.getElementById('submit-btn');
+    const text = document.getElementById('submit-text');
+    const spinner = document.getElementById('loading-spinner');
+    
+    btn.disabled = true;
+    text.style.display = 'none';
+    spinner.style.display = 'inline-block';
+});
+</script>
+{% endblock %}

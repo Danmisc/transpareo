@@ -1,0 +1,1220 @@
+{% extends 'core/admin/base_admin.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block page_title %}Business Plan Complet{% endblock %}
+
+{% block content %}
+<div class="business-plan-page">
+    <!-- Header Actions -->
+    <div class="plan-header">
+        <div class="header-left">
+            <h1 class="page-title-main">Business Plan Complet</h1>
+            <p class="page-subtitle">{{ plan.nom_entreprise }} - Version {{ plan.version }}</p>
+        </div>
+        <div class="header-actions">
+            <div class="save-indicator" id="save-indicator" style="display: none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span id="save-message">Sauvegardé</span>
+            </div>
+            <div class="actions-dropdown">
+                <button class="btn-secondary" onclick="toggleVersionsDropdown()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                    Historique versions
+                </button>
+                <div class="dropdown-menu" id="versions-dropdown">
+                    <div class="dropdown-header">10 dernières versions</div>
+                    {% for version in versions %}
+                    <a href="#" class="dropdown-item" onclick="restoreVersion({{ version.id }}); return false;">
+                        <div class="version-info">
+                            <div class="version-title">Version {{ version.version }}</div>
+                            <div class="version-date">{{ version.created_at|date:"d/m/Y H:i" }}</div>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="dropdown-item-empty">Aucune version disponible</div>
+                    {% endfor %}
+                </div>
+            </div>
+            <a href="{% url 'admin-business-plan-export-pdf' %}" class="btn-primary" target="_blank">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Exporter PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Layout with Sidebar -->
+    <div class="plan-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="plan-sidebar">
+            <nav class="sections-nav">
+                <a href="{% url 'admin-business-plan-section' 'resume-executif' %}" class="section-nav-item {% if active_section == 'resume-executif' %}active{% endif %}">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    1. Résumé exécutif
+                </a>
+                <a href="{% url 'admin-business-plan-section' 'presentation-entreprise' %}" class="section-nav-item {% if active_section == 'presentation-entreprise' %}active{% endif %}">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    2. Présentation entreprise
+                </a>
+                <a href="{% url 'admin-business-plan-section' 'etude-marche' %}" class="section-nav-item {% if active_section == 'etude-marche' %}active{% endif %}">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    3. Étude de marché
+                </a>
+                <a href="{% url 'admin-business-plan-section' 'strategie-marketing' %}" class="section-nav-item {% if active_section == 'strategie-marketing' %}active{% endif %}">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    4. Stratégie marketing
+                </a>
+                <a href="{% url 'admin-business-plan-section' 'plan-operationnel' %}" class="section-nav-item {% if active_section == 'plan-operationnel' %}active{% endif %}">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="3" y1="9" x2="21" y2="9"></line>
+                        <line x1="9" y1="21" x2="9" y2="9"></line>
+                    </svg>
+                    5. Plan opérationnel
+                </a>
+                <a href="{% url 'admin-business-plan-section' 'projections-financieres' %}" class="section-nav-item {% if active_section == 'projections-financieres' %}active{% endif %}">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="20" x2="12" y2="10"></line>
+                        <line x1="18" y1="20" x2="18" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="16"></line>
+                    </svg>
+                    6. Projections financières
+                </a>
+                <a href="{% url 'admin-business-plan-section' 'analyse-swot' %}" class="section-nav-item {% if active_section == 'analyse-swot' %}active{% endif %}">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="3" y1="9" x2="21" y2="9"></line>
+                        <line x1="9" y1="21" x2="9" y2="9"></line>
+                    </svg>
+                    7. Analyse SWOT
+                </a>
+                <a href="{% url 'admin-business-plan-section' 'annexes' %}" class="section-nav-item {% if active_section == 'annexes' %}active{% endif %}">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    8. Annexes
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="plan-content">
+            <!-- Section 1 - Résumé Exécutif -->
+            {% if active_section == 'resume-executif' %}
+            <div class="plan-section active" id="section-resume-executif">
+                <h2 class="section-title">1. Résumé Exécutif</h2>
+                
+                <div class="section-field">
+                    <label for="vision">Vision</label>
+                    <div class="rich-editor-wrapper">
+                        <div class="rich-toolbar">
+                            <button type="button" class="toolbar-btn" onclick="formatText('bold')" title="Gras">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path>
+                                    <path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path>
+                                </svg>
+                            </button>
+                            <button type="button" class="toolbar-btn" onclick="formatText('italic')" title="Italique">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="19" y1="4" x2="10" y2="4"></line>
+                                    <line x1="14" y1="20" x2="5" y2="20"></line>
+                                    <line x1="15" y1="4" x2="9" y2="20"></line>
+                                </svg>
+                            </button>
+                            <button type="button" class="toolbar-btn" onclick="formatText('ul')" title="Liste à puces">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                                </svg>
+                            </button>
+                            <button type="button" class="toolbar-btn" onclick="formatText('ol')" title="Liste numérotée">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="10" y1="6" x2="21" y2="6"></line>
+                                    <line x1="10" y1="12" x2="21" y2="12"></line>
+                                    <line x1="10" y1="18" x2="21" y2="18"></line>
+                                    <polyline points="3 6 4 7 3 8"></polyline>
+                                    <path d="M4 12h1v3h-1z"></path>
+                                    <path d="M4 18h1v3h-1z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div contenteditable="true" class="rich-editor" id="vision" data-field="vision" onblur="saveRichField(this)" oninput="debounceSaveRich(this)">{{ plan.vision|default:"" }}</div>
+                    </div>
+                </div>
+
+                <div class="section-field">
+                    <label for="mission">Mission</label>
+                    <div class="rich-editor-wrapper">
+                        <div class="rich-toolbar">
+                            <button type="button" class="toolbar-btn" onclick="formatText('bold')" title="Gras">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path>
+                                    <path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path>
+                                </svg>
+                            </button>
+                            <button type="button" class="toolbar-btn" onclick="formatText('italic')" title="Italique">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="19" y1="4" x2="10" y2="4"></line>
+                                    <line x1="14" y1="20" x2="5" y2="20"></line>
+                                    <line x1="15" y1="4" x2="9" y2="20"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <div contenteditable="true" class="rich-editor" id="mission" data-field="mission" onblur="saveRichField(this)" oninput="debounceSaveRich(this)">{{ plan.mission|default:"" }}</div>
+                    </div>
+                </div>
+
+                <div class="section-field">
+                    <label>Objectifs 1 an</label>
+                    <div class="editable-list" id="objectifs-1-an" data-field="objectifs_1_an">
+                        {% for obj in plan.objectifs_1_an %}
+                        <div class="list-item">
+                            <input type="text" class="list-input" value="{{ obj }}" onblur="saveListField('objectifs_1_an')" oninput="debounceSaveList('objectifs_1_an')">
+                            <button type="button" class="list-remove" onclick="removeListItem(this, 'objectifs_1_an')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        {% empty %}
+                        <div class="list-item">
+                            <input type="text" class="list-input" placeholder="Nouvel objectif..." onblur="saveListField('objectifs_1_an')" oninput="debounceSaveList('objectifs_1_an')">
+                            <button type="button" class="list-remove" onclick="removeListItem(this, 'objectifs_1_an')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        {% endfor %}
+                        <button type="button" class="btn-add-item" onclick="addListItem('objectifs_1_an')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Ajouter un objectif
+                        </button>
+                    </div>
+                </div>
+
+                <div class="section-field">
+                    <label>Objectifs 3 ans</label>
+                    <div class="editable-list" id="objectifs-3-ans" data-field="objectifs_3_ans">
+                        {% for obj in plan.objectifs_3_ans %}
+                        <div class="list-item">
+                            <input type="text" class="list-input" value="{{ obj }}" onblur="saveListField('objectifs_3_ans')" oninput="debounceSaveList('objectifs_3_ans')">
+                            <button type="button" class="list-remove" onclick="removeListItem(this, 'objectifs_3_ans')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        {% empty %}
+                        <div class="list-item">
+                            <input type="text" class="list-input" placeholder="Nouvel objectif..." onblur="saveListField('objectifs_3_ans')" oninput="debounceSaveList('objectifs_3_ans')">
+                            <button type="button" class="list-remove" onclick="removeListItem(this, 'objectifs_3_ans')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        {% endfor %}
+                        <button type="button" class="btn-add-item" onclick="addListItem('objectifs_3_ans')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Ajouter un objectif
+                        </button>
+                    </div>
+                </div>
+
+                <div class="section-fields-grid">
+                    <div class="section-field">
+                        <label for="investissement_requis">Investissement requis (€)</label>
+                        <input type="number" id="investissement_requis" class="input-field" data-field="investissement_requis" value="{{ plan.investissement_requis|default:'' }}" onblur="saveField(this)" oninput="debounceSave(this)" step="0.01" min="0">
+                    </div>
+                    <div class="section-field">
+                        <label for="roi_prevu">Retour sur investissement prévu (%)</label>
+                        <input type="number" id="roi_prevu" class="input-field" data-field="roi_prevu" value="{{ plan.roi_prevu|default:'' }}" onblur="saveField(this)" oninput="debounceSave(this)" step="0.01" min="0" max="100">
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Section 2 - Présentation Entreprise -->
+            {% if active_section == 'presentation-entreprise' %}
+            <div class="plan-section active" id="section-presentation-entreprise">
+                <h2 class="section-title">2. Présentation de l'Entreprise</h2>
+                
+                <div class="section-fields-grid">
+                    <div class="section-field">
+                        <label for="nom_entreprise">Nom entreprise</label>
+                        <input type="text" id="nom_entreprise" class="input-field" data-field="nom_entreprise" value="{{ plan.nom_entreprise|default:'Transpareo' }}" onblur="saveField(this)" oninput="debounceSave(this)">
+                    </div>
+                    <div class="section-field">
+                        <label for="date_creation">Date de création</label>
+                        <input type="date" id="date_creation" class="input-field" data-field="date_creation" value="{{ plan.date_creation|date:'Y-m-d'|default:'' }}" onblur="saveField(this)">
+                    </div>
+                </div>
+
+                <div class="section-fields-grid">
+                    <div class="section-field">
+                        <label for="forme_juridique">Forme juridique</label>
+                        <select id="forme_juridique" class="input-field" data-field="forme_juridique" onchange="saveField(this)">
+                            <option value="SAS" {% if plan.forme_juridique == 'SAS' %}selected{% endif %}>SAS - Société par Actions Simplifiée</option>
+                            <option value="SARL" {% if plan.forme_juridique == 'SARL' %}selected{% endif %}>SARL - Société à Responsabilité Limitée</option>
+                            <option value="SA" {% if plan.forme_juridique == 'SA' %}selected{% endif %}>SA - Société Anonyme</option>
+                            <option value="EURL" {% if plan.forme_juridique == 'EURL' %}selected{% endif %}>EURL - Entreprise Unipersonnelle à Responsabilité Limitée</option>
+                            <option value="SASU" {% if plan.forme_juridique == 'SASU' %}selected{% endif %}>SASU - Société par Actions Simplifiée Unipersonnelle</option>
+                            <option value="SCI" {% if plan.forme_juridique == 'SCI' %}selected{% endif %}>SCI - Société Civile Immobilière</option>
+                        </select>
+                    </div>
+                    <div class="section-field">
+                        <label for="capital_social">Capital social (€)</label>
+                        <input type="number" id="capital_social" class="input-field" data-field="capital_social" value="{{ plan.capital_social|default:'' }}" onblur="saveField(this)" oninput="debounceSave(this)" step="0.01" min="0">
+                    </div>
+                </div>
+
+                <div class="section-field">
+                    <label for="siege_social">Siège social</label>
+                    <textarea id="siege_social" class="textarea-field" data-field="siege_social" rows="3" onblur="saveField(this)" oninput="debounceSave(this)">{{ plan.siege_social|default:'' }}</textarea>
+                </div>
+
+                <div class="section-field">
+                    <label>Équipe fondatrice</label>
+                    <div class="editable-table" id="equipe-fondatrice" data-field="equipe_fondatrice">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Rôle</th>
+                                    <th>Bio</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="equipe-fondatrice-tbody">
+                                {% for membre in plan.equipe_fondatrice %}
+                                <tr class="table-row-editable">
+                                    <td><input type="text" class="table-input" value="{{ membre.nom|default:'' }}" onblur="saveTableField('equipe_fondatrice')"></td>
+                                    <td><input type="text" class="table-input" value="{{ membre.role|default:'' }}" onblur="saveTableField('equipe_fondatrice')"></td>
+                                    <td><textarea class="table-textarea" rows="2" onblur="saveTableField('equipe_fondatrice')">{{ membre.bio|default:'' }}</textarea></td>
+                                    <td><button type="button" class="btn-remove-row" onclick="removeTableRow(this, 'equipe_fondatrice')">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button></td>
+                                </tr>
+                                {% empty %}
+                                <tr class="table-row-editable">
+                                    <td><input type="text" class="table-input" placeholder="Nom..." onblur="saveTableField('equipe_fondatrice')"></td>
+                                    <td><input type="text" class="table-input" placeholder="Rôle..." onblur="saveTableField('equipe_fondatrice')"></td>
+                                    <td><textarea class="table-textarea" rows="2" placeholder="Bio..." onblur="saveTableField('equipe_fondatrice')"></textarea></td>
+                                    <td><button type="button" class="btn-remove-row" onclick="removeTableRow(this, 'equipe_fondatrice')">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <button type="button" class="btn-add-row" onclick="addTableRow('equipe_fondatrice', {nom: '', role: '', bio: ''})">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Ajouter un membre
+                        </button>
+                    </div>
+                </div>
+
+                <div class="section-field">
+                    <label for="histoire_genese">Histoire et genèse</label>
+                    <div class="rich-editor-wrapper">
+                        <div class="rich-toolbar">
+                            <button type="button" class="toolbar-btn" onclick="formatText('bold')" title="Gras">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path>
+                                    <path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path>
+                                </svg>
+                            </button>
+                            <button type="button" class="toolbar-btn" onclick="formatText('italic')" title="Italique">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="19" y1="4" x2="10" y2="4"></line>
+                                    <line x1="14" y1="20" x2="5" y2="20"></line>
+                                    <line x1="15" y1="4" x2="9" y2="20"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <div contenteditable="true" class="rich-editor" id="histoire_genese" data-field="histoire_genese" onblur="saveRichField(this)" oninput="debounceSaveRich(this)">{{ plan.histoire_genese|default:"" }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Section 7 - Analyse SWOT -->
+            {% if active_section == 'analyse-swot' %}
+            <div class="plan-section active" id="section-analyse-swot">
+                <h2 class="section-title">7. Analyse SWOT</h2>
+                
+                <div class="swot-grid">
+                    <div class="swot-quadrant swot-strengths">
+                        <div class="swot-header">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <h3 class="swot-title">Forces (Strengths)</h3>
+                        </div>
+                        <div class="swot-content">
+                            <div class="editable-list" id="forces" data-field="forces">
+                                {% for force in plan.forces %}
+                                <div class="list-item">
+                                    <input type="text" class="list-input" value="{{ force }}" onblur="saveListField('forces')" oninput="debounceSaveList('forces')">
+                                    <button type="button" class="list-remove" onclick="removeListItem(this, 'forces')">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                {% empty %}
+                                <div class="list-item">
+                                    <input type="text" class="list-input" placeholder="Nouvelle force..." onblur="saveListField('forces')" oninput="debounceSaveList('forces')">
+                                    <button type="button" class="list-remove" onclick="removeListItem(this, 'forces')">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                {% endfor %}
+                                <button type="button" class="btn-add-item" onclick="addListItem('forces')">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    Ajouter
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="swot-quadrant swot-weaknesses">
+                        <div class="swot-header">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                            <h3 class="swot-title">Faiblesses (Weaknesses)</h3>
+                        </div>
+                        <div class="swot-content">
+                            <div class="editable-list" id="faiblesses" data-field="faiblesses">
+                                {% for faiblesse in plan.faiblesses %}
+                                <div class="list-item">
+                                    <input type="text" class="list-input" value="{{ faiblesse }}" onblur="saveListField('faiblesses')" oninput="debounceSaveList('faiblesses')">
+                                    <button type="button" class="list-remove" onclick="removeListItem(this, 'faiblesses')">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                {% empty %}
+                                <div class="list-item">
+                                    <input type="text" class="list-input" placeholder="Nouvelle faiblesse..." onblur="saveListField('faiblesses')" oninput="debounceSaveList('faiblesses')">
+                                    <button type="button" class="list-remove" onclick="removeListItem(this, 'faiblesses')">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                {% endfor %}
+                                <button type="button" class="btn-add-item" onclick="addListItem('faiblesses')">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    Ajouter
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="swot-quadrant swot-opportunities">
+                        <div class="swot-header">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                            <h3 class="swot-title">Opportunités (Opportunities)</h3>
+                        </div>
+                        <div class="swot-content">
+                            <div class="editable-list" id="opportunites" data-field="opportunites">
+                                {% for opp in plan.opportunites %}
+                                <div class="list-item">
+                                    <input type="text" class="list-input" value="{{ opp }}" onblur="saveListField('opportunites')" oninput="debounceSaveList('opportunites')">
+                                    <button type="button" class="list-remove" onclick="removeListItem(this, 'opportunites')">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                {% empty %}
+                                <div class="list-item">
+                                    <input type="text" class="list-input" placeholder="Nouvelle opportunité..." onblur="saveListField('opportunites')" oninput="debounceSaveList('opportunites')">
+                                    <button type="button" class="list-remove" onclick="removeListItem(this, 'opportunites')">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                {% endfor %}
+                                <button type="button" class="btn-add-item" onclick="addListItem('opportunites')">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    Ajouter
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="swot-quadrant swot-threats">
+                        <div class="swot-header">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                <line x1="12" y1="9" x2="12" y2="13"></line>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                            <h3 class="swot-title">Menaces (Threats)</h3>
+                        </div>
+                        <div class="swot-content">
+                            <div class="editable-list" id="menaces" data-field="menaces">
+                                {% for menace in plan.menaces %}
+                                <div class="list-item">
+                                    <input type="text" class="list-input" value="{{ menace }}" onblur="saveListField('menaces')" oninput="debounceSaveList('menaces')">
+                                    <button type="button" class="list-remove" onclick="removeListItem(this, 'menaces')">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                {% empty %}
+                                <div class="list-item">
+                                    <input type="text" class="list-input" placeholder="Nouvelle menace..." onblur="saveListField('menaces')" oninput="debounceSaveList('menaces')">
+                                    <button type="button" class="list-remove" onclick="removeListItem(this, 'menaces')">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                {% endfor %}
+                                <button type="button" class="btn-add-item" onclick="addListItem('menaces')">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    Ajouter
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Section 8 - Annexes -->
+            {% if active_section == 'annexes' %}
+            <div class="plan-section active" id="section-annexes">
+                <h2 class="section-title">8. Annexes</h2>
+                
+                <div class="section-field">
+                    <label>Documents annexes</label>
+                    <div class="documents-list">
+                        {% for doc in documents %}
+                        <div class="document-item">
+                            <div class="document-info">
+                                <div class="document-title">{{ doc.title }}</div>
+                                <div class="document-meta">
+                                    <span>{{ doc.get_document_type_display }}</span>
+                                    <span>•</span>
+                                    <span>{{ doc.uploaded_at|date:"d/m/Y" }}</span>
+                                </div>
+                                {% if doc.description %}
+                                <div class="document-description">{{ doc.description }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="document-actions">
+                                <a href="{{ doc.document.url }}" class="btn-link" target="_blank">Télécharger</a>
+                                <button type="button" class="btn-danger-small" onclick="deleteDocument({{ doc.id }})">Supprimer</button>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="empty-state">Aucun document annexe</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="section-field">
+                    <label>Ajouter un document</label>
+                    <form id="upload-document-form" class="upload-form" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <input type="text" name="title" placeholder="Titre du document" required>
+                            </div>
+                            <div class="form-field">
+                                <select name="document_type" required>
+                                    <option value="etude_marche">Étude de marché</option>
+                                    <option value="contrat">Contrat partenaire</option>
+                                    <option value="lettre_intention">Lettre d'intention</option>
+                                    <option value="brevet">Brevet/Marque</option>
+                                    <option value="autre">Autre</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <input type="file" name="document" accept=".pdf,.doc,.docx,.xls,.xlsx" required>
+                            </div>
+                            <div class="form-field full-width">
+                                <textarea name="description" placeholder="Description (optionnel)" rows="2"></textarea>
+                            </div>
+                            <div class="form-field full-width">
+                                <button type="submit" class="btn-primary">Uploader le document</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Section 3 - Étude de Marché -->
+            {% if active_section == 'etude-marche' %}
+            <div class="plan-section active" id="section-etude-marche">
+                <h2 class="section-title">3. Étude de Marché</h2>
+                
+                <h3 class="section-subtitle">A. Marché cible</h3>
+                <div class="section-fields-grid">
+                    <div class="section-field">
+                        <label for="taille_marche">Taille du marché</label>
+                        <div class="input-group">
+                            <input type="number" id="taille_marche" class="input-field" data-field="taille_marche" value="{{ plan.taille_marche|default:'' }}" onblur="saveField(this)" oninput="debounceSave(this)" step="0.01" min="0">
+                            <select id="unite_marche" class="input-field" data-field="unite_marche" onchange="saveField(this)" style="width: 100px;">
+                                <option value="€" {% if plan.unite_marche == '€' %}selected{% endif %}>€</option>
+                                <option value="M€" {% if plan.unite_marche == 'M€' %}selected{% endif %}>M€</option>
+                                <option value="utilisateurs" {% if plan.unite_marche == 'utilisateurs' %}selected{% endif %}>utilisateurs</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="section-field">
+                        <label for="croissance_annuelle">Croissance annuelle (%)</label>
+                        <input type="number" id="croissance_annuelle" class="input-field" data-field="croissance_annuelle" value="{{ plan.croissance_annuelle|default:'' }}" onblur="saveField(this)" oninput="debounceSave(this)" step="0.01" min="0">
+                    </div>
+                </div>
+
+                <div class="section-field">
+                    <label for="tendances_marche">Tendances</label>
+                    <div class="rich-editor-wrapper">
+                        <div class="rich-toolbar">
+                            <button type="button" class="toolbar-btn" onclick="formatText('bold')" title="Gras">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path>
+                                    <path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path>
+                                </svg>
+                            </button>
+                            <button type="button" class="toolbar-btn" onclick="formatText('italic')" title="Italique">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="19" y1="4" x2="10" y2="4"></line>
+                                    <line x1="14" y1="20" x2="5" y2="20"></line>
+                                    <line x1="15" y1="4" x2="9" y2="20"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <div contenteditable="true" class="rich-editor" id="tendances_marche" data-field="tendances_marche" onblur="saveRichField(this)" oninput="debounceSaveRich(this)">{{ plan.tendances_marche|default:"" }}</div>
+                    </div>
+                </div>
+
+                <h3 class="section-subtitle">B. Segments clients</h3>
+                <div class="section-field">
+                    <div class="editable-table" id="segments-clients" data-field="segments_clients">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Segment</th>
+                                    <th>Taille</th>
+                                    <th>Besoins</th>
+                                    <th>Comportement</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="segments-clients-tbody">
+                                {% for segment in plan.segments_clients %}
+                                <tr class="table-row-editable">
+                                    <td><input type="text" class="table-input" value="{{ segment.segment|default:'' }}" onblur="saveTableField('segments_clients')"></td>
+                                    <td><input type="text" class="table-input" value="{{ segment.taille|default:'' }}" onblur="saveTableField('segments_clients')"></td>
+                                    <td><textarea class="table-textarea" rows="2" onblur="saveTableField('segments_clients')">{{ segment.besoins|default:'' }}</textarea></td>
+                                    <td><textarea class="table-textarea" rows="2" onblur="saveTableField('segments_clients')">{{ segment.comportement|default:'' }}</textarea></td>
+                                    <td><button type="button" class="btn-remove-row" onclick="removeTableRow(this, 'segments_clients')">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button></td>
+                                </tr>
+                                {% empty %}
+                                <tr class="table-row-editable">
+                                    <td><input type="text" class="table-input" placeholder="Segment..." onblur="saveTableField('segments_clients')"></td>
+                                    <td><input type="text" class="table-input" placeholder="Taille..." onblur="saveTableField('segments_clients')"></td>
+                                    <td><textarea class="table-textarea" rows="2" placeholder="Besoins..." onblur="saveTableField('segments_clients')"></textarea></td>
+                                    <td><textarea class="table-textarea" rows="2" placeholder="Comportement..." onblur="saveTableField('segments_clients')"></textarea></td>
+                                    <td><button type="button" class="btn-remove-row" onclick="removeTableRow(this, 'segments_clients')">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <button type="button" class="btn-add-row" onclick="addTableRow('segments_clients', {segment: '', taille: '', besoins: '', comportement: ''})">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Ajouter un segment
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Section 4 - Stratégie Marketing -->
+            {% if active_section == 'strategie-marketing' %}
+            <div class="plan-section active" id="section-strategie-marketing">
+                <h2 class="section-title">4. Stratégie Marketing</h2>
+                
+                <h3 class="section-subtitle">Produit</h3>
+                <div class="section-field">
+                    <label>Fonctionnalités principales</label>
+                    <div class="editable-list" id="fonctionnalites-principales" data-field="fonctionnalites_principales">
+                        {% for fonctionnalite in plan.fonctionnalites_principales %}
+                        <div class="list-item">
+                            <input type="text" class="list-input" value="{{ fonctionnalite }}" onblur="saveListField('fonctionnalites_principales')" oninput="debounceSaveList('fonctionnalites_principales')">
+                            <button type="button" class="list-remove" onclick="removeListItem(this, 'fonctionnalites_principales')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        {% empty %}
+                        <div class="list-item">
+                            <input type="text" class="list-input" placeholder="Nouvelle fonctionnalité..." onblur="saveListField('fonctionnalites_principales')" oninput="debounceSaveList('fonctionnalites_principales')">
+                            <button type="button" class="list-remove" onclick="removeListItem(this, 'fonctionnalites_principales')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        {% endfor %}
+                        <button type="button" class="btn-add-item" onclick="addListItem('fonctionnalites_principales')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Ajouter une fonctionnalité
+                        </button>
+                    </div>
+                </div>
+
+                <div class="section-field">
+                    <label for="proposition_valeur_unique">Proposition de valeur unique</label>
+                    <div class="rich-editor-wrapper">
+                        <div class="rich-toolbar">
+                            <button type="button" class="toolbar-btn" onclick="formatText('bold')" title="Gras">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path>
+                                    <path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path>
+                                </svg>
+                            </button>
+                            <button type="button" class="toolbar-btn" onclick="formatText('italic')" title="Italique">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="19" y1="4" x2="10" y2="4"></line>
+                                    <line x1="14" y1="20" x2="5" y2="20"></line>
+                                    <line x1="15" y1="4" x2="9" y2="20"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <div contenteditable="true" class="rich-editor" id="proposition_valeur_unique" data-field="proposition_valeur_unique" onblur="saveRichField(this)" oninput="debounceSaveRich(this)">{{ plan.proposition_valeur_unique|default:"" }}</div>
+                    </div>
+                </div>
+
+                <h3 class="section-subtitle">Prix</h3>
+                <div class="section-fields-grid">
+                    <div class="section-field">
+                        <label for="strategie_pricing">Stratégie pricing</label>
+                        <select id="strategie_pricing" class="input-field" data-field="strategie_pricing" onchange="saveField(this)">
+                            <option value="freemium" {% if plan.strategie_pricing == 'freemium' %}selected{% endif %}>Freemium</option>
+                            <option value="abonnement" {% if plan.strategie_pricing == 'abonnement' %}selected{% endif %}>Abonnement</option>
+                            <option value="commission" {% if plan.strategie_pricing == 'commission' %}selected{% endif %}>Commission</option>
+                            <option value="licence" {% if plan.strategie_pricing == 'licence' %}selected{% endif %}>Licence</option>
+                            <option value="hybride" {% if plan.strategie_pricing == 'hybride' %}selected{% endif %}>Hybride</option>
+                        </select>
+                    </div>
+                    <div class="section-field">
+                        <label for="positionnement_prix">Positionnement prix</label>
+                        <input type="text" id="positionnement_prix" class="input-field" data-field="positionnement_prix" value="{{ plan.positionnement_prix|default:'' }}" placeholder="low-cost, premium, etc." onblur="saveField(this)" oninput="debounceSave(this)">
+                    </div>
+                </div>
+
+                <div class="section-field">
+                    <label>Grille tarifaire</label>
+                    <div class="editable-table" id="grille-tarifaire" data-field="grille_tarifaire">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Offre</th>
+                                    <th>Prix/mois</th>
+                                    <th>Fonctionnalités</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="grille-tarifaire-tbody">
+                                {% for offre in plan.grille_tarifaire %}
+                                <tr class="table-row-editable">
+                                    <td><input type="text" class="table-input" value="{{ offre.nom|default:'' }}" onblur="saveTableField('grille_tarifaire')"></td>
+                                    <td><input type="number" class="table-input" value="{{ offre.prix|default:'' }}" placeholder="€" onblur="saveTableField('grille_tarifaire')"></td>
+                                    <td><textarea class="table-textarea" rows="2" onblur="saveTableField('grille_tarifaire')">{{ offre.fonctionnalites|default:'' }}</textarea></td>
+                                    <td><button type="button" class="btn-remove-row" onclick="removeTableRow(this, 'grille_tarifaire')">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button></td>
+                                </tr>
+                                {% empty %}
+                                <tr class="table-row-editable">
+                                    <td><input type="text" class="table-input" placeholder="Nom offre..." onblur="saveTableField('grille_tarifaire')"></td>
+                                    <td><input type="number" class="table-input" placeholder="Prix..." onblur="saveTableField('grille_tarifaire')"></td>
+                                    <td><textarea class="table-textarea" rows="2" placeholder="Fonctionnalités..." onblur="saveTableField('grille_tarifaire')"></textarea></td>
+                                    <td><button type="button" class="btn-remove-row" onclick="removeTableRow(this, 'grille_tarifaire')">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <button type="button" class="btn-add-row" onclick="addTableRow('grille_tarifaire', {nom: '', prix: '', fonctionnalites: ''})">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Ajouter une offre
+                        </button>
+                    </div>
+                </div>
+
+                <h3 class="section-subtitle">Place</h3>
+                <div class="section-field">
+                    <label>Canaux de distribution</label>
+                    <div class="checkboxes-grid">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="canaux_distribution" value="web" {% if 'web' in plan.canaux_distribution %}checked{% endif %} onchange="saveCheckboxes('canaux_distribution')">
+                            <span>Web</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="canaux_distribution" value="mobile" {% if 'mobile' in plan.canaux_distribution %}checked{% endif %} onchange="saveCheckboxes('canaux_distribution')">
+                            <span>Mobile</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="canaux_distribution" value="partenariats" {% if 'partenariats' in plan.canaux_distribution %}checked{% endif %} onchange="saveCheckboxes('canaux_distribution')">
+                            <span>Partenariats</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="section-field">
+                    <label for="plan_expansion">Plan expansion</label>
+                    <textarea id="plan_expansion" class="textarea-field" data-field="plan_expansion" rows="4" onblur="saveField(this)" oninput="debounceSave(this)">{{ plan.plan_expansion|default:'' }}</textarea>
+                </div>
+
+                <h3 class="section-subtitle">Promotion</h3>
+                <div class="section-field">
+                    <label>Canaux marketing</label>
+                    <div class="checkboxes-grid">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="canaux_marketing" value="SEO" {% if 'SEO' in plan.canaux_marketing %}checked{% endif %} onchange="saveCheckboxes('canaux_marketing')">
+                            <span>SEO</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="canaux_marketing" value="SEA" {% if 'SEA' in plan.canaux_marketing %}checked{% endif %} onchange="saveCheckboxes('canaux_marketing')">
+                            <span>SEA</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="canaux_marketing" value="social_media" {% if 'social_media' in plan.canaux_marketing %}checked{% endif %} onchange="saveCheckboxes('canaux_marketing')">
+                            <span>Social Media</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="canaux_marketing" value="email" {% if 'email' in plan.canaux_marketing %}checked{% endif %} onchange="saveCheckboxes('canaux_marketing')">
+                            <span>Email</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="canaux_marketing" value="content" {% if 'content' in plan.canaux_marketing %}checked{% endif %} onchange="saveCheckboxes('canaux_marketing')">
+                            <span>Content Marketing</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="section-fields-grid">
+                    <div class="section-field">
+                        <label for="budget_marketing_annuel">Budget marketing annuel (€)</label>
+                        <input type="number" id="budget_marketing_annuel" class="input-field" data-field="budget_marketing_annuel" value="{{ plan.budget_marketing_annuel|default:'' }}" onblur="saveField(this)" oninput="debounceSave(this)" step="0.01" min="0">
+                    </div>
+                </div>
+
+                <div class="section-field">
+                    <label>Actions marketing prévues</label>
+                    <div class="editable-list" id="actions-marketing" data-field="actions_marketing">
+                        {% for action in plan.actions_marketing %}
+                        <div class="list-item">
+                            <input type="text" class="list-input" value="{{ action }}" onblur="saveListField('actions_marketing')" oninput="debounceSaveList('actions_marketing')">
+                            <button type="button" class="list-remove" onclick="removeListItem(this, 'actions_marketing')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        {% empty %}
+                        <div class="list-item">
+                            <input type="text" class="list-input" placeholder="Nouvelle action..." onblur="saveListField('actions_marketing')" oninput="debounceSaveList('actions_marketing')">
+                            <button type="button" class="list-remove" onclick="removeListItem(this, 'actions_marketing')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        {% endfor %}
+                        <button type="button" class="btn-add-item" onclick="addListItem('actions_marketing')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Ajouter une action
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Section 5 - Plan Opérationnel -->
+            {% if active_section == 'plan-operationnel' %}
+            <div class="plan-section active" id="section-plan-operationnel">
+                <h2 class="section-title">5. Plan Opérationnel</h2>
+                
+                <div class="section-field">
+                    <label for="infrastructure_technique">Infrastructure technique</label>
+                    <textarea id="infrastructure_technique" class="textarea-field" data-field="infrastructure_technique" rows="6" onblur="saveField(this)" oninput="debounceSave(this)">{{ plan.infrastructure_technique|default:'' }}</textarea>
+                </div>
+
+                <div class="section-field">
+                    <label>Équipe et recrutements</label>
+                    <div class="editable-table" id="equipe-recrutements" data-field="equipe_recrutements">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Poste</th>
+                                    <th>Date embauche</th>
+                                    <th>Salaire (€)</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="equipe-recrutements-tbody">
+                                {% for recrutement in plan.equipe_recrutements %}
+                                <tr class="table-row-editable">
+                                    <td><input type="text" class="table-input" value="{{ recrutement.poste|default:'' }}" onblur="saveTableField('equipe_recrutements')"></td>
+                                    <td><input type="date" class="table-input" value="{{ recrutement.date_embauche|default:'' }}" onblur="saveTableField('equipe_recrutements')"></td>
+                                    <td><input type="number" class="table-input" value="{{ recrutement.salaire|default:'' }}" onblur="saveTableField('equipe_recrutements')"></td>
+                                    <td><button type="button" class="btn-remove-row" onclick="removeTableRow(this, 'equipe_recrutements')">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button></td>
+                                </tr>
+                                {% empty %}
+                                <tr class="table-row-editable">
+                                    <td><input type="text" class="table-input" placeholder="Poste..." onblur="saveTableField('equipe_recrutements')"></td>
+                                    <td><input type="date" class="table-input" onblur="saveTableField('equipe_recrutements')"></td>
+                                    <td><input type="number" class="table-input" placeholder="Salaire..." onblur="saveTableField('equipe_recrutements')"></td>
+                                    <td><button type="button" class="btn-remove-row" onclick="removeTableRow(this, 'equipe_recrutements')">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <button type="button" class="btn-add-row" onclick="addTableRow('equipe_recrutements', {poste: '', date_embauche: '', salaire: ''})">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Ajouter un poste
+                        </button>
+                    </div>
+                </div>
+
+                <div class="section-field">
+                    <label>Processus clés</label>
+                    <div class="editable-list" id="processus-cles" data-field="processus_cles">
+                        {% for processus in plan.processus_cles %}
+                        <div class="list-item">
+                            <input type="text" class="list-input" value="{{ processus }}" onblur="saveListField('processus_cles')" oninput="debounceSaveList('processus_cles')">
+                            <button type="button" class="list-remove" onclick="removeListItem(this, 'processus_cles')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        {% empty %}
+                        <div class="list-item">
+                            <input type="text" class="list-input" placeholder="Nouveau processus..." onblur="saveListField('processus_cles')" oninput="debounceSaveList('processus_cles')">
+                            <button type="button" class="list-remove" onclick="removeListItem(this, 'processus_cles')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        {% endfor %}
+                        <button type="button" class="btn-add-item" onclick="addListItem('processus_cles')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Ajouter un processus
+                        </button>
+                    </div>
+                </div>
+
+                <div class="section-field">
+                    <label>Partenaires opérationnels</label>
+                    <div class="editable-list" id="partenaires-operationnels" data-field="partenaires_operationnels">
+                        {% for partenaire in plan.partenaires_operationnels %}
+                        <div class="list-item">
+                            <input type="text" class="list-input" value="{{ partenaire }}" onblur="saveListField('partenaires_operationnels')" oninput="debounceSaveList('partenaires_operationnels')">
+                            <button type="button" class="list-remove" onclick="removeListItem(this, 'partenaires_operationnels')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        {% empty %}
+                        <div class="list-item">
+                            <input type="text" class="list-input" placeholder="Nouveau partenaire..." onblur="saveListField('partenaires_operationnels')" oninput="debounceSaveList('partenaires_operationnels')">
+                            <button type="button" class="list-remove" onclick="removeListItem(this, 'partenaires_operationnels')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        {% endfor %}
+                        <button type="button" class="btn-add-item" onclick="addListItem('partenaires_operationnels')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Ajouter un partenaire
+                        </button>
+                    </div>
+                </div>
+
+                <div class="section-field">
+                    <label>Outils et technologies</label>
+                    <div class="editable-list" id="outils-technologies" data-field="outils_technologies">
+                        {% for outil in plan.outils_technologies %}
+                        <div class="list-item">
+                            <input type="text" class="list-input" value="{{ outil }}" onblur="saveListField('outils_technologies')" oninput="debounceSaveList('outils_technologies')">
+                            <button type="button" class="list-remove" onclick="removeListItem(this, 'outils_technologies')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        {% empty %}
+                        <div class="list-item">
+                            <input type="text" class="list-input" placeholder="Nouvel outil..." onblur="saveListField('outils_technologies')" oninput="debounceSaveList('outils_technologies')">
+                            <button type="button" class="list-remove" onclick="removeListItem(this, 'outils_technologies')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        {% endfor %}
+                        <button type="button" class="btn-add-item" onclick="addListItem('outils_technologies')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Ajouter un outil
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Section 6 - Projections Financières -->
+            {% if active_section == 'projections-financieres' %}
+            <div class="plan-section active" id="section-projections-financieres">
+                <h2 class="section-title">6. Projections Financières</h2>
+                
+                <div class="section-field">
+                    <label>Compte de résultat prévisionnel (3 ans)</label>
+                    <div class="editable-table" id="compte-resultat" data-field="compte_resultat">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Poste</th>
+                                    <th>Année 1</th>
+                                    <th>Année 2</th>
+                                    <th>Année 3</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="compte-resultat-tbody">
+                                {% if plan.compte_resultat.revenus %}
+                                <tr class="table-row-editable table-row-section">
+                                    <td><strong>REVENUS</strong></td>
+                                    <td colspan="3"></td>
+                                    <td></td>
+                                </tr>
+                                {% for revenu in plan.compte_resultat.revenus %}
+                                <tr class="table-row-editable">
+                                    <td><input type="text" class="table-input" value="{{ revenu.nom|default:'' }}" placeholder="Source de revenus..."></td>
+                                    <td><input type="number" class="table-input" value="{{ revenu.annee1|default:'' }}" placeholder="€"></td>
+                                    <td><input type="number" class="table-input" value="{{ revenu.annee2|default:'' }}" placeholder="€"></td>
+                                    <td><input type="number" class="table-input" value="{{ revenu.annee3|default:'' }}" placeholder="€"></td>
+                                    <td><button type="button" class="btn-remove-row" onclick="removeTableRow(this, 'compte_resultat')">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button></td>
+                                </tr>
+                                {% endfor %}
+                                {% endif %}
+                                <tr class="table-row-editable">
+                                    <td><input type="text" class="table-input" placeholder="Nouveau poste..." onblur="saveTableField('compte_resultat')"></td>
+                                    <td><input type="number" class="table-input" placeholder="€" onblur="saveTableField('compte_resultat')"></td>
+                                    <td><input type="number" class="table-input" placeholder="€" onblur="saveTableField('compte_resultat')"></td>
+                                    <td><input type="number" class="table-input" placeholder="€" onblur="saveTableField('compte_resultat')"></td>
+                                    <td><button type="button" class="btn-remove-row" onclick="removeTableRow(this, 'compte_resultat')">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <button type="button" class="btn-add-row" onclick="addTableRow('compte_resultat', {nom: '', annee1: '', annee2: '', annee3: ''})">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Ajouter un poste
+                        </button>
+                    </div>
+                </div>
+
+                <div class="section-field">
+                    <label>Indicateurs clés</label>
+                    <div class="section-fields-grid">
+                        <div class="section-field">
+                            <label>Seuil de rentabilité (mois)</label>
+                            <input type="number" class="input-field" id="seuil_rentabilite" placeholder="Calculé automatiquement" readonly>
+                        </div>
+                        <div class="section-field">
+                            <label>ROI à 3 ans (%)</label>
+                            <input type="number" class="input-field" id="roi_3_ans" placeholder="Calculé automatiquement" readonly>
+                        </div>
+                        <div class="section-field">
+                            <label>Marge nette (%)</label>
+                            <input type="number" class="input-field" id="marge_nette" placeholder="Calculé automatiquement" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </main>
+    </div>
+</div>
+
+<!-- Styles -->
+<link rel="stylesheet" href="{% static 'core/admin/business-plan.css' %}">
+
+<!-- JavaScript -->
+<script src="{% static 'core/admin/business-plan.js' %}"></script>
+
+<script>
+    // Variables globales
+    const saveUrl = '{% url "admin-business-plan-save" %}';
+    const csrfToken = '{{ csrf_token }}';
+    
+    // Initialiser
+    document.addEventListener('DOMContentLoaded', function() {
+        initBusinessPlan();
+    });
+</script>
+{% endblock %}
+

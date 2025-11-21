@@ -1,0 +1,259 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load humanize %}
+{% load core_filters %}
+
+{% block title %}Recherche - {{ query }} | Transpareo Connect{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'core/connect-home.css' %}">
+<style>
+    /* Masquer la navbar par défaut pour cette page */
+    .navbar {
+        display: none !important;
+    }
+    .navbar-spacer {
+        display: none !important;
+    }
+    /* Masquer le bouton "Aller au contenu principal" */
+    .skip-link {
+        display: none !important;
+    }
+    body {
+        background-color: #F9FAFB !important;
+        margin: 0;
+        padding: 0;
+    }
+    #main-content {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    /* Page de résultats de recherche */
+    .search-results-page {
+        margin-top: 64px;
+        padding: 24px;
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .search-results-header {
+        margin-bottom: 24px;
+    }
+    
+    .search-results-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--color-black);
+        margin-bottom: 8px;
+    }
+    
+    .search-results-subtitle {
+        font-size: 14px;
+        color: var(--color-gray-medium);
+    }
+    
+    .search-results-filters {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+    
+    .search-filter-pill {
+        padding: 8px 16px;
+        border-radius: 20px;
+        border: 1px solid var(--color-gray-light);
+        background: var(--color-white);
+        color: var(--color-gray-dark);
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all var(--transition-fast);
+    }
+    
+    .search-filter-pill:hover {
+        background: var(--color-bg);
+        border-color: var(--color-gray-medium);
+    }
+    
+    .search-filter-pill.active {
+        background: var(--color-orange);
+        color: white;
+        border-color: var(--color-orange);
+    }
+    
+    .search-results-content {
+        display: grid;
+        gap: 16px;
+    }
+    
+    .search-result-card {
+        background: var(--color-white);
+        border-radius: var(--radius-md);
+        padding: 20px;
+        box-shadow: var(--shadow-sm);
+        transition: all var(--transition-normal);
+    }
+    
+    .search-result-card:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- NAVBAR PRINCIPALE (FIXE TOP) -->
+{% include 'core/connect/partials/navbar_connect.html' %}
+
+<div class="search-results-page">
+    <!-- Header -->
+    <div class="search-results-header">
+        <h1 class="search-results-title">
+            {% if query %}
+                Résultats pour "{{ query }}"
+            {% else %}
+                Recherche
+            {% endif %}
+        </h1>
+        <p class="search-results-subtitle">
+            {% if total > 0 %}
+                {{ total }} résultat{{ total|pluralize }} trouvé{{ total|pluralize }}
+            {% else %}
+                Aucun résultat trouvé
+            {% endif %}
+        </p>
+    </div>
+    
+    <!-- Filtres -->
+    <div class="search-results-filters">
+        <a href="?q={{ query|urlencode }}&type=all" 
+           class="search-filter-pill {% if search_type == 'all' %}active{% endif %}">
+            Tout
+        </a>
+        <a href="?q={{ query|urlencode }}&type=users" 
+           class="search-filter-pill {% if search_type == 'users' %}active{% endif %}">
+            Personnes
+        </a>
+        <a href="?q={{ query|urlencode }}&type=posts" 
+           class="search-filter-pill {% if search_type == 'posts' %}active{% endif %}">
+            Posts
+        </a>
+        <a href="?q={{ query|urlencode }}&type=groups" 
+           class="search-filter-pill {% if search_type == 'groups' %}active{% endif %}">
+            Groupes
+        </a>
+        <a href="?q={{ query|urlencode }}&type=events" 
+           class="search-filter-pill {% if search_type == 'events' %}active{% endif %}">
+            Événements
+        </a>
+    </div>
+    
+    <!-- Résultats -->
+    <div class="search-results-content">
+        {% if search_type == 'all' or search_type == 'users' %}
+            {% for user in results.users %}
+                {% include 'core/connect/partials/search_result_user.html' with user=user %}
+            {% endfor %}
+        {% endif %}
+        
+        {% if search_type == 'all' or search_type == 'posts' %}
+            {% for item in results.posts %}
+                {% include 'core/connect/partials/search_result_post.html' with post=item.post first_image=item.first_image %}
+            {% endfor %}
+        {% endif %}
+        
+        {% if search_type == 'all' or search_type == 'groups' %}
+            {% for group in results.groups %}
+                {% include 'core/connect/partials/search_result_group.html' with group=group %}
+            {% endfor %}
+        {% endif %}
+        
+        {% if search_type == 'all' or search_type == 'events' %}
+            {% for event in results.events %}
+                {% include 'core/connect/partials/search_result_event.html' with event=event %}
+            {% endfor %}
+        {% endif %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if search_type == 'all' or search_type == 'users' %}
+        {% if results.users.has_other_pages %}
+        <div class="pagination" style="margin-top: 32px; display: flex; justify-content: center; gap: 8px;">
+            {% if results.users.has_previous %}
+            <a href="?q={{ query|urlencode }}&type={{ search_type }}&page={{ results.users.previous_page_number }}" 
+               class="search-filter-pill">← Précédent</a>
+            {% endif %}
+            <span class="search-filter-pill" style="background: var(--color-bg); cursor: default;">
+                Page {{ page }} sur {{ results.users.paginator.num_pages }}
+            </span>
+            {% if results.users.has_next %}
+            <a href="?q={{ query|urlencode }}&type={{ search_type }}&page={{ results.users.next_page_number }}" 
+               class="search-filter-pill">Suivant →</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    {% endif %}
+    
+    {% if search_type == 'all' or search_type == 'posts' %}
+        {% if results.posts_page.has_other_pages %}
+        <div class="pagination" style="margin-top: 32px; display: flex; justify-content: center; gap: 8px;">
+            {% if results.posts_page.has_previous %}
+            <a href="?q={{ query|urlencode }}&type={{ search_type }}&page={{ results.posts_page.previous_page_number }}" 
+               class="search-filter-pill">← Précédent</a>
+            {% endif %}
+            <span class="search-filter-pill" style="background: var(--color-bg); cursor: default;">
+                Page {{ page }} sur {{ results.posts_page.paginator.num_pages }}
+            </span>
+            {% if results.posts_page.has_next %}
+            <a href="?q={{ query|urlencode }}&type={{ search_type }}&page={{ results.posts_page.next_page_number }}" 
+               class="search-filter-pill">Suivant →</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    {% endif %}
+    
+    {% if search_type == 'all' or search_type == 'groups' %}
+        {% if results.groups.has_other_pages %}
+        <div class="pagination" style="margin-top: 32px; display: flex; justify-content: center; gap: 8px;">
+            {% if results.groups.has_previous %}
+            <a href="?q={{ query|urlencode }}&type={{ search_type }}&page={{ results.groups.previous_page_number }}" 
+               class="search-filter-pill">← Précédent</a>
+            {% endif %}
+            <span class="search-filter-pill" style="background: var(--color-bg); cursor: default;">
+                Page {{ page }} sur {{ results.groups.paginator.num_pages }}
+            </span>
+            {% if results.groups.has_next %}
+            <a href="?q={{ query|urlencode }}&type={{ search_type }}&page={{ results.groups.next_page_number }}" 
+               class="search-filter-pill">Suivant →</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    {% endif %}
+    
+    {% if search_type == 'all' or search_type == 'events' %}
+        {% if results.events.has_other_pages %}
+        <div class="pagination" style="margin-top: 32px; display: flex; justify-content: center; gap: 8px;">
+            {% if results.events.has_previous %}
+            <a href="?q={{ query|urlencode }}&type={{ search_type }}&page={{ results.events.previous_page_number }}" 
+               class="search-filter-pill">← Précédent</a>
+            {% endif %}
+            <span class="search-filter-pill" style="background: var(--color-bg); cursor: default;">
+                Page {{ page }} sur {{ results.events.paginator.num_pages }}
+            </span>
+            {% if results.events.has_next %}
+            <a href="?q={{ query|urlencode }}&type={{ search_type }}&page={{ results.events.next_page_number }}" 
+               class="search-filter-pill">Suivant →</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    {% endif %}
+</div>
+
+{% block extra_scripts %}
+<script src="{% static 'core/connect-home.js' %}"></script>
+{% endblock %}
+{% endblock %}
+

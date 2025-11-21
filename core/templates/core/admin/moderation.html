@@ -1,0 +1,517 @@
+{% extends 'core/admin/base_admin.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block page_title %}Modération{% endblock %}
+
+{% block content %}
+<div class="moderation-page">
+    <!-- Header -->
+    <div class="moderation-header">
+        <div class="header-left">
+            <h1 class="page-title-main">Modération</h1>
+            <p class="page-subtitle">Gérer contenus signalés, vérifications et réclamations</p>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="moderation-tabs">
+        <button class="tab-btn active" data-tab="reported-contents" onclick="switchModerationTab('reported-contents')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                <path d="M9 12l2 2 4-4"></path>
+            </svg>
+            Contenus signalés
+            {% if reported_contents|length > 0 %}
+            <span class="tab-badge">{{ reported_contents|length }}</span>
+            {% endif %}
+        </button>
+        <button class="tab-btn" data-tab="users-moderate" onclick="switchModerationTab('users-moderate')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            Utilisateurs à modérer
+            {% if users_to_moderate|length > 0 %}
+            <span class="tab-badge">{{ users_to_moderate|length }}</span>
+            {% endif %}
+        </button>
+        <button class="tab-btn" data-tab="verifications" onclick="switchModerationTab('verifications')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            Demandes de vérification
+            {% if verification_identity|length > 0 or verification_owner|length > 0 %}
+            <span class="tab-badge">{{ verification_identity|length|add:verification_owner|length }}</span>
+            {% endif %}
+        </button>
+        <button class="tab-btn" data-tab="property-claims" onclick="switchModerationTab('property-claims')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            Réclamations logements
+            {% if property_claims|length > 0 %}
+            <span class="tab-badge">{{ property_claims|length }}</span>
+            {% endif %}
+        </button>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="moderation-tab-content">
+        <!-- Tab 1: Contenus signalés -->
+        <div id="tab-reported-contents" class="tab-panel active">
+            <div class="tab-header">
+                <h2>Contenus Signalés</h2>
+                <p class="tab-description">Gérer les contenus signalés par les utilisateurs (posts, commentaires, messages, profils)</p>
+            </div>
+
+            <!-- Filtres -->
+            <div class="filters-section">
+                <form method="GET" class="filters-form">
+                    <div class="filter-group">
+                        <label for="filter_content_type">Type</label>
+                        <select id="filter_content_type" name="content_type" class="filter-select">
+                            <option value="">Tous</option>
+                            <option value="post">Posts</option>
+                            <option value="comment">Commentaires</option>
+                            <option value="message">Messages</option>
+                            <option value="profile">Profils</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filter_status">Statut</label>
+                        <select id="filter_status" name="status" class="filter-select">
+                            <option value="">Tous</option>
+                            <option value="pending">En attente</option>
+                            <option value="treated">Traité</option>
+                            <option value="ignored">Ignoré</option>
+                            <option value="deleted">Supprimé</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filter_severity">Gravité</label>
+                        <select id="filter_severity" name="severity" class="filter-select">
+                            <option value="">Toutes</option>
+                            <option value="high">Haute</option>
+                            <option value="medium">Moyenne</option>
+                            <option value="low">Basse</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-secondary">Filtrer</button>
+                    <a href="{% url 'admin-moderation' %}" class="btn-secondary">Réinitialiser</a>
+                </form>
+            </div>
+
+            <!-- Bulk Actions Bar -->
+            <div id="bulk-actions-bar" class="bulk-actions-bar" style="display: none;">
+                <span id="bulk-count">0</span> contenus sélectionnés
+                <button type="button" class="btn-secondary" onclick="bulkAction('approve')">Approuver tous</button>
+                <button type="button" class="btn-secondary" onclick="bulkAction('delete')">Supprimer tous</button>
+                <button type="button" class="btn-secondary" onclick="bulkAction('mark_treated')">Marquer traités</button>
+                <button type="button" class="btn-secondary" onclick="deselectAll()">Désélectionner tout</button>
+            </div>
+
+            <!-- Tableau -->
+            <div class="moderation-table-container">
+                <table class="moderation-table" id="reported-contents-table">
+                    <thead>
+                        <tr>
+                            <th>
+                                <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
+                            </th>
+                            <th>Type</th>
+                            <th>Contenu</th>
+                            <th>Auteur</th>
+                            <th>Signalé par</th>
+                            <th>Raison</th>
+                            <th>Date</th>
+                            <th>Gravité</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for content in reported_contents %}
+                        <tr class="data-row" data-content-id="{{ content.id }}">
+                            <td>
+                                <input type="checkbox" class="content-checkbox" value="{{ content.id }}" onchange="updateBulkActions()">
+                            </td>
+                            <td>
+                                <span class="content-type-badge content-type-{{ content.content_type }}">
+                                    {{ content.get_content_type_display }}
+                                </span>
+                            </td>
+                            <td class="content-preview">
+                                <div class="content-text">{{ content.content_preview|truncatewords:20|default:"Aucun aperçu" }}</div>
+                                <button type="button" class="btn-view-detail" onclick="viewContentDetail({{ content.id }})">Voir détail</button>
+                            </td>
+                            <td>
+                                <a href="{% url 'admin-user-detail' content.author.id %}" class="user-link">
+                                    {% if content.author.profile.avatar %}
+                                    <img src="{{ content.author.profile.avatar.url }}" alt="{{ content.author.username }}" class="user-avatar-small">
+                                    {% else %}
+                                    <div class="user-avatar-small-initial">{{ content.author.username|first|upper }}</div>
+                                    {% endif %}
+                                    {{ content.author.username }}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="reports-count">{{ content.reports_count }}</span> utilisateur{{ content.reports_count|pluralize }}
+                                <button type="button" class="btn-view-reports" onclick="viewReports({{ content.id }})">Voir</button>
+                            </td>
+                            <td>
+                                <span class="reason-badge reason-{{ content.reason }}">{{ content.get_reason_display }}</span>
+                            </td>
+                            <td>{{ content.created_at|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                <span class="severity-badge severity-{{ content.severity }}">
+                                    {% if content.severity == 'high' %}
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                    </svg>
+                                    {% endif %}
+                                    {{ content.get_severity_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="status-badge status-{{ content.status }}">{{ content.get_status_display }}</span>
+                            </td>
+                            <td>
+                                <div class="actions-dropdown">
+                                    <button type="button" class="btn-actions" onclick="toggleActionsMenu({{ content.id }})">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="1"></circle>
+                                            <circle cx="12" cy="5" r="1"></circle>
+                                            <circle cx="12" cy="19" r="1"></circle>
+                                        </svg>
+                                    </button>
+                                    <div id="actions-menu-{{ content.id }}" class="actions-menu" style="display: none;">
+                                        <button type="button" onclick="viewContentDetail({{ content.id }})">Voir détail</button>
+                                        <button type="button" onclick="contentAction({{ content.id }}, 'approve')">Approuver</button>
+                                        <button type="button" onclick="contentAction({{ content.id }}, 'delete')">Supprimer contenu</button>
+                                        <button type="button" onclick="contentAction({{ content.id }}, 'mark_treated')">Marquer traité</button>
+                                        <button type="button" onclick="contentAction({{ content.id }}, 'ignore')">Ignorer</button>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="empty-row">
+                                <div class="empty-state">
+                                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                        <path d="M9 12l2 2 4-4"></path>
+                                    </svg>
+                                    <h3>Aucun contenu signalé</h3>
+                                    <p>Tous les contenus signalés ont été traités</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 2: Utilisateurs à modérer -->
+        <div id="tab-users-moderate" class="tab-panel">
+            <div class="tab-header">
+                <h2>Utilisateurs à Modérer</h2>
+                <p class="tab-description">Utilisateurs nécessitant une modération (plusieurs signalements, comportement suspect, spam)</p>
+            </div>
+
+            <div class="users-moderate-grid">
+                {% for user_mod in users_to_moderate %}
+                <div class="user-moderate-card">
+                    <div class="user-card-header">
+                        <div class="user-info">
+                            {% if user_mod.user.profile.avatar %}
+                            <img src="{{ user_mod.user.profile.avatar.url }}" alt="{{ user_mod.user.username }}" class="user-avatar">
+                            {% else %}
+                            <div class="user-avatar-initial">{{ user_mod.user.username|first|upper }}</div>
+                            {% endif %}
+                            <div class="user-details">
+                                <h3>{{ user_mod.user.get_full_name|default:user_mod.user.username }}</h3>
+                                <p class="user-email">{{ user_mod.user.email }}</p>
+                            </div>
+                        </div>
+                        <div class="user-alert">
+                            <span class="alert-badge alert-{{ user_mod.alert_type }}">
+                                {{ user_mod.get_alert_type_display }}
+                            </span>
+                            {% if user_mod.reports_count > 0 %}
+                            <span class="reports-badge">{{ user_mod.reports_count }} signalement{{ user_mod.reports_count|pluralize }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="user-card-body">
+                        <div class="user-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Statut actuel</span>
+                                <span class="stat-value status-{{ user_mod.status }}">{{ user_mod.get_status_display }}</span>
+                            </div>
+                        </div>
+                        <div class="user-actions">
+                            <button type="button" class="btn-secondary" onclick="viewUserProfile({{ user_mod.user.id }})">Voir profil</button>
+                            <button type="button" class="btn-secondary" onclick="suspendUser({{ user_mod.id }})">Suspendre</button>
+                            <button type="button" class="btn-danger" onclick="banUser({{ user_mod.id }})">Bannir</button>
+                            <button type="button" class="btn-secondary" onclick="ignoreAlert({{ user_mod.id }})">Ignorer</button>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <h3>Aucun utilisateur à modérer</h3>
+                    <p>Tous les utilisateurs sont conformes</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Tab 3: Demandes de vérification -->
+        <div id="tab-verifications" class="tab-panel">
+            <div class="tab-header">
+                <h2>Demandes de Vérification</h2>
+                <p class="tab-description">Vérifier les demandes d'identité et de propriétaire</p>
+            </div>
+
+            <!-- Sous-tabs -->
+            <div class="verification-subtabs">
+                <button class="subtab-btn active" data-subtab="identity" onclick="switchVerificationSubtab('identity')">
+                    Vérification identité
+                    {% if verification_identity|length > 0 %}
+                    <span class="tab-badge">{{ verification_identity|length }}</span>
+                    {% endif %}
+                </button>
+                <button class="subtab-btn" data-subtab="owner" onclick="switchVerificationSubtab('owner')">
+                    Vérification propriétaire
+                    {% if verification_owner|length > 0 %}
+                    <span class="tab-badge">{{ verification_owner|length }}</span>
+                    {% endif %}
+                </button>
+            </div>
+
+            <!-- Sous-tab Identité -->
+            <div id="subtab-identity" class="subtab-panel active">
+                <div class="verifications-grid">
+                    {% for verification in verification_identity %}
+                    <div class="verification-card">
+                        <div class="verification-header">
+                            <div class="user-info">
+                                {% if verification.user.profile.avatar %}
+                                <img src="{{ verification.user.profile.avatar.url }}" alt="{{ verification.user.username }}" class="user-avatar">
+                                {% else %}
+                                <div class="user-avatar-initial">{{ verification.user.username|first|upper }}</div>
+                                {% endif %}
+                                <div class="user-details">
+                                    <h3>{{ verification.user.get_full_name|default:verification.user.username }}</h3>
+                                    <p class="user-email">{{ verification.user.email }}</p>
+                                    <p class="verification-date">Demandé le {{ verification.created_at|date:"d/m/Y" }}</p>
+                                </div>
+                            </div>
+                            <span class="status-badge status-{{ verification.status }}">{{ verification.get_status_display }}</span>
+                        </div>
+                        <div class="verification-body">
+                            <div class="documents-viewer">
+                                {% if verification.piece_identite %}
+                                <div class="document-item">
+                                    <label>Pièce d'identité</label>
+                                    <img src="{{ verification.piece_identite.url }}" alt="Pièce d'identité" class="document-image" onclick="openImageViewer(this.src)">
+                                </div>
+                                {% endif %}
+                                {% if verification.selfie_identite %}
+                                <div class="document-item">
+                                    <label>Selfie avec pièce d'identité</label>
+                                    <img src="{{ verification.selfie_identite.url }}" alt="Selfie" class="document-image" onclick="openImageViewer(this.src)">
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="verification-actions">
+                                <button type="button" class="btn-success" onclick="verificationAction({{ verification.id }}, 'approve')">Approuver</button>
+                                <button type="button" class="btn-danger" onclick="verificationAction({{ verification.id }}, 'reject')">Refuser</button>
+                                <button type="button" class="btn-secondary" onclick="verificationAction({{ verification.id }}, 'complement_required')">Demander complément</button>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">
+                        <h3>Aucune demande de vérification identité</h3>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Sous-tab Propriétaire -->
+            <div id="subtab-owner" class="subtab-panel">
+                <div class="verifications-grid">
+                    {% for verification in verification_owner %}
+                    <div class="verification-card">
+                        <div class="verification-header">
+                            <div class="user-info">
+                                {% if verification.user.profile.avatar %}
+                                <img src="{{ verification.user.profile.avatar.url }}" alt="{{ verification.user.username }}" class="user-avatar">
+                                {% else %}
+                                <div class="user-avatar-initial">{{ verification.user.username|first|upper }}</div>
+                                {% endif %}
+                                <div class="user-details">
+                                    <h3>{{ verification.user.get_full_name|default:verification.user.username }}</h3>
+                                    <p class="property-address">{{ verification.justificatif_propriete|default:"Aucune adresse" }}</p>
+                                    <p class="verification-date">Demandé le {{ verification.created_at|date:"d/m/Y" }}</p>
+                                </div>
+                            </div>
+                            <span class="status-badge status-{{ verification.status }}">{{ verification.get_status_display }}</span>
+                        </div>
+                        <div class="verification-body">
+                            <div class="documents-viewer">
+                                {% if verification.justificatif_propriete %}
+                                <div class="document-item">
+                                    <label>Justificatif de propriété</label>
+                                    <a href="{{ verification.justificatif_propriete.url }}" target="_blank" class="document-link">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                        </svg>
+                                        Voir document
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="verification-actions">
+                                <button type="button" class="btn-success" onclick="verificationAction({{ verification.id }}, 'approve')">Approuver</button>
+                                <button type="button" class="btn-danger" onclick="verificationAction({{ verification.id }}, 'reject')">Refuser</button>
+                                <button type="button" class="btn-secondary" onclick="verificationAction({{ verification.id }}, 'complement_required')">Demander complément</button>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">
+                        <h3>Aucune demande de vérification propriétaire</h3>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Réclamations logements -->
+        <div id="tab-property-claims" class="tab-panel">
+            <div class="tab-header">
+                <h2>Réclamations Logements</h2>
+                <p class="tab-description">Gérer les réclamations de propriété de logements</p>
+            </div>
+
+            <div class="claims-grid">
+                {% for claim in property_claims %}
+                <div class="claim-card">
+                    <div class="claim-header">
+                        <div class="user-info">
+                            {% if claim.user.profile.avatar %}
+                            <img src="{{ claim.user.profile.avatar.url }}" alt="{{ claim.user.username }}" class="user-avatar">
+                            {% else %}
+                            <div class="user-avatar-initial">{{ claim.user.username|first|upper }}</div>
+                            {% endif %}
+                            <div class="user-details">
+                                <h3>{{ claim.user.get_full_name|default:claim.user.username }}</h3>
+                                <p class="property-address">{{ claim.property_address }}</p>
+                            </div>
+                        </div>
+                        <span class="status-badge status-{{ claim.status }}">{{ claim.get_status_display }}</span>
+                    </div>
+                    <div class="claim-body">
+                        <div class="claim-reason">
+                            <h4>Raison de la réclamation</h4>
+                            <p>{{ claim.claim_reason|truncatewords:30 }}</p>
+                        </div>
+                        {% if claim.documents %}
+                        <div class="claim-documents">
+                            <h4>Documents fournis</h4>
+                            <div class="documents-list">
+                                {% for doc in claim.documents %}
+                                <a href="{{ doc.url }}" target="_blank" class="document-link">{{ doc.name|default:"Document" }}</a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="claim-actions">
+                            <button type="button" class="btn-success" onclick="claimAction({{ claim.id }}, 'approve')">Approuver</button>
+                            <button type="button" class="btn-danger" onclick="claimAction({{ claim.id }}, 'reject')">Refuser</button>
+                            <button type="button" class="btn-secondary" onclick="claimAction({{ claim.id }}, 'information_required')">Demander informations</button>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state">
+                    <h3>Aucune réclamation de logement</h3>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Détail Contenu Signalé -->
+<div id="content-detail-modal" class="modal" style="display: none;">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2>Détail du Contenu Signalé</h2>
+            <button type="button" class="btn-close-modal" onclick="closeModal('content-detail-modal')">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body" id="content-detail-body">
+            <!-- Contenu chargé dynamiquement -->
+        </div>
+    </div>
+</div>
+
+<!-- Modal Image Viewer -->
+<div id="image-viewer-modal" class="modal" style="display: none;">
+    <div class="modal-content modal-image-viewer">
+        <button type="button" class="btn-close-modal" onclick="closeModal('image-viewer-modal')">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+        <img id="viewer-image" src="" alt="Image" class="viewer-image">
+        <div class="viewer-controls">
+            <button type="button" onclick="rotateImage(-90)">↺</button>
+            <button type="button" onclick="rotateImage(90)">↻</button>
+            <button type="button" onclick="zoomImage(1.2)">+</button>
+            <button type="button" onclick="zoomImage(0.8)">−</button>
+        </div>
+    </div>
+</div>
+
+<!-- Styles -->
+<link rel="stylesheet" href="{% static 'core/admin/moderation.css' %}">
+
+<!-- JavaScript -->
+<script src="{% static 'core/admin/moderation.js' %}"></script>
+
+<script>
+    const reportedContentActionUrl = '{% url "admin-reported-content-action" 0 %}'.replace('0/', '');
+    const userModerationActionUrl = '{% url "admin-user-moderation-action" 0 %}'.replace('0/', '');
+    const verificationActionUrl = '{% url "admin-verification-action" 0 %}'.replace('0/', '');
+    const propertyClaimActionUrl = '{% url "admin-property-claim-action" 0 %}'.replace('0/', '');
+    const csrfToken = '{{ csrf_token }}';
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        initModeration();
+    });
+</script>
+{% endblock %}
+

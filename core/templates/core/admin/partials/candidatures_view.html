@@ -1,0 +1,1799 @@
+{% load humanize %}
+<!-- Filtres Avancés -->
+<div class="filters-section">
+    <div class="filters-header">
+        <h3>Filtres avancés</h3>
+        <button class="btn-ghost btn-small" onclick="toggleFilters()">
+            <span id="filters-toggle-text">Masquer</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        </button>
+    </div>
+    <div class="filters-content" id="filters-content">
+        <form method="GET" action="{% url 'admin-candidatures-locations' %}" id="filters-form">
+            <input type="hidden" name="view" value="candidatures">
+            
+            <!-- Row 1 -->
+            <div class="filter-row">
+                <div class="filter-field filter-search">
+                    <label>Recherche globale</label>
+                    <div class="search-input-wrapper">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        <input type="text" name="search" value="{{ filters.search }}" 
+                               placeholder="Nom candidat, logement, ID..." class="filter-input">
+                    </div>
+                </div>
+                <div class="filter-field">
+                    <label>Statut</label>
+                    <select name="statut" multiple class="filter-select multi-select">
+                        <option value="en_attente" {% if 'en_attente' in filters.statut %}selected{% endif %}>En attente</option>
+                        <option value="acceptee" {% if 'acceptee' in filters.statut %}selected{% endif %}>Acceptée</option>
+                        <option value="refusee" {% if 'refusee' in filters.statut %}selected{% endif %}>Refusée</option>
+                        <option value="annulee" {% if 'annulee' in filters.statut %}selected{% endif %}>Annulée</option>
+                    </select>
+                </div>
+                <div class="filter-field">
+                    <label>Logement</label>
+                    <input type="text" name="logement" value="{{ filters.logement }}" 
+                           placeholder="Rechercher par adresse/ID..." class="filter-input autocomplete">
+                </div>
+            </div>
+            
+            <!-- Row 2 -->
+            <div class="filter-row">
+                <div class="filter-field">
+                    <label>Candidat</label>
+                    <input type="text" name="candidat" value="{{ filters.candidat }}" 
+                           placeholder="Nom ou email..." class="filter-input autocomplete">
+                </div>
+                <div class="filter-field">
+                    <label>Date candidature</label>
+                    <div class="date-range">
+                        <input type="date" name="date_debut" value="{{ filters.date_debut }}" class="filter-input">
+                        <span>à</span>
+                        <input type="date" name="date_fin" value="{{ filters.date_fin }}" class="filter-input">
+                    </div>
+                </div>
+                <div class="filter-field">
+                    <label>Propriétaire</label>
+                    <input type="text" name="proprietaire" value="{{ filters.proprietaire }}" 
+                           placeholder="Rechercher..." class="filter-input autocomplete">
+                </div>
+            </div>
+            
+            <!-- Row 3 -->
+            <div class="filter-row">
+                <div class="filter-field">
+                    <label>Ville logement</label>
+                    <select name="ville" class="filter-select">
+                        <option value="">Toutes</option>
+                        {% for ville in available_villes %}
+                        <option value="{{ ville }}" {% if filters.ville == ville %}selected{% endif %}>{{ ville }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="filter-actions">
+                <button type="submit" class="btn-primary">Appliquer filtres</button>
+                <button type="button" class="btn-secondary" onclick="resetFilters()">Réinitialiser</button>
+                <button type="button" class="btn-ghost" onclick="saveSearch()">Sauvegarder cette recherche</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Toggles tri rapide -->
+<div class="quick-filters">
+    <button class="quick-filter-pill {% if not filters.statut %}active{% endif %}" 
+            onclick="filterByStatut('')">
+        Toutes <span class="pill-count">{{ count_by_statut.toutes }}</span>
+    </button>
+    <button class="quick-filter-pill statut-en_attente {% if 'en_attente' in filters.statut %}active{% endif %}" 
+            onclick="filterByStatut('en_attente')">
+        En attente <span class="pill-count badge-orange">{{ count_by_statut.en_attente }}</span>
+    </button>
+    <button class="quick-filter-pill statut-acceptee {% if 'acceptee' in filters.statut %}active{% endif %}" 
+            onclick="filterByStatut('acceptee')">
+        Acceptées <span class="pill-count badge-green">{{ count_by_statut.acceptees }}</span>
+    </button>
+    <button class="quick-filter-pill statut-refusee {% if 'refusee' in filters.statut %}active{% endif %}" 
+            onclick="filterByStatut('refusee')">
+        Refusées <span class="pill-count badge-red">{{ count_by_statut.refusees }}</span>
+    </button>
+</div>
+
+<!-- Tableau Candidatures -->
+<div class="table-section">
+    <div class="table-header">
+        <div class="table-header-left">
+            <h3>Candidatures</h3>
+            <button class="btn-ghost btn-small" onclick="openColumnsModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="9" y1="3" x2="9" y2="21"></line>
+                </svg>
+                Colonnes
+            </button>
+        </div>
+        <div class="table-header-right">
+            <button class="btn-secondary btn-small" onclick="switchToKanban()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                Vue Kanban
+            </button>
+        </div>
+    </div>
+
+    <!-- Actions bulk -->
+    <div class="bulk-actions-bar" id="bulk-actions-bar" style="display: none;">
+        <span class="bulk-count"><span id="bulk-count">0</span> candidatures sélectionnées</span>
+        <div class="bulk-buttons">
+            <button class="btn-secondary btn-small" onclick="bulkChangeStatut()">Changer statut</button>
+            <button class="btn-secondary btn-small" onclick="bulkSendEmail()">Envoyer email groupe</button>
+            <button class="btn-secondary btn-small" onclick="bulkExport()">Exporter sélection</button>
+            <button class="btn-ghost btn-small" onclick="clearSelection()">Désélectionner tout</button>
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="col-checkbox sticky-left">
+                        <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
+                    </th>
+                    <th class="col-id">ID</th>
+                    <th class="col-candidat sticky-left-after-checkbox">Candidat</th>
+                    <th class="col-logement">Logement</th>
+                    <th class="col-proprietaire">Propriétaire</th>
+                    <th class="col-date sortable" onclick="sortTable('created_at')">
+                        Date candidature
+                        {% if sort_by == 'created_at' or sort_by == '-created_at' %}
+                        <span class="sort-indicator {% if sort_by == '-created_at' %}desc{% else %}asc{% endif %}"></span>
+                        {% endif %}
+                    </th>
+                    <th class="col-statut">Statut</th>
+                    <th class="col-score">Score</th>
+                    <th class="col-documents">Documents</th>
+                    <th class="col-revenus">Revenus</th>
+                    <th class="col-garant">Garant</th>
+                    <th class="col-actions sticky-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for candidature in candidatures %}
+                <tr class="table-row" data-candidature-id="{{ candidature.id }}">
+                    <td class="col-checkbox sticky-left">
+                        <input type="checkbox" class="candidature-checkbox" value="{{ candidature.id }}" 
+                               onchange="updateBulkActions()">
+                    </td>
+                    <td class="col-id">
+                        <span class="id-text" onclick="copyToClipboard('{{ candidature.id }}')">{{ candidature.id }}</span>
+                    </td>
+                    <td class="col-candidat sticky-left-after-checkbox">
+                        <div class="candidat-cell">
+                            <div class="avatar-small">
+                                {% if candidature.candidat.avatar %}
+                                <img src="{{ candidature.candidat.avatar.url }}" alt="{{ candidature.candidat.username }}">
+                                {% else %}
+                                <div class="avatar-placeholder">{{ candidature.candidat.username|first|upper }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="candidat-info">
+                                <a href="/connect-admin/users/{{ candidature.candidat.id }}/" class="candidat-name">
+                                    <strong>{{ candidature.candidat.username }}</strong>
+                                </a>
+                                <div class="candidat-email">{{ candidature.candidat.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="col-logement">
+                        <div class="logement-cell">
+                            <div class="logement-thumbnail">📷</div>
+                            <div class="logement-info">
+                                <a href="/connect-admin/logements/{{ candidature.logement.id }}/" class="logement-link">
+                                    {{ candidature.logement.titre|truncatewords:5 }}
+                                </a>
+                                <div class="logement-address">{{ candidature.logement.adresse|truncatewords:3 }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="col-proprietaire">
+                        {% if candidature.logement.proprietaire %}
+                        <div class="proprietaire-cell">
+                            <div class="avatar-tiny">
+                                {% if candidature.logement.proprietaire.avatar %}
+                                <img src="{{ candidature.logement.proprietaire.avatar.url }}" alt="{{ candidature.logement.proprietaire.username }}">
+                                {% else %}
+                                <div class="avatar-placeholder">{{ candidature.logement.proprietaire.username|first|upper }}</div>
+                                {% endif %}
+                            </div>
+                            <a href="/connect-admin/users/{{ candidature.logement.proprietaire.id }}/">{{ candidature.logement.proprietaire.username }}</a>
+                        </div>
+                        {% else %}
+                        <span class="no-data">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="col-date">{{ candidature.created_at|timesince }}</td>
+                    <td class="col-statut">
+                        <span class="statut-badge statut-{{ candidature.statut }}">
+                            {{ candidature.get_statut_display }}
+                        </span>
+                    </td>
+                    <td class="col-score">
+                        <div class="score-circle" data-score="75">
+                            <span>75</span>
+                        </div>
+                    </td>
+                    <td class="col-documents">
+                        <div class="documents-count">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            <span>8/10</span>
+                        </div>
+                    </td>
+                    <td class="col-revenus">
+                        {% if candidature.revenus_mensuels %}
+                        <div class="revenus-cell">
+                            <strong>{{ candidature.revenus_mensuels|floatformat:0|intcomma }} €</strong>
+                            <div class="ratio-loyer">3.2x</div>
+                        </div>
+                        {% else %}
+                        <span class="no-data">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="col-garant">
+                        {% if candidature.garant %}
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="green" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        {% else %}
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="gray" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                        {% endif %}
+                    </td>
+                    <td class="col-actions sticky-right">
+                        <div class="actions-dropdown">
+                            <button class="actions-btn" onclick="toggleActionsDropdown(this)">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="1"></circle>
+                                    <circle cx="12" cy="5" r="1"></circle>
+                                    <circle cx="12" cy="19" r="1"></circle>
+                                </svg>
+                            </button>
+                            <div class="dropdown-menu">
+                                <a href="#" class="dropdown-item" onclick="openCandidatureDetail({{ candidature.id }})">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                    Voir dossier complet
+                                </a>
+                                <a href="#" class="dropdown-item" onclick="acceptCandidature({{ candidature.id }})">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="green" stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Accepter candidature
+                                </a>
+                                <a href="#" class="dropdown-item dropdown-warning" onclick="refuseCandidature({{ candidature.id }})">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                    Refuser candidature
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a href="#" class="dropdown-item" onclick="downloadDossierPDF({{ candidature.id }})">
+                                    Télécharger dossier PDF
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="12" class="empty-state">
+                        <p>Aucune candidature trouvée</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if candidatures.has_other_pages %}
+    <div class="pagination-wrapper">
+        <div class="pagination-info">
+            <select class="per-page-select" onchange="changePerPage(this.value)">
+                <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+                <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                <option value="250" {% if per_page == 250 %}selected{% endif %}>250</option>
+            </select>
+            <span class="pagination-text">
+                Affichage {{ candidatures.start_index }}-{{ candidatures.end_index }} sur {{ candidatures.paginator.count|intcomma }} candidatures
+            </span>
+        </div>
+        <div class="pagination-controls">
+            {% if candidatures.has_previous %}
+            <a href="?page={{ candidatures.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">Précédent</a>
+            {% endif %}
+            {% for num in candidatures.paginator.page_range %}
+                {% if candidatures.number == num %}
+                <span class="page-current">{{ num }}</span>
+                {% elif num > candidatures.number|add:'-3' and num < candidatures.number|add:'3' %}
+                <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if candidatures.has_next %}
+            <a href="?page={{ candidatures.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">Suivant</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal Dossier Complet Candidature -->
+<div class="modal-overlay" id="candidature-detail-modal" style="display: none;">
+    <div class="modal-content modal-extra-large">
+        <div class="modal-header">
+            <h2 id="modal-candidature-title">Dossier candidature</h2>
+            <button class="modal-close" onclick="closeCandidatureDetailModal()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-detail-layout">
+                <div class="modal-detail-left">
+                    <!-- Onglets -->
+                    <div class="modal-tabs">
+                        <button class="modal-tab active" data-tab="resume" onclick="switchModalTab('resume')">Résumé</button>
+                        <button class="modal-tab" data-tab="candidat" onclick="switchModalTab('candidat')">Informations candidat</button>
+                        <button class="modal-tab" data-tab="professionnel" onclick="switchModalTab('professionnel')">Situation professionnelle</button>
+                        <button class="modal-tab" data-tab="garant" onclick="switchModalTab('garant')">Garant(s)</button>
+                        <button class="modal-tab" data-tab="documents" onclick="switchModalTab('documents')">Documents</button>
+                        <button class="modal-tab" data-tab="historique" onclick="switchModalTab('historique')">Historique</button>
+                    </div>
+
+                    <!-- Onglet Résumé -->
+                    <div class="modal-tab-content active" id="tab-resume">
+                        <div class="modal-form-section">
+                            <div class="score-global">
+                                <div class="score-circle-large" id="score-global-circle">
+                                    <span id="score-global-value">85</span>
+                                </div>
+                                <div class="score-info">
+                                    <h3>Score global</h3>
+                                    <p class="score-recommendation" id="score-recommendation">Recommandation : Accepter</p>
+                                </div>
+                            </div>
+
+                            <div class="sous-scores">
+                                <h4>Sous-scores</h4>
+                                <div class="scores-grid">
+                                    <div class="score-item">
+                                        <div class="score-label">Revenus</div>
+                                        <div class="score-bar">
+                                            <div class="score-bar-fill" style="width: 85%; background: #10B981;"></div>
+                                            <span class="score-value">85/100</span>
+                                        </div>
+                                        <div class="score-detail">Ratio : 3.5x loyer</div>
+                                    </div>
+                                    <div class="score-item">
+                                        <div class="score-label">Stabilité emploi</div>
+                                        <div class="score-bar">
+                                            <div class="score-bar-fill" style="width: 70%; background: #F59E0B;"></div>
+                                            <span class="score-value">70/100</span>
+                                        </div>
+                                        <div class="score-detail">CDD 18 mois</div>
+                                    </div>
+                                    <div class="score-item">
+                                        <div class="score-label">Documents</div>
+                                        <div class="score-bar">
+                                            <div class="score-bar-fill" style="width: 100%; background: #10B981;"></div>
+                                            <span class="score-value">100/100</span>
+                                        </div>
+                                        <div class="score-detail">Tous fournis</div>
+                                    </div>
+                                    <div class="score-item">
+                                        <div class="score-label">Historique</div>
+                                        <div class="score-bar">
+                                            <div class="score-bar-fill" style="width: 0%; background: #9CA3AF;"></div>
+                                            <span class="score-value">N/A</span>
+                                        </div>
+                                        <div class="score-detail">Premier dossier</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="alertes-section">
+                                <h4>Alertes et informations</h4>
+                                <div class="alertes-list" id="alertes-list">
+                                    <div class="alerte-item alerte-info">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                        <span>Garant présent, dossier renforcé</span>
+                                    </div>
+                                    <div class="alerte-item alerte-success">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                        <span>Tous documents fournis</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="actions-rapides">
+                                <button class="btn-primary btn-full" onclick="acceptCandidatureFromModal()">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Accepter
+                                </button>
+                                <button class="btn-danger btn-full" onclick="refuseCandidatureFromModal()">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                    Refuser
+                                </button>
+                                <button class="btn-secondary btn-full" onclick="demanderInfos()">
+                                    Demander informations
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Onglet Informations candidat -->
+                    <div class="modal-tab-content" id="tab-candidat">
+                        <div class="modal-form-section">
+                            <h3>Identité</h3>
+                            <div class="modal-form-grid">
+                                <div class="modal-form-field">
+                                    <label>Photo</label>
+                                    <div class="avatar-large" id="modal-candidat-avatar">
+                                        <div class="avatar-placeholder-large">U</div>
+                                    </div>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Civilité</label>
+                                    <select id="modal-civilite" class="modal-select" disabled>
+                                        <option value="M">M.</option>
+                                        <option value="Mme">Mme</option>
+                                    </select>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Nom</label>
+                                    <input type="text" id="modal-nom" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Prénom</label>
+                                    <input type="text" id="modal-prenom" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Date naissance</label>
+                                    <input type="date" id="modal-date-naissance" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Email</label>
+                                    <input type="email" id="modal-email" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Téléphone</label>
+                                    <input type="tel" id="modal-telephone" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field full-width">
+                                    <label>Adresse actuelle</label>
+                                    <textarea id="modal-adresse-actuelle" class="modal-textarea" rows="2" readonly></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Onglet Situation professionnelle -->
+                    <div class="modal-tab-content" id="tab-professionnel">
+                        <div class="modal-form-section">
+                            <h3>Emploi actuel</h3>
+                            <div class="modal-form-grid">
+                                <div class="modal-form-field">
+                                    <label>Statut</label>
+                                    <select id="modal-statut-emploi" class="modal-select" disabled>
+                                        <option value="cdi">Salarié CDI</option>
+                                        <option value="cdd">Salarié CDD</option>
+                                        <option value="fonctionnaire">Fonctionnaire</option>
+                                        <option value="independant">Indépendant</option>
+                                        <option value="etudiant">Étudiant</option>
+                                        <option value="retraite">Retraité</option>
+                                    </select>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Employeur</label>
+                                    <input type="text" id="modal-employeur" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Revenus nets mensuels</label>
+                                    <input type="number" id="modal-revenus" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Ratio revenus/loyer</label>
+                                    <div class="ratio-display" id="modal-ratio">
+                                        <span class="ratio-value">3.2x</span>
+                                        <span class="ratio-status ratio-ok">OK</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Onglet Garant -->
+                    <div class="modal-tab-content" id="tab-garant">
+                        <div class="modal-form-section">
+                            <h3>Garant(s)</h3>
+                            <div id="garants-list">
+                                <div class="garant-card">
+                                    <h4>Garant 1</h4>
+                                    <div class="modal-form-grid">
+                                        <div class="modal-form-field">
+                                            <label>Nom prénom</label>
+                                            <input type="text" class="modal-input" readonly value="Jean Dupont">
+                                        </div>
+                                        <div class="modal-form-field">
+                                            <label>Lien avec candidat</label>
+                                            <input type="text" class="modal-input" readonly value="Parent">
+                                        </div>
+                                        <div class="modal-form-field">
+                                            <label>Revenus nets mensuels</label>
+                                            <input type="number" class="modal-input" readonly value="3500">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn-secondary" onclick="addGarant()">Ajouter garant</button>
+                        </div>
+                    </div>
+
+                    <!-- Onglet Documents -->
+                    <div class="modal-tab-content" id="tab-documents">
+                        <div class="modal-form-section">
+                            <h3>Documents</h3>
+                            <div class="documents-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 80%;"></div>
+                                </div>
+                                <span class="progress-text">8/10 documents requis fournis</span>
+                            </div>
+
+                            <div class="documents-categories">
+                                <div class="doc-category">
+                                    <h4>Identité & Domicile</h4>
+                                    <div class="doc-list">
+                                        <div class="doc-item">
+                                            <span class="doc-name">Pièce identité recto</span>
+                                            <span class="doc-status doc-uploaded">✓ Téléchargé</span>
+                                        </div>
+                                        <div class="doc-item">
+                                            <span class="doc-name">Justificatif domicile</span>
+                                            <span class="doc-status doc-missing">✗ Manquant</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="doc-category">
+                                    <h4>Situation professionnelle</h4>
+                                    <div class="doc-list">
+                                        <div class="doc-item">
+                                            <span class="doc-name">Contrat travail</span>
+                                            <span class="doc-status doc-uploaded">✓ Téléchargé</span>
+                                        </div>
+                                        <div class="doc-item">
+                                            <span class="doc-name">3 derniers bulletins</span>
+                                            <span class="doc-status doc-pending">⏳ En attente</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button class="btn-primary" onclick="uploadDocuments()">Ajouter documents</button>
+                        </div>
+                    </div>
+
+                    <!-- Onglet Historique -->
+                    <div class="modal-tab-content" id="tab-historique">
+                        <div class="modal-form-section">
+                            <h3>Historique & Timeline</h3>
+                            <div class="timeline">
+                                <div class="timeline-item">
+                                    <div class="timeline-dot"></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-date">Il y a 2 jours</div>
+                                        <div class="timeline-action">Candidature créée</div>
+                                        <div class="timeline-author">Par candidat</div>
+                                    </div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div class="timeline-dot"></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-date">Il y a 1 jour</div>
+                                        <div class="timeline-action">Documents ajoutés</div>
+                                        <div class="timeline-author">Par candidat</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-detail-right">
+                    <!-- Widget logement -->
+                    <div class="modal-widget">
+                        <h4>Logement concerné</h4>
+                        <div class="modal-widget-content" id="modal-logement-info">
+                            <div class="logement-image-placeholder">📷</div>
+                            <div class="logement-details">
+                                <h5 id="modal-logement-titre">-</h5>
+                                <p id="modal-logement-adresse">-</p>
+                                <div class="logement-specs">
+                                    <span id="modal-logement-prix">-</span>
+                                    <span id="modal-logement-surface">-</span>
+                                    <span id="modal-logement-pieces">-</span>
+                                </div>
+                            </div>
+                            <a href="#" id="modal-logement-link" class="btn-secondary btn-small btn-full">Voir fiche logement</a>
+                        </div>
+                    </div>
+
+                    <!-- Widget propriétaire -->
+                    <div class="modal-widget">
+                        <h4>Propriétaire</h4>
+                        <div class="modal-widget-content" id="modal-proprietaire-info">
+                            <p class="no-data">Aucun propriétaire</p>
+                        </div>
+                    </div>
+
+                    <!-- Widget statut -->
+                    <div class="modal-widget">
+                        <h4>Statut candidature</h4>
+                        <div class="modal-widget-content">
+                            <div id="modal-statut-badge" class="statut-badge"></div>
+                            <div class="statut-dates">
+                                <div>Date soumission : <span id="modal-date-soumission">-</span></div>
+                                <div>Dernière modification : <span id="modal-date-modif">-</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Widget actions rapides -->
+                    <div class="modal-widget">
+                        <h4>Actions rapides</h4>
+                        <div class="modal-widget-content">
+                            <button class="btn-secondary btn-small btn-full" onclick="downloadDossierPDF(currentCandidatureId)">Télécharger dossier PDF</button>
+                            <button class="btn-secondary btn-small btn-full" onclick="sendEmailCandidat()">Envoyer email candidat</button>
+                            <button class="btn-secondary btn-small btn-full" onclick="sendSMSCandidat()">Envoyer SMS</button>
+                            <button class="btn-secondary btn-small btn-full" onclick="shareWithProprietaire()">Partager avec propriétaire</button>
+                        </div>
+                    </div>
+
+                    <!-- Widget notes internes -->
+                    <div class="modal-widget">
+                        <h4>Notes internes</h4>
+                        <div class="modal-widget-content">
+                            <div id="notes-list" class="notes-list">
+                                <p class="no-data">Aucune note</p>
+                            </div>
+                            <textarea id="note-input" class="modal-textarea" rows="3" placeholder="Ajouter une note..."></textarea>
+                            <button class="btn-primary btn-small btn-full" onclick="saveNote()">Sauvegarder note</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Workflow Acceptation -->
+<div class="modal-overlay" id="accept-workflow-modal" style="display: none;">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2>Accepter candidature</h2>
+            <button class="modal-close" onclick="closeAcceptWorkflow()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="workflow-steps">
+                <div class="workflow-step active" data-step="1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">Confirmation</div>
+                </div>
+                <div class="workflow-step" data-step="2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">Génération contrat</div>
+                </div>
+                <div class="workflow-step" data-step="3">
+                    <div class="step-number">3</div>
+                    <div class="step-label">Envoi et signature</div>
+                </div>
+                <div class="workflow-step" data-step="4">
+                    <div class="step-number">4</div>
+                    <div class="step-label">Confirmation finale</div>
+                </div>
+            </div>
+
+            <!-- Étape 1 -->
+            <div class="workflow-step-content active" id="workflow-step-1">
+                <h3>Confirmation</h3>
+                <div class="workflow-summary">
+                    <div class="summary-section">
+                        <h4>Candidat</h4>
+                        <p id="workflow-candidat-name">-</p>
+                    </div>
+                    <div class="summary-section">
+                        <h4>Logement</h4>
+                        <p id="workflow-logement-titre">-</p>
+                    </div>
+                </div>
+                <div class="workflow-checkboxes">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="confirm-dossier-verifie" required>
+                        <span>Dossier vérifié et validé</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="confirm-proprietaire-accord" required>
+                        <span>Propriétaire informé et d'accord</span>
+                    </label>
+                </div>
+                <div class="workflow-actions">
+                    <button class="btn-primary" onclick="workflowNext()">Continuer</button>
+                    <button class="btn-secondary" onclick="closeAcceptWorkflow()">Annuler</button>
+                </div>
+            </div>
+
+            <!-- Étape 2 -->
+            <div class="workflow-step-content" id="workflow-step-2">
+                <h3>Génération contrat bail</h3>
+                <div class="modal-form-grid">
+                    <div class="modal-form-field">
+                        <label>Date début bail *</label>
+                        <input type="date" id="contrat-date-debut" class="modal-input" required>
+                    </div>
+                    <div class="modal-form-field">
+                        <label>Durée bail *</label>
+                        <select id="contrat-duree" class="modal-select" required>
+                            <option value="12">1 an</option>
+                            <option value="36">3 ans</option>
+                            <option value="0">Indéterminé</option>
+                        </select>
+                    </div>
+                    <div class="modal-form-field">
+                        <label>Loyer mensuel (€) *</label>
+                        <input type="number" id="contrat-loyer" class="modal-input" required min="0" step="0.01">
+                    </div>
+                    <div class="modal-form-field">
+                        <label>Charges (€)</label>
+                        <input type="number" id="contrat-charges" class="modal-input" min="0" step="0.01">
+                    </div>
+                    <div class="modal-form-field">
+                        <label>Dépôt garantie (€)</label>
+                        <input type="number" id="contrat-depot" class="modal-input" min="0" step="0.01">
+                    </div>
+                    <div class="modal-form-field full-width">
+                        <label>Conditions particulières</label>
+                        <textarea id="contrat-conditions" class="modal-textarea" rows="4"></textarea>
+                    </div>
+                </div>
+                <div class="workflow-actions">
+                    <button class="btn-secondary" onclick="workflowPrevious()">Précédent</button>
+                    <button class="btn-primary" onclick="generateContrat()">Générer contrat</button>
+                </div>
+            </div>
+
+            <!-- Étape 3 -->
+            <div class="workflow-step-content" id="workflow-step-3">
+                <h3>Envoi et signature</h3>
+                <div class="contrat-preview">
+                    <p>Contrat généré avec succès</p>
+                    <button class="btn-secondary" onclick="previewContrat()">Prévisualiser contrat</button>
+                </div>
+                <div class="workflow-actions">
+                    <button class="btn-secondary" onclick="workflowPrevious()">Précédent</button>
+                    <button class="btn-primary" onclick="sendContrat()">Envoyer contrat</button>
+                </div>
+            </div>
+
+            <!-- Étape 4 -->
+            <div class="workflow-step-content" id="workflow-step-4">
+                <h3>Confirmation finale</h3>
+                <div class="success-message">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    <h4>Candidature acceptée et contrat envoyé</h4>
+                    <p>Le suivi se fera dans "Locations actives"</p>
+                </div>
+                <div class="workflow-actions">
+                    <button class="btn-primary" onclick="closeAcceptWorkflow()">Terminer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Workflow Refus -->
+<div class="modal-overlay" id="refuse-workflow-modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Refuser candidature</h2>
+            <button class="modal-close" onclick="closeRefuseWorkflow()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="refuse-form" onsubmit="submitRefuse(event)">
+                <div class="modal-form-field">
+                    <label>Raison du refus *</label>
+                    <select id="refuse-raison" class="modal-select" required onchange="toggleAutreRaison()">
+                        <option value="">Sélectionner une raison</option>
+                        <option value="dossier_incomplet">Dossier incomplet</option>
+                        <option value="revenus_insuffisants">Revenus insuffisants</option>
+                        <option value="documents_non_conformes">Documents non conformes</option>
+                        <option value="autre_candidat">Autre candidat retenu</option>
+                        <option value="autre">Autre raison</option>
+                    </select>
+                </div>
+                <div class="modal-form-field" id="autre-raison-field" style="display: none;">
+                    <label>Précisions *</label>
+                    <textarea id="refuse-autre-detail" class="modal-textarea" rows="4" placeholder="Détails de la raison..."></textarea>
+                </div>
+                <div class="modal-form-field full-width">
+                    <label>Message candidat (éditable)</label>
+                    <textarea id="refuse-message" class="modal-textarea" rows="6" placeholder="Message automatique généré..."></textarea>
+                </div>
+                <div class="workflow-checkboxes">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="refuse-send-email" checked>
+                        <span>Envoyer email notification refus</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="refuse-proposer-logements">
+                        <span>Proposer logements similaires</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="refuse-keep-dossier" checked>
+                        <span>Garder dossier pour futurs logements</span>
+                    </label>
+                </div>
+                <div class="workflow-actions">
+                    <button type="button" class="btn-secondary" onclick="closeRefuseWorkflow()">Annuler</button>
+                    <button type="submit" class="btn-danger">Confirmer refus</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<div class="filters-section">
+    <div class="filters-header">
+        <h3>Filtres avancés</h3>
+        <button class="btn-ghost btn-small" onclick="toggleFilters()">
+            <span id="filters-toggle-text">Masquer</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        </button>
+    </div>
+    <div class="filters-content" id="filters-content">
+        <form method="GET" action="{% url 'admin-candidatures-locations' %}" id="filters-form">
+            <input type="hidden" name="view" value="candidatures">
+            
+            <!-- Row 1 -->
+            <div class="filter-row">
+                <div class="filter-field filter-search">
+                    <label>Recherche globale</label>
+                    <div class="search-input-wrapper">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        <input type="text" name="search" value="{{ filters.search }}" 
+                               placeholder="Nom candidat, logement, ID..." class="filter-input">
+                    </div>
+                </div>
+                <div class="filter-field">
+                    <label>Statut</label>
+                    <select name="statut" multiple class="filter-select multi-select">
+                        <option value="en_attente" {% if 'en_attente' in filters.statut %}selected{% endif %}>En attente</option>
+                        <option value="acceptee" {% if 'acceptee' in filters.statut %}selected{% endif %}>Acceptée</option>
+                        <option value="refusee" {% if 'refusee' in filters.statut %}selected{% endif %}>Refusée</option>
+                        <option value="annulee" {% if 'annulee' in filters.statut %}selected{% endif %}>Annulée</option>
+                    </select>
+                </div>
+                <div class="filter-field">
+                    <label>Logement</label>
+                    <input type="text" name="logement" value="{{ filters.logement }}" 
+                           placeholder="Rechercher par adresse/ID..." class="filter-input autocomplete">
+                </div>
+            </div>
+            
+            <!-- Row 2 -->
+            <div class="filter-row">
+                <div class="filter-field">
+                    <label>Candidat</label>
+                    <input type="text" name="candidat" value="{{ filters.candidat }}" 
+                           placeholder="Nom ou email..." class="filter-input autocomplete">
+                </div>
+                <div class="filter-field">
+                    <label>Date candidature</label>
+                    <div class="date-range">
+                        <input type="date" name="date_debut" value="{{ filters.date_debut }}" class="filter-input">
+                        <span>à</span>
+                        <input type="date" name="date_fin" value="{{ filters.date_fin }}" class="filter-input">
+                    </div>
+                </div>
+                <div class="filter-field">
+                    <label>Propriétaire</label>
+                    <input type="text" name="proprietaire" value="{{ filters.proprietaire }}" 
+                           placeholder="Rechercher..." class="filter-input autocomplete">
+                </div>
+            </div>
+            
+            <!-- Row 3 -->
+            <div class="filter-row">
+                <div class="filter-field">
+                    <label>Ville logement</label>
+                    <select name="ville" class="filter-select">
+                        <option value="">Toutes</option>
+                        {% for ville in available_villes %}
+                        <option value="{{ ville }}" {% if filters.ville == ville %}selected{% endif %}>{{ ville }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="filter-actions">
+                <button type="submit" class="btn-primary">Appliquer filtres</button>
+                <button type="button" class="btn-secondary" onclick="resetFilters()">Réinitialiser</button>
+                <button type="button" class="btn-ghost" onclick="saveSearch()">Sauvegarder cette recherche</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Toggles tri rapide -->
+<div class="quick-filters">
+    <button class="quick-filter-pill {% if not filters.statut %}active{% endif %}" 
+            onclick="filterByStatut('')">
+        Toutes <span class="pill-count">{{ count_by_statut.toutes }}</span>
+    </button>
+    <button class="quick-filter-pill statut-en_attente {% if 'en_attente' in filters.statut %}active{% endif %}" 
+            onclick="filterByStatut('en_attente')">
+        En attente <span class="pill-count badge-orange">{{ count_by_statut.en_attente }}</span>
+    </button>
+    <button class="quick-filter-pill statut-acceptee {% if 'acceptee' in filters.statut %}active{% endif %}" 
+            onclick="filterByStatut('acceptee')">
+        Acceptées <span class="pill-count badge-green">{{ count_by_statut.acceptees }}</span>
+    </button>
+    <button class="quick-filter-pill statut-refusee {% if 'refusee' in filters.statut %}active{% endif %}" 
+            onclick="filterByStatut('refusee')">
+        Refusées <span class="pill-count badge-red">{{ count_by_statut.refusees }}</span>
+    </button>
+</div>
+
+<!-- Tableau Candidatures -->
+<div class="table-section">
+    <div class="table-header">
+        <div class="table-header-left">
+            <h3>Candidatures</h3>
+            <button class="btn-ghost btn-small" onclick="openColumnsModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="9" y1="3" x2="9" y2="21"></line>
+                </svg>
+                Colonnes
+            </button>
+        </div>
+        <div class="table-header-right">
+            <button class="btn-secondary btn-small" onclick="switchToKanban()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                Vue Kanban
+            </button>
+        </div>
+    </div>
+
+    <!-- Actions bulk -->
+    <div class="bulk-actions-bar" id="bulk-actions-bar" style="display: none;">
+        <span class="bulk-count"><span id="bulk-count">0</span> candidatures sélectionnées</span>
+        <div class="bulk-buttons">
+            <button class="btn-secondary btn-small" onclick="bulkChangeStatut()">Changer statut</button>
+            <button class="btn-secondary btn-small" onclick="bulkSendEmail()">Envoyer email groupe</button>
+            <button class="btn-secondary btn-small" onclick="bulkExport()">Exporter sélection</button>
+            <button class="btn-ghost btn-small" onclick="clearSelection()">Désélectionner tout</button>
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="col-checkbox sticky-left">
+                        <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
+                    </th>
+                    <th class="col-id">ID</th>
+                    <th class="col-candidat sticky-left-after-checkbox">Candidat</th>
+                    <th class="col-logement">Logement</th>
+                    <th class="col-proprietaire">Propriétaire</th>
+                    <th class="col-date sortable" onclick="sortTable('created_at')">
+                        Date candidature
+                        {% if sort_by == 'created_at' or sort_by == '-created_at' %}
+                        <span class="sort-indicator {% if sort_by == '-created_at' %}desc{% else %}asc{% endif %}"></span>
+                        {% endif %}
+                    </th>
+                    <th class="col-statut">Statut</th>
+                    <th class="col-score">Score</th>
+                    <th class="col-documents">Documents</th>
+                    <th class="col-revenus">Revenus</th>
+                    <th class="col-garant">Garant</th>
+                    <th class="col-actions sticky-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for candidature in candidatures %}
+                <tr class="table-row" data-candidature-id="{{ candidature.id }}">
+                    <td class="col-checkbox sticky-left">
+                        <input type="checkbox" class="candidature-checkbox" value="{{ candidature.id }}" 
+                               onchange="updateBulkActions()">
+                    </td>
+                    <td class="col-id">
+                        <span class="id-text" onclick="copyToClipboard('{{ candidature.id }}')">{{ candidature.id }}</span>
+                    </td>
+                    <td class="col-candidat sticky-left-after-checkbox">
+                        <div class="candidat-cell">
+                            <div class="avatar-small">
+                                {% if candidature.candidat.avatar %}
+                                <img src="{{ candidature.candidat.avatar.url }}" alt="{{ candidature.candidat.username }}">
+                                {% else %}
+                                <div class="avatar-placeholder">{{ candidature.candidat.username|first|upper }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="candidat-info">
+                                <a href="/connect-admin/users/{{ candidature.candidat.id }}/" class="candidat-name">
+                                    <strong>{{ candidature.candidat.username }}</strong>
+                                </a>
+                                <div class="candidat-email">{{ candidature.candidat.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="col-logement">
+                        <div class="logement-cell">
+                            <div class="logement-thumbnail">📷</div>
+                            <div class="logement-info">
+                                <a href="/connect-admin/logements/{{ candidature.logement.id }}/" class="logement-link">
+                                    {{ candidature.logement.titre|truncatewords:5 }}
+                                </a>
+                                <div class="logement-address">{{ candidature.logement.adresse|truncatewords:3 }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="col-proprietaire">
+                        {% if candidature.logement.proprietaire %}
+                        <div class="proprietaire-cell">
+                            <div class="avatar-tiny">
+                                {% if candidature.logement.proprietaire.avatar %}
+                                <img src="{{ candidature.logement.proprietaire.avatar.url }}" alt="{{ candidature.logement.proprietaire.username }}">
+                                {% else %}
+                                <div class="avatar-placeholder">{{ candidature.logement.proprietaire.username|first|upper }}</div>
+                                {% endif %}
+                            </div>
+                            <a href="/connect-admin/users/{{ candidature.logement.proprietaire.id }}/">{{ candidature.logement.proprietaire.username }}</a>
+                        </div>
+                        {% else %}
+                        <span class="no-data">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="col-date">{{ candidature.created_at|timesince }}</td>
+                    <td class="col-statut">
+                        <span class="statut-badge statut-{{ candidature.statut }}">
+                            {{ candidature.get_statut_display }}
+                        </span>
+                    </td>
+                    <td class="col-score">
+                        <div class="score-circle" data-score="75">
+                            <span>75</span>
+                        </div>
+                    </td>
+                    <td class="col-documents">
+                        <div class="documents-count">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            <span>8/10</span>
+                        </div>
+                    </td>
+                    <td class="col-revenus">
+                        {% if candidature.revenus_mensuels %}
+                        <div class="revenus-cell">
+                            <strong>{{ candidature.revenus_mensuels|floatformat:0|intcomma }} €</strong>
+                            <div class="ratio-loyer">3.2x</div>
+                        </div>
+                        {% else %}
+                        <span class="no-data">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="col-garant">
+                        {% if candidature.garant %}
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="green" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        {% else %}
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="gray" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                        {% endif %}
+                    </td>
+                    <td class="col-actions sticky-right">
+                        <div class="actions-dropdown">
+                            <button class="actions-btn" onclick="toggleActionsDropdown(this)">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="1"></circle>
+                                    <circle cx="12" cy="5" r="1"></circle>
+                                    <circle cx="12" cy="19" r="1"></circle>
+                                </svg>
+                            </button>
+                            <div class="dropdown-menu">
+                                <a href="#" class="dropdown-item" onclick="openCandidatureDetail({{ candidature.id }})">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                    Voir dossier complet
+                                </a>
+                                <a href="#" class="dropdown-item" onclick="acceptCandidature({{ candidature.id }})">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="green" stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Accepter candidature
+                                </a>
+                                <a href="#" class="dropdown-item dropdown-warning" onclick="refuseCandidature({{ candidature.id }})">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                    Refuser candidature
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a href="#" class="dropdown-item" onclick="downloadDossierPDF({{ candidature.id }})">
+                                    Télécharger dossier PDF
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="12" class="empty-state">
+                        <p>Aucune candidature trouvée</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if candidatures.has_other_pages %}
+    <div class="pagination-wrapper">
+        <div class="pagination-info">
+            <select class="per-page-select" onchange="changePerPage(this.value)">
+                <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+                <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                <option value="250" {% if per_page == 250 %}selected{% endif %}>250</option>
+            </select>
+            <span class="pagination-text">
+                Affichage {{ candidatures.start_index }}-{{ candidatures.end_index }} sur {{ candidatures.paginator.count|intcomma }} candidatures
+            </span>
+        </div>
+        <div class="pagination-controls">
+            {% if candidatures.has_previous %}
+            <a href="?page={{ candidatures.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">Précédent</a>
+            {% endif %}
+            {% for num in candidatures.paginator.page_range %}
+                {% if candidatures.number == num %}
+                <span class="page-current">{{ num }}</span>
+                {% elif num > candidatures.number|add:'-3' and num < candidatures.number|add:'3' %}
+                <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if candidatures.has_next %}
+            <a href="?page={{ candidatures.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">Suivant</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal Dossier Complet Candidature -->
+<div class="modal-overlay" id="candidature-detail-modal" style="display: none;">
+    <div class="modal-content modal-extra-large">
+        <div class="modal-header">
+            <h2 id="modal-candidature-title">Dossier candidature</h2>
+            <button class="modal-close" onclick="closeCandidatureDetailModal()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-detail-layout">
+                <div class="modal-detail-left">
+                    <!-- Onglets -->
+                    <div class="modal-tabs">
+                        <button class="modal-tab active" data-tab="resume" onclick="switchModalTab('resume')">Résumé</button>
+                        <button class="modal-tab" data-tab="candidat" onclick="switchModalTab('candidat')">Informations candidat</button>
+                        <button class="modal-tab" data-tab="professionnel" onclick="switchModalTab('professionnel')">Situation professionnelle</button>
+                        <button class="modal-tab" data-tab="garant" onclick="switchModalTab('garant')">Garant(s)</button>
+                        <button class="modal-tab" data-tab="documents" onclick="switchModalTab('documents')">Documents</button>
+                        <button class="modal-tab" data-tab="historique" onclick="switchModalTab('historique')">Historique</button>
+                    </div>
+
+                    <!-- Onglet Résumé -->
+                    <div class="modal-tab-content active" id="tab-resume">
+                        <div class="modal-form-section">
+                            <div class="score-global">
+                                <div class="score-circle-large" id="score-global-circle">
+                                    <span id="score-global-value">85</span>
+                                </div>
+                                <div class="score-info">
+                                    <h3>Score global</h3>
+                                    <p class="score-recommendation" id="score-recommendation">Recommandation : Accepter</p>
+                                </div>
+                            </div>
+
+                            <div class="sous-scores">
+                                <h4>Sous-scores</h4>
+                                <div class="scores-grid">
+                                    <div class="score-item">
+                                        <div class="score-label">Revenus</div>
+                                        <div class="score-bar">
+                                            <div class="score-bar-fill" style="width: 85%; background: #10B981;"></div>
+                                            <span class="score-value">85/100</span>
+                                        </div>
+                                        <div class="score-detail">Ratio : 3.5x loyer</div>
+                                    </div>
+                                    <div class="score-item">
+                                        <div class="score-label">Stabilité emploi</div>
+                                        <div class="score-bar">
+                                            <div class="score-bar-fill" style="width: 70%; background: #F59E0B;"></div>
+                                            <span class="score-value">70/100</span>
+                                        </div>
+                                        <div class="score-detail">CDD 18 mois</div>
+                                    </div>
+                                    <div class="score-item">
+                                        <div class="score-label">Documents</div>
+                                        <div class="score-bar">
+                                            <div class="score-bar-fill" style="width: 100%; background: #10B981;"></div>
+                                            <span class="score-value">100/100</span>
+                                        </div>
+                                        <div class="score-detail">Tous fournis</div>
+                                    </div>
+                                    <div class="score-item">
+                                        <div class="score-label">Historique</div>
+                                        <div class="score-bar">
+                                            <div class="score-bar-fill" style="width: 0%; background: #9CA3AF;"></div>
+                                            <span class="score-value">N/A</span>
+                                        </div>
+                                        <div class="score-detail">Premier dossier</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="alertes-section">
+                                <h4>Alertes et informations</h4>
+                                <div class="alertes-list" id="alertes-list">
+                                    <div class="alerte-item alerte-info">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                        <span>Garant présent, dossier renforcé</span>
+                                    </div>
+                                    <div class="alerte-item alerte-success">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                        <span>Tous documents fournis</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="actions-rapides">
+                                <button class="btn-primary btn-full" onclick="acceptCandidatureFromModal()">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Accepter
+                                </button>
+                                <button class="btn-danger btn-full" onclick="refuseCandidatureFromModal()">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                    Refuser
+                                </button>
+                                <button class="btn-secondary btn-full" onclick="demanderInfos()">
+                                    Demander informations
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Onglet Informations candidat -->
+                    <div class="modal-tab-content" id="tab-candidat">
+                        <div class="modal-form-section">
+                            <h3>Identité</h3>
+                            <div class="modal-form-grid">
+                                <div class="modal-form-field">
+                                    <label>Photo</label>
+                                    <div class="avatar-large" id="modal-candidat-avatar">
+                                        <div class="avatar-placeholder-large">U</div>
+                                    </div>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Civilité</label>
+                                    <select id="modal-civilite" class="modal-select" disabled>
+                                        <option value="M">M.</option>
+                                        <option value="Mme">Mme</option>
+                                    </select>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Nom</label>
+                                    <input type="text" id="modal-nom" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Prénom</label>
+                                    <input type="text" id="modal-prenom" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Date naissance</label>
+                                    <input type="date" id="modal-date-naissance" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Email</label>
+                                    <input type="email" id="modal-email" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Téléphone</label>
+                                    <input type="tel" id="modal-telephone" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field full-width">
+                                    <label>Adresse actuelle</label>
+                                    <textarea id="modal-adresse-actuelle" class="modal-textarea" rows="2" readonly></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Onglet Situation professionnelle -->
+                    <div class="modal-tab-content" id="tab-professionnel">
+                        <div class="modal-form-section">
+                            <h3>Emploi actuel</h3>
+                            <div class="modal-form-grid">
+                                <div class="modal-form-field">
+                                    <label>Statut</label>
+                                    <select id="modal-statut-emploi" class="modal-select" disabled>
+                                        <option value="cdi">Salarié CDI</option>
+                                        <option value="cdd">Salarié CDD</option>
+                                        <option value="fonctionnaire">Fonctionnaire</option>
+                                        <option value="independant">Indépendant</option>
+                                        <option value="etudiant">Étudiant</option>
+                                        <option value="retraite">Retraité</option>
+                                    </select>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Employeur</label>
+                                    <input type="text" id="modal-employeur" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Revenus nets mensuels</label>
+                                    <input type="number" id="modal-revenus" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Ratio revenus/loyer</label>
+                                    <div class="ratio-display" id="modal-ratio">
+                                        <span class="ratio-value">3.2x</span>
+                                        <span class="ratio-status ratio-ok">OK</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Onglet Garant -->
+                    <div class="modal-tab-content" id="tab-garant">
+                        <div class="modal-form-section">
+                            <h3>Garant(s)</h3>
+                            <div id="garants-list">
+                                <div class="garant-card">
+                                    <h4>Garant 1</h4>
+                                    <div class="modal-form-grid">
+                                        <div class="modal-form-field">
+                                            <label>Nom prénom</label>
+                                            <input type="text" class="modal-input" readonly value="Jean Dupont">
+                                        </div>
+                                        <div class="modal-form-field">
+                                            <label>Lien avec candidat</label>
+                                            <input type="text" class="modal-input" readonly value="Parent">
+                                        </div>
+                                        <div class="modal-form-field">
+                                            <label>Revenus nets mensuels</label>
+                                            <input type="number" class="modal-input" readonly value="3500">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn-secondary" onclick="addGarant()">Ajouter garant</button>
+                        </div>
+                    </div>
+
+                    <!-- Onglet Documents -->
+                    <div class="modal-tab-content" id="tab-documents">
+                        <div class="modal-form-section">
+                            <h3>Documents</h3>
+                            <div class="documents-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 80%;"></div>
+                                </div>
+                                <span class="progress-text">8/10 documents requis fournis</span>
+                            </div>
+
+                            <div class="documents-categories">
+                                <div class="doc-category">
+                                    <h4>Identité & Domicile</h4>
+                                    <div class="doc-list">
+                                        <div class="doc-item">
+                                            <span class="doc-name">Pièce identité recto</span>
+                                            <span class="doc-status doc-uploaded">✓ Téléchargé</span>
+                                        </div>
+                                        <div class="doc-item">
+                                            <span class="doc-name">Justificatif domicile</span>
+                                            <span class="doc-status doc-missing">✗ Manquant</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="doc-category">
+                                    <h4>Situation professionnelle</h4>
+                                    <div class="doc-list">
+                                        <div class="doc-item">
+                                            <span class="doc-name">Contrat travail</span>
+                                            <span class="doc-status doc-uploaded">✓ Téléchargé</span>
+                                        </div>
+                                        <div class="doc-item">
+                                            <span class="doc-name">3 derniers bulletins</span>
+                                            <span class="doc-status doc-pending">⏳ En attente</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button class="btn-primary" onclick="uploadDocuments()">Ajouter documents</button>
+                        </div>
+                    </div>
+
+                    <!-- Onglet Historique -->
+                    <div class="modal-tab-content" id="tab-historique">
+                        <div class="modal-form-section">
+                            <h3>Historique & Timeline</h3>
+                            <div class="timeline">
+                                <div class="timeline-item">
+                                    <div class="timeline-dot"></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-date">Il y a 2 jours</div>
+                                        <div class="timeline-action">Candidature créée</div>
+                                        <div class="timeline-author">Par candidat</div>
+                                    </div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div class="timeline-dot"></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-date">Il y a 1 jour</div>
+                                        <div class="timeline-action">Documents ajoutés</div>
+                                        <div class="timeline-author">Par candidat</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-detail-right">
+                    <!-- Widget logement -->
+                    <div class="modal-widget">
+                        <h4>Logement concerné</h4>
+                        <div class="modal-widget-content" id="modal-logement-info">
+                            <div class="logement-image-placeholder">📷</div>
+                            <div class="logement-details">
+                                <h5 id="modal-logement-titre">-</h5>
+                                <p id="modal-logement-adresse">-</p>
+                                <div class="logement-specs">
+                                    <span id="modal-logement-prix">-</span>
+                                    <span id="modal-logement-surface">-</span>
+                                    <span id="modal-logement-pieces">-</span>
+                                </div>
+                            </div>
+                            <a href="#" id="modal-logement-link" class="btn-secondary btn-small btn-full">Voir fiche logement</a>
+                        </div>
+                    </div>
+
+                    <!-- Widget propriétaire -->
+                    <div class="modal-widget">
+                        <h4>Propriétaire</h4>
+                        <div class="modal-widget-content" id="modal-proprietaire-info">
+                            <p class="no-data">Aucun propriétaire</p>
+                        </div>
+                    </div>
+
+                    <!-- Widget statut -->
+                    <div class="modal-widget">
+                        <h4>Statut candidature</h4>
+                        <div class="modal-widget-content">
+                            <div id="modal-statut-badge" class="statut-badge"></div>
+                            <div class="statut-dates">
+                                <div>Date soumission : <span id="modal-date-soumission">-</span></div>
+                                <div>Dernière modification : <span id="modal-date-modif">-</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Widget actions rapides -->
+                    <div class="modal-widget">
+                        <h4>Actions rapides</h4>
+                        <div class="modal-widget-content">
+                            <button class="btn-secondary btn-small btn-full" onclick="downloadDossierPDF(currentCandidatureId)">Télécharger dossier PDF</button>
+                            <button class="btn-secondary btn-small btn-full" onclick="sendEmailCandidat()">Envoyer email candidat</button>
+                            <button class="btn-secondary btn-small btn-full" onclick="sendSMSCandidat()">Envoyer SMS</button>
+                            <button class="btn-secondary btn-small btn-full" onclick="shareWithProprietaire()">Partager avec propriétaire</button>
+                        </div>
+                    </div>
+
+                    <!-- Widget notes internes -->
+                    <div class="modal-widget">
+                        <h4>Notes internes</h4>
+                        <div class="modal-widget-content">
+                            <div id="notes-list" class="notes-list">
+                                <p class="no-data">Aucune note</p>
+                            </div>
+                            <textarea id="note-input" class="modal-textarea" rows="3" placeholder="Ajouter une note..."></textarea>
+                            <button class="btn-primary btn-small btn-full" onclick="saveNote()">Sauvegarder note</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Workflow Acceptation -->
+<div class="modal-overlay" id="accept-workflow-modal" style="display: none;">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2>Accepter candidature</h2>
+            <button class="modal-close" onclick="closeAcceptWorkflow()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="workflow-steps">
+                <div class="workflow-step active" data-step="1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">Confirmation</div>
+                </div>
+                <div class="workflow-step" data-step="2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">Génération contrat</div>
+                </div>
+                <div class="workflow-step" data-step="3">
+                    <div class="step-number">3</div>
+                    <div class="step-label">Envoi et signature</div>
+                </div>
+                <div class="workflow-step" data-step="4">
+                    <div class="step-number">4</div>
+                    <div class="step-label">Confirmation finale</div>
+                </div>
+            </div>
+
+            <!-- Étape 1 -->
+            <div class="workflow-step-content active" id="workflow-step-1">
+                <h3>Confirmation</h3>
+                <div class="workflow-summary">
+                    <div class="summary-section">
+                        <h4>Candidat</h4>
+                        <p id="workflow-candidat-name">-</p>
+                    </div>
+                    <div class="summary-section">
+                        <h4>Logement</h4>
+                        <p id="workflow-logement-titre">-</p>
+                    </div>
+                </div>
+                <div class="workflow-checkboxes">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="confirm-dossier-verifie" required>
+                        <span>Dossier vérifié et validé</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="confirm-proprietaire-accord" required>
+                        <span>Propriétaire informé et d'accord</span>
+                    </label>
+                </div>
+                <div class="workflow-actions">
+                    <button class="btn-primary" onclick="workflowNext()">Continuer</button>
+                    <button class="btn-secondary" onclick="closeAcceptWorkflow()">Annuler</button>
+                </div>
+            </div>
+
+            <!-- Étape 2 -->
+            <div class="workflow-step-content" id="workflow-step-2">
+                <h3>Génération contrat bail</h3>
+                <div class="modal-form-grid">
+                    <div class="modal-form-field">
+                        <label>Date début bail *</label>
+                        <input type="date" id="contrat-date-debut" class="modal-input" required>
+                    </div>
+                    <div class="modal-form-field">
+                        <label>Durée bail *</label>
+                        <select id="contrat-duree" class="modal-select" required>
+                            <option value="12">1 an</option>
+                            <option value="36">3 ans</option>
+                            <option value="0">Indéterminé</option>
+                        </select>
+                    </div>
+                    <div class="modal-form-field">
+                        <label>Loyer mensuel (€) *</label>
+                        <input type="number" id="contrat-loyer" class="modal-input" required min="0" step="0.01">
+                    </div>
+                    <div class="modal-form-field">
+                        <label>Charges (€)</label>
+                        <input type="number" id="contrat-charges" class="modal-input" min="0" step="0.01">
+                    </div>
+                    <div class="modal-form-field">
+                        <label>Dépôt garantie (€)</label>
+                        <input type="number" id="contrat-depot" class="modal-input" min="0" step="0.01">
+                    </div>
+                    <div class="modal-form-field full-width">
+                        <label>Conditions particulières</label>
+                        <textarea id="contrat-conditions" class="modal-textarea" rows="4"></textarea>
+                    </div>
+                </div>
+                <div class="workflow-actions">
+                    <button class="btn-secondary" onclick="workflowPrevious()">Précédent</button>
+                    <button class="btn-primary" onclick="generateContrat()">Générer contrat</button>
+                </div>
+            </div>
+
+            <!-- Étape 3 -->
+            <div class="workflow-step-content" id="workflow-step-3">
+                <h3>Envoi et signature</h3>
+                <div class="contrat-preview">
+                    <p>Contrat généré avec succès</p>
+                    <button class="btn-secondary" onclick="previewContrat()">Prévisualiser contrat</button>
+                </div>
+                <div class="workflow-actions">
+                    <button class="btn-secondary" onclick="workflowPrevious()">Précédent</button>
+                    <button class="btn-primary" onclick="sendContrat()">Envoyer contrat</button>
+                </div>
+            </div>
+
+            <!-- Étape 4 -->
+            <div class="workflow-step-content" id="workflow-step-4">
+                <h3>Confirmation finale</h3>
+                <div class="success-message">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    <h4>Candidature acceptée et contrat envoyé</h4>
+                    <p>Le suivi se fera dans "Locations actives"</p>
+                </div>
+                <div class="workflow-actions">
+                    <button class="btn-primary" onclick="closeAcceptWorkflow()">Terminer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Workflow Refus -->
+<div class="modal-overlay" id="refuse-workflow-modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Refuser candidature</h2>
+            <button class="modal-close" onclick="closeRefuseWorkflow()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="refuse-form" onsubmit="submitRefuse(event)">
+                <div class="modal-form-field">
+                    <label>Raison du refus *</label>
+                    <select id="refuse-raison" class="modal-select" required onchange="toggleAutreRaison()">
+                        <option value="">Sélectionner une raison</option>
+                        <option value="dossier_incomplet">Dossier incomplet</option>
+                        <option value="revenus_insuffisants">Revenus insuffisants</option>
+                        <option value="documents_non_conformes">Documents non conformes</option>
+                        <option value="autre_candidat">Autre candidat retenu</option>
+                        <option value="autre">Autre raison</option>
+                    </select>
+                </div>
+                <div class="modal-form-field" id="autre-raison-field" style="display: none;">
+                    <label>Précisions *</label>
+                    <textarea id="refuse-autre-detail" class="modal-textarea" rows="4" placeholder="Détails de la raison..."></textarea>
+                </div>
+                <div class="modal-form-field full-width">
+                    <label>Message candidat (éditable)</label>
+                    <textarea id="refuse-message" class="modal-textarea" rows="6" placeholder="Message automatique généré..."></textarea>
+                </div>
+                <div class="workflow-checkboxes">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="refuse-send-email" checked>
+                        <span>Envoyer email notification refus</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="refuse-proposer-logements">
+                        <span>Proposer logements similaires</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="refuse-keep-dossier" checked>
+                        <span>Garder dossier pour futurs logements</span>
+                    </label>
+                </div>
+                <div class="workflow-actions">
+                    <button type="button" class="btn-secondary" onclick="closeRefuseWorkflow()">Annuler</button>
+                    <button type="submit" class="btn-danger">Confirmer refus</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+

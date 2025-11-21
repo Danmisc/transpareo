@@ -1,0 +1,901 @@
+{% extends 'core/admin/base_admin.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block page_title %}Logements et Annonces{% endblock %}
+
+{% block content %}
+<div class="admin-logements-page">
+    <!-- Header Section -->
+    <div class="logements-header">
+        <div class="header-left">
+            <h1 class="page-title-main">Logements et Annonces</h1>
+            <nav class="breadcrumb-nav">
+                <a href="{% url 'admin-dashboard' %}" class="breadcrumb-link">Admin</a>
+                <span class="breadcrumb-separator">/</span>
+                <a href="#" class="breadcrumb-link">Gestion plateforme</a>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-current">Logements</span>
+            </nav>
+        </div>
+        <div class="header-actions">
+            <a href="?{% for key, value in request.GET.items %}{% if key != 'export' %}{{ key }}={{ value }}&{% endif %}{% endfor %}export=csv" class="btn-secondary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Exporter CSV
+            </a>
+            <button class="btn-secondary" onclick="exportPDF()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                Exporter PDF
+            </button>
+            <button class="btn-primary" onclick="openAddLogementModal()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Ajouter logement
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Cards Mini -->
+    <div class="stats-mini-grid">
+        <div class="stat-mini-card">
+            <div class="stat-mini-value">{{ total_logements|intcomma }}</div>
+            <div class="stat-mini-label">Total logements</div>
+        </div>
+        <div class="stat-mini-card stat-mini-success">
+            <div class="stat-mini-value">{{ actifs_count|intcomma }}</div>
+            <div class="stat-mini-label">Actifs</div>
+        </div>
+        <div class="stat-mini-card stat-mini-warning">
+            <div class="stat-mini-value">{{ en_attente_count|intcomma }}</div>
+            <div class="stat-mini-label">En attente</div>
+        </div>
+        <div class="stat-mini-card stat-mini-gray">
+            <div class="stat-mini-value">{{ desactives_count|intcomma }}</div>
+            <div class="stat-mini-label">Désactivés</div>
+        </div>
+    </div>
+
+    <!-- Filtres Avancés -->
+    <div class="filters-card">
+        <div class="filters-header">
+            <h3>Filtres avancés</h3>
+            <button class="filters-toggle" onclick="toggleFilters()" id="filters-toggle">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                </svg>
+                <span id="filters-toggle-text">Masquer</span>
+            </button>
+        </div>
+        <div class="filters-content" id="filters-content">
+            <form method="get" class="filters-form" id="logements-filters-form">
+                <!-- Row 1 -->
+                <div class="filters-row">
+                    <div class="filter-item filter-search">
+                        <label for="search">Recherche globale</label>
+                        <div class="search-input-wrapper">
+                            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                            <input type="text" name="search" id="search" value="{{ search_query }}" placeholder="Adresse, titre, ID, propriétaire..." class="search-input">
+                        </div>
+                    </div>
+                    <div class="filter-item">
+                        <label for="statut">Statut</label>
+                        <select name="statut" id="statut" class="filter-select multi-select" multiple>
+                            <option value="disponible" {% if 'disponible' in statut_filters %}selected{% endif %}>Actif</option>
+                            <option value="reclame" {% if 'reclame' in statut_filters %}selected{% endif %}>En attente validation</option>
+                            <option value="verifie" {% if 'verifie' in statut_filters %}selected{% endif %}>Désactivé</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label for="type">Type bien</label>
+                        <select name="type" id="type" class="filter-select multi-select" multiple>
+                            <option value="appartement" {% if 'appartement' in type_filters %}selected{% endif %}>Appartement</option>
+                            <option value="maison" {% if 'maison' in type_filters %}selected{% endif %}>Maison</option>
+                            <option value="studio" {% if 'studio' in type_filters %}selected{% endif %}>Studio</option>
+                            <option value="chambre" {% if 'chambre' in type_filters %}selected{% endif %}>Colocation</option>
+                            <option value="autre" {% if 'autre' in type_filters %}selected{% endif %}>Autre</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Row 2 -->
+                <div class="filters-row">
+                    <div class="filter-item">
+                        <label for="ville">Ville</label>
+                        <select name="ville" id="ville" class="filter-select multi-select" multiple>
+                            {% for city in available_cities %}
+                            <option value="{{ city }}" {% if city in ville_filters %}selected{% endif %}>{{ city }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="filter-item filter-price-range">
+                        <label>Prix (€/mois)</label>
+                        <div class="range-slider-wrapper">
+                            <input type="range" id="prix-slider-min" min="{{ prix_range.min_prix|default:0 }}" max="{{ prix_range.max_prix|default:5000 }}" value="{{ prix_min|default:prix_range.min_prix|default:0 }}" class="range-slider">
+                            <input type="range" id="prix-slider-max" min="{{ prix_range.min_prix|default:0 }}" max="{{ prix_range.max_prix|default:5000 }}" value="{{ prix_max|default:prix_range.max_prix|default:5000 }}" class="range-slider">
+                            <div class="range-inputs">
+                                <input type="number" name="prix_min" id="prix_min" value="{{ prix_min|default:prix_range.min_prix|default:0 }}" class="range-input" min="0">
+                                <span>→</span>
+                                <input type="number" name="prix_max" id="prix_max" value="{{ prix_max|default:prix_range.max_prix|default:5000 }}" class="range-input" min="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 3 -->
+                <div class="filters-row">
+                    <div class="filter-item filter-surface-range">
+                        <label>Surface (m²)</label>
+                        <div class="range-slider-wrapper">
+                            <input type="range" id="surface-slider-min" min="{{ surface_range.min_surface|default:0 }}" max="{{ surface_range.max_surface|default:200 }}" value="{{ surface_min|default:surface_range.min_surface|default:0 }}" class="range-slider">
+                            <input type="range" id="surface-slider-max" min="{{ surface_range.min_surface|default:0 }}" max="{{ surface_range.max_surface|default:200 }}" value="{{ surface_max|default:surface_range.max_surface|default:200 }}" class="range-slider">
+                            <div class="range-inputs">
+                                <input type="number" name="surface_min" id="surface_min" value="{{ surface_min|default:surface_range.min_surface|default:0 }}" class="range-input" min="0">
+                                <span>→</span>
+                                <input type="number" name="surface_max" id="surface_max" value="{{ surface_max|default:surface_range.max_surface|default:200 }}" class="range-input" min="0">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="filter-item filter-pieces">
+                        <label>Nombre pièces</label>
+                        <div class="pieces-checkboxes">
+                            {% for i in "12345" %}
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="pieces" value="{{ i }}" {% if i|stringformat:"s" in pieces_filters %}checked{% endif %}>
+                                <span>{{ i }}{% if i == "5" %}+{% endif %}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="filter-item filter-date-range">
+                        <label>Date publication</label>
+                        <div class="date-range">
+                            <input type="date" name="date_from" value="{{ date_from }}" class="date-input" placeholder="Du">
+                            <span class="date-separator">→</span>
+                            <input type="date" name="date_to" value="{{ date_to }}" class="date-input" placeholder="Au">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 4 -->
+                <div class="filters-row">
+                    <div class="filter-item">
+                        <label for="proprietaire">Propriétaire</label>
+                        <input type="text" name="proprietaire" id="proprietaire" value="{{ proprietaire_id }}" class="filter-input" placeholder="Rechercher par nom/email..." list="proprietaires-list">
+                        <datalist id="proprietaires-list">
+                            {% for prop in proprietaires %}
+                            <option value="{{ prop.id }}">{{ prop.username }} ({{ prop.email }})</option>
+                            {% endfor %}
+                        </datalist>
+                    </div>
+                    <div class="filter-item filter-note">
+                        <label for="note_min">Note minimum</label>
+                        <div class="note-slider-wrapper">
+                            <input type="range" name="note_min" id="note_min" min="0" max="5" step="0.5" value="{{ note_min|default:0 }}" class="note-slider">
+                            <span class="note-value">{{ note_min|default:0 }}/5</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="filters-actions">
+                    <button type="submit" class="btn-filter">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                        </svg>
+                        Appliquer filtres
+                    </button>
+                    <a href="{% url 'admin-logements' %}" class="btn-filter-reset">Réinitialiser</a>
+                    <button type="button" class="btn-filter-ghost" onclick="saveSearch()">Sauvegarder cette recherche</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Actions Bulk (si sélection) -->
+    <div class="bulk-actions-bar" id="bulk-actions-bar" style="display: none;">
+        <div class="bulk-info">
+            <span id="bulk-count">0</span> logement{{ 's'|pluralize }} sélectionné{{ 's'|pluralize }}
+        </div>
+        <div class="bulk-buttons">
+            <button class="btn-bulk" onclick="bulkChangeStatus()">Changer statut</button>
+            <button class="btn-bulk" onclick="bulkExport()">Exporter sélection</button>
+            <button class="btn-bulk" onclick="bulkEmail()">Envoyer email propriétaires</button>
+            <button class="btn-bulk btn-bulk-danger" onclick="bulkDelete()">Supprimer</button>
+            <button class="btn-bulk-secondary" onclick="clearSelection()">Désélectionner tout</button>
+        </div>
+    </div>
+
+    <!-- Vue Toggles -->
+    <div class="view-toggles">
+        <button class="view-toggle active" data-view="table" onclick="switchView('table')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"></path>
+            </svg>
+            Vue tableau
+        </button>
+        <button class="view-toggle" data-view="map" onclick="switchView('map')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+            </svg>
+            Vue carte
+        </button>
+        <button class="view-toggle" data-view="gallery" onclick="switchView('gallery')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            Vue galerie
+        </button>
+    </div>
+
+    <!-- Vue Tableau -->
+    <div id="view-table" class="view-content active">
+        <div class="table-card">
+            <div class="table-header-actions">
+                <button class="btn-columns" onclick="openColumnsModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    Colonnes
+                </button>
+            </div>
+            <div class="table-wrapper">
+                <table class="logements-table" id="logements-table">
+                    <thead>
+                        <tr>
+                            <th class="col-checkbox sticky-left">
+                                <input type="checkbox" id="select-all" class="checkbox-input" onchange="toggleSelectAll(this)">
+                            </th>
+                            <th class="col-image sticky-left">Image</th>
+                            <th class="col-titre sticky-left sortable" data-sort="titre">
+                                Titre annonce
+                                <svg class="sort-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </th>
+                            <th class="col-id">ID</th>
+                            <th class="col-adresse">Adresse</th>
+                            <th class="col-type sortable" data-sort="type_logement">Type</th>
+                            <th class="col-prix sortable" data-sort="prix">Prix</th>
+                            <th class="col-surface sortable" data-sort="surface">Surface</th>
+                            <th class="col-pieces sortable" data-sort="chambres">Pièces</th>
+                            <th class="col-proprietaire">Propriétaire</th>
+                            <th class="col-statut sortable" data-sort="statut">Statut</th>
+                            <th class="col-note sortable" data-sort="note_moyenne">Note</th>
+                            <th class="col-date sortable" data-sort="date_creation">Date publication</th>
+                            <th class="col-actions sticky-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for logement in logements %}
+                        <tr class="table-row" data-logement-id="{{ logement.id }}">
+                            <td class="col-checkbox sticky-left">
+                                <input type="checkbox" class="checkbox-input logement-checkbox" value="{{ logement.id }}" onchange="updateBulkActions()">
+                            </td>
+                            <td class="col-image sticky-left">
+                                <div class="logement-thumbnail">
+                                    <div class="thumbnail-placeholder">📷</div>
+                                </div>
+                            </td>
+                            <td class="col-titre sticky-left">
+                                <a href="#" onclick="openLogementDetail({{ logement.id }}); return false;" class="logement-title-link">
+                                    <strong>{{ logement.titre|truncatewords:8 }}</strong>
+                                </a>
+                            </td>
+                            <td class="col-id">
+                                <span class="id-text" onclick="copyId({{ logement.id }})" title="Cliquer pour copier">#{{ logement.id }}</span>
+                            </td>
+                            <td class="col-adresse">
+                                <div class="adresse-text">{{ logement.adresse|truncatewords:3 }}</div>
+                                <div class="adresse-city">{{ logement.code_postal }}</div>
+                            </td>
+                            <td class="col-type">
+                                <span class="type-badge type-{{ logement.type_logement }}">
+                                    {{ logement.get_type_logement_display }}
+                                </span>
+                            </td>
+                            <td class="col-prix">
+                                <strong>{{ logement.prix|floatformat:0|intcomma }} €</strong>
+                                <div class="prix-period">/mois</div>
+                            </td>
+                            <td class="col-surface">{{ logement.surface|floatformat:0 }} m²</td>
+                            <td class="col-pieces">
+                                <span class="pieces-count">{{ logement.chambres }}</span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                </svg>
+                            </td>
+                            <td class="col-proprietaire">
+                                {% if logement.proprietaire %}
+                                <div class="proprietaire-info">
+                                    <div class="proprietaire-avatar-small">{{ logement.proprietaire.username|first|upper }}</div>
+                                    <a href="{% url 'admin-user-detail' logement.proprietaire.id %}" class="proprietaire-name">{{ logement.proprietaire.username }}</a>
+                                </div>
+                                {% else %}
+                                <span class="no-proprietaire">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="col-statut">
+                                <span class="statut-badge statut-{{ logement.statut }}">
+                                    {{ logement.get_statut_display }}
+                                </span>
+                            </td>
+                            <td class="col-note">
+                                <div class="note-stars">
+                                    {% for i in "12345" %}
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="{% if forloop.counter <= logement.note_moyenne %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2">
+                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                    </svg>
+                                    {% endfor %}
+                                </div>
+                                <div class="note-value">{{ logement.note_moyenne|floatformat:1|default:"0.0" }}/5</div>
+                            </td>
+                            <td class="col-date">{{ logement.date_creation|timesince }}</td>
+                            <td class="col-actions sticky-right">
+                                <div class="actions-dropdown">
+                                    <button class="actions-btn" onclick="toggleActionsDropdown(this)">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="1"></circle>
+                                            <circle cx="12" cy="5" r="1"></circle>
+                                            <circle cx="12" cy="19" r="1"></circle>
+                                        </svg>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a href="#" class="dropdown-item" onclick="openLogementDetail({{ logement.id }}); return false;">Voir détail</a>
+                                        <a href="#" class="dropdown-item" onclick="editLogement({{ logement.id }}); return false;">Modifier</a>
+                                        <a href="#" class="dropdown-item" onclick="duplicateLogement({{ logement.id }}); return false;">Dupliquer</a>
+                                        <div class="dropdown-divider"></div>
+                                        <a href="#" class="dropdown-item dropdown-warning" onclick="boostLogement({{ logement.id }}); return false;">Mettre en avant</a>
+                                        <a href="#" class="dropdown-item dropdown-danger" onclick="deleteLogement({{ logement.id }}); return false;">Supprimer</a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="14" class="empty-state">
+                                <div class="empty-content">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                    </svg>
+                                    <p>Aucun logement trouvé</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if logements.has_other_pages %}
+            <div class="pagination-wrapper">
+                <div class="pagination-info">
+                    Affichage de {{ logements.start_index }} à {{ logements.end_index }} sur {{ total_logements }} logement{{ total_logements|pluralize }}
+                </div>
+                <div class="pagination-controls">
+                    <select name="per_page" class="pagination-select" onchange="changePerPage(this.value)">
+                        <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+                        <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                        <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                        <option value="250" {% if per_page == 250 %}selected{% endif %}>250</option>
+                    </select>
+                    <div class="pagination">
+                        {% if logements.has_previous %}
+                        <a href="?page={{ logements.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">Précédent</a>
+                        {% endif %}
+                        {% for num in logements.paginator.page_range %}
+                            {% if logements.number == num %}
+                            <span class="page-current">{{ num }}</span>
+                            {% elif num > logements.number|add:'-3' and num < logements.number|add:'3' %}
+                            <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">{{ num }}</a>
+                            {% endif %}
+                        {% endfor %}
+                        {% if logements.has_next %}
+                        <a href="?page={{ logements.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">Suivant</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Vue Carte (placeholder) -->
+    <div id="view-map" class="view-content">
+        <div class="map-container">
+            <div id="map" style="width: 100%; height: 600px;"></div>
+            <p class="map-placeholder">Vue carte - À implémenter avec Leaflet/Mapbox</p>
+        </div>
+    </div>
+
+    <!-- Vue Galerie -->
+    <div id="view-gallery" class="view-content">
+        <div class="gallery-grid">
+            {% for logement in logements %}
+            <div class="gallery-card" data-logement-id="{{ logement.id }}">
+                <div class="gallery-card-image">
+                    <div class="gallery-image-placeholder">📷</div>
+                    <div class="gallery-card-badges">
+                        <span class="gallery-badge-statut statut-{{ logement.statut }}">{{ logement.get_statut_display }}</span>
+                    </div>
+                </div>
+                <div class="gallery-card-content">
+                    <h3 class="gallery-card-title">{{ logement.titre|truncatewords:8 }}</h3>
+                    <div class="gallery-card-address">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        {{ logement.adresse|truncatewords:3 }}, {{ logement.code_postal }}
+                    </div>
+                    <div class="gallery-card-price">
+                        <strong>{{ logement.prix|floatformat:0|intcomma }} €</strong>
+                        <span>/mois</span>
+                    </div>
+                    <div class="gallery-card-details">
+                        <span>{{ logement.surface|floatformat:0 }} m²</span>
+                        <span>|</span>
+                        <span>{{ logement.chambres }} pièce{{ logement.chambres|pluralize }}</span>
+                        <span>|</span>
+                        <div class="gallery-card-note">
+                            {% for i in "12345" %}
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="{% if forloop.counter <= logement.note_moyenne %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                            {% endfor %}
+                            <span>{{ logement.note_moyenne|floatformat:1|default:"0.0" }}</span>
+                        </div>
+                    </div>
+                    {% if logement.proprietaire %}
+                    <div class="gallery-card-owner">
+                        <div class="gallery-owner-avatar">{{ logement.proprietaire.username|first|upper }}</div>
+                        <span>{{ logement.proprietaire.username }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="gallery-card-footer">
+                        <span class="gallery-stats">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            {{ logement.baux_count|default:0 }} vues
+                        </span>
+                        <span class="gallery-stats">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            {{ logement.baux_count|default:0 }} candidatures
+                        </span>
+                        <span class="gallery-date">{{ logement.date_creation|timesince }}</span>
+                    </div>
+                </div>
+                <div class="gallery-card-overlay">
+                    <button class="gallery-action-btn" onclick="openLogementDetail({{ logement.id }})">Voir</button>
+                    <button class="gallery-action-btn" onclick="editLogement({{ logement.id }})">Modifier</button>
+                    <button class="gallery-action-btn" onclick="toggleActionsDropdown(this.closest('.gallery-card').querySelector('.gallery-more-btn'))">Plus</button>
+                </div>
+            </div>
+            {% empty %}
+            <div class="gallery-empty">
+                <p>Aucun logement trouvé</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal Détail Logement -->
+<div class="modal-overlay" id="logement-detail-modal" style="display: none;">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2 id="modal-logement-title">Détail du logement</h2>
+            <button class="modal-close" onclick="closeLogementDetailModal()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-detail-layout">
+                <div class="modal-detail-left">
+                    <!-- Galerie images -->
+                    <div class="modal-gallery">
+                        <div class="modal-gallery-main">
+                            <div class="modal-gallery-main-image" id="modal-main-image">
+                                <div class="gallery-placeholder-large">📷</div>
+                            </div>
+                        </div>
+                        <div class="modal-gallery-thumbnails" id="modal-thumbnails">
+                            <!-- Thumbnails seront chargés dynamiquement -->
+                        </div>
+                    </div>
+
+                    <!-- Onglets -->
+                    <div class="modal-tabs">
+                        <button class="modal-tab active" data-tab="infos" onclick="switchModalTab('infos')">Informations générales</button>
+                        <button class="modal-tab" data-tab="equipements" onclick="switchModalTab('equipements')">Équipements</button>
+                        <button class="modal-tab" data-tab="disponibilite" onclick="switchModalTab('disponibilite')">Disponibilité</button>
+                        <button class="modal-tab" data-tab="candidatures" onclick="switchModalTab('candidatures')">Candidatures</button>
+                        <button class="modal-tab" data-tab="avis" onclick="switchModalTab('avis')">Avis</button>
+                        <button class="modal-tab" data-tab="historique" onclick="switchModalTab('historique')">Historique</button>
+                    </div>
+
+                    <!-- Contenu onglets -->
+                    <div class="modal-tab-content active" id="tab-infos">
+                        <div class="modal-form-section">
+                            <h3>Informations générales</h3>
+                            <div class="modal-form-grid">
+                                <div class="modal-form-field">
+                                    <label>Titre annonce</label>
+                                    <input type="text" id="modal-titre" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Type bien</label>
+                                    <select id="modal-type" class="modal-select" disabled>
+                                        <option value="appartement">Appartement</option>
+                                        <option value="maison">Maison</option>
+                                        <option value="studio">Studio</option>
+                                        <option value="chambre">Chambre</option>
+                                        <option value="autre">Autre</option>
+                                    </select>
+                                </div>
+                                <div class="modal-form-field full-width">
+                                    <label>Description</label>
+                                    <textarea id="modal-description" class="modal-textarea" rows="6" readonly></textarea>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Adresse complète</label>
+                                    <input type="text" id="modal-adresse" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Code postal</label>
+                                    <input type="text" id="modal-code-postal" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Prix loyer (€/mois)</label>
+                                    <input type="number" id="modal-prix" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Surface (m²)</label>
+                                    <input type="number" id="modal-surface" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Nombre pièces</label>
+                                    <input type="number" id="modal-pieces" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Nombre chambres</label>
+                                    <input type="number" id="modal-chambres" class="modal-input" readonly>
+                                </div>
+                                <div class="modal-form-field">
+                                    <label>Étage</label>
+                                    <select id="modal-etage" class="modal-select" disabled>
+                                        <option value="rdc">Rez-de-chaussée</option>
+                                        <option value="etage">Étage</option>
+                                        <option value="dernier">Dernier étage</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-tab-content" id="tab-equipements">
+                        <div class="modal-form-section">
+                            <h3>Équipements et caractéristiques</h3>
+                            <div class="equipements-grid">
+                                <label class="equipement-checkbox"><input type="checkbox" disabled> Cuisine équipée</label>
+                                <label class="equipement-checkbox"><input type="checkbox" disabled> Four</label>
+                                <label class="equipement-checkbox"><input type="checkbox" disabled> Plaques cuisson</label>
+                                <label class="equipement-checkbox"><input type="checkbox" disabled> Réfrigérateur</label>
+                                <label class="equipement-checkbox"><input type="checkbox" disabled> Lave-vaisselle</label>
+                                <label class="equipement-checkbox"><input type="checkbox" disabled> Lave-linge</label>
+                                <label class="equipement-checkbox"><input type="checkbox" disabled> Sèche-linge</label>
+                                <label class="equipement-checkbox"><input type="checkbox" disabled> Internet fibre</label>
+                                <label class="equipement-checkbox"><input type="checkbox" disabled> TV</label>
+                                <label class="equipement-checkbox"><input type="checkbox" disabled> Climatisation</label>
+                                <label class="equipement-checkbox"><input type="checkbox" disabled> Balcon</label>
+                                <label class="equipement-checkbox"><input type="checkbox" disabled> Terrasse</label>
+                                <label class="equipement-checkbox"><input type="checkbox" disabled> Jardin</label>
+                                <label class="equipement-checkbox"><input type="checkbox" disabled> Parking</label>
+                                <label class="equipement-checkbox"><input type="checkbox" disabled> Ascenseur</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-tab-content" id="tab-disponibilite">
+                        <div class="modal-form-section">
+                            <h3>Disponibilité et calendrier</h3>
+                            <div class="calendar-placeholder">
+                                <p>Calendrier de disponibilité - À implémenter</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-tab-content" id="tab-candidatures">
+                        <div class="modal-form-section">
+                            <h3>Candidatures</h3>
+                            <div class="candidatures-placeholder">
+                                <p>Liste des candidatures - À implémenter</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-tab-content" id="tab-avis">
+                        <div class="modal-form-section">
+                            <h3>Avis et évaluations</h3>
+                            <div class="avis-placeholder">
+                                <p>Liste des avis - À implémenter</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-tab-content" id="tab-historique">
+                        <div class="modal-form-section">
+                            <h3>Historique des modifications</h3>
+                            <div class="historique-placeholder">
+                                <p>Historique - À implémenter</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-detail-right">
+                    <!-- Widget propriétaire -->
+                    <div class="modal-widget">
+                        <h4>Propriétaire</h4>
+                        <div class="modal-widget-content" id="modal-proprietaire-info">
+                            <p class="no-data">Aucun propriétaire</p>
+                        </div>
+                    </div>
+
+                    <!-- Widget statistiques -->
+                    <div class="modal-widget">
+                        <h4>Statistiques</h4>
+                        <div class="modal-widget-content" id="modal-statistiques">
+                            <div class="stat-item">
+                                <span class="stat-label">Vues totales</span>
+                                <span class="stat-value" id="modal-vues">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Candidatures</span>
+                                <span class="stat-value" id="modal-candidatures">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Note moyenne</span>
+                                <span class="stat-value" id="modal-note">0.0/5</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Widget statut -->
+                    <div class="modal-widget">
+                        <h4>Statut</h4>
+                        <div class="modal-widget-content">
+                            <div id="modal-statut-badge" class="statut-badge"></div>
+                            <button class="btn-primary btn-small" onclick="toggleEditMode()" id="btn-edit-mode">Modifier</button>
+                        </div>
+                    </div>
+
+                    <!-- Widget actions rapides -->
+                    <div class="modal-widget">
+                        <h4>Actions rapides</h4>
+                        <div class="modal-widget-content">
+                            <button class="btn-secondary btn-small btn-full" onclick="duplicateLogement(currentLogementId)">Dupliquer</button>
+                            <button class="btn-secondary btn-small btn-full" onclick="boostLogement(currentLogementId)">Mettre en avant</button>
+                            <button class="btn-secondary btn-small btn-full" onclick="shareLogement(currentLogementId)">Partager lien</button>
+                            <button class="btn-secondary btn-small btn-full" onclick="previewLogement(currentLogementId)">Prévisualiser</button>
+                            <button class="btn-danger btn-small btn-full" onclick="deleteLogement(currentLogementId)">Supprimer</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ajouter Logement (Wizard) -->
+<div class="modal-overlay" id="add-logement-modal" style="display: none;">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2>Ajouter un logement</h2>
+            <button class="modal-close" onclick="closeAddLogementModal()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <!-- Progress bar -->
+            <div class="wizard-progress">
+                <div class="wizard-progress-bar" id="wizard-progress-bar" style="width: 20%;"></div>
+            </div>
+            <div class="wizard-steps">
+                <div class="wizard-step active" data-step="1">1. Informations de base</div>
+                <div class="wizard-step" data-step="2">2. Caractéristiques</div>
+                <div class="wizard-step" data-step="3">3. Description</div>
+                <div class="wizard-step" data-step="4">4. Équipements</div>
+                <div class="wizard-step" data-step="5">5. Images & Publication</div>
+            </div>
+
+            <form id="add-logement-form" method="POST" action="{% url 'admin-logements' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <!-- Étape 1 -->
+                <div class="wizard-step-content active" id="wizard-step-1">
+                    <h3>Informations de base</h3>
+                    <div class="modal-form-grid">
+                        <div class="modal-form-field">
+                            <label for="wizard-type">Type bien *</label>
+                            <select name="type_logement" id="wizard-type" class="modal-select" required>
+                                <option value="appartement">Appartement</option>
+                                <option value="maison">Maison</option>
+                                <option value="studio">Studio</option>
+                                <option value="chambre">Chambre</option>
+                                <option value="autre">Autre</option>
+                            </select>
+                        </div>
+                        <div class="modal-form-field full-width">
+                            <label for="wizard-adresse">Adresse *</label>
+                            <input type="text" name="adresse" id="wizard-adresse" class="modal-input" required placeholder="Rue, numéro...">
+                        </div>
+                        <div class="modal-form-field">
+                            <label for="wizard-ville">Ville *</label>
+                            <input type="text" name="ville" id="wizard-ville" class="modal-input" required>
+                        </div>
+                        <div class="modal-form-field">
+                            <label for="wizard-code-postal">Code postal *</label>
+                            <input type="text" name="code_postal" id="wizard-code-postal" class="modal-input" required maxlength="5">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Étape 2 -->
+                <div class="wizard-step-content" id="wizard-step-2">
+                    <h3>Caractéristiques</h3>
+                    <div class="modal-form-grid">
+                        <div class="modal-form-field">
+                            <label for="wizard-prix">Prix loyer (€/mois) *</label>
+                            <input type="number" name="prix" id="wizard-prix" class="modal-input" required min="0" step="0.01">
+                        </div>
+                        <div class="modal-form-field">
+                            <label for="wizard-surface">Surface (m²) *</label>
+                            <input type="number" name="surface" id="wizard-surface" class="modal-input" required min="0" step="0.01">
+                        </div>
+                        <div class="modal-form-field">
+                            <label for="wizard-pieces">Nombre pièces *</label>
+                            <input type="number" name="chambres" id="wizard-pieces" class="modal-input" required min="1">
+                        </div>
+                        <div class="modal-form-field">
+                            <label for="wizard-chambres">Nombre chambres</label>
+                            <input type="number" name="chambres" id="wizard-chambres" class="modal-input" min="0">
+                        </div>
+                        <div class="modal-form-field">
+                            <label for="wizard-etage">Étage</label>
+                            <select name="etage" id="wizard-etage" class="modal-select">
+                                <option value="rdc">Rez-de-chaussée</option>
+                                <option value="etage">Étage</option>
+                                <option value="dernier">Dernier étage</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Étape 3 -->
+                <div class="wizard-step-content" id="wizard-step-3">
+                    <h3>Description</h3>
+                    <div class="modal-form-grid">
+                        <div class="modal-form-field full-width">
+                            <label for="wizard-titre">Titre annonce *</label>
+                            <input type="text" name="titre" id="wizard-titre" class="modal-input" required maxlength="100">
+                            <span class="char-count"><span id="titre-count">0</span>/100</span>
+                        </div>
+                        <div class="modal-form-field full-width">
+                            <label for="wizard-description">Description</label>
+                            <textarea name="description" id="wizard-description" class="modal-textarea" rows="8" maxlength="2000"></textarea>
+                            <span class="char-count"><span id="description-count">0</span>/2000</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Étape 4 -->
+                <div class="wizard-step-content" id="wizard-step-4">
+                    <h3>Équipements</h3>
+                    <div class="equipements-grid">
+                        <label class="equipement-checkbox"><input type="checkbox" name="equipement" value="cuisine_equipee"> Cuisine équipée</label>
+                        <label class="equipement-checkbox"><input type="checkbox" name="equipement" value="four"> Four</label>
+                        <label class="equipement-checkbox"><input type="checkbox" name="equipement" value="plaques"> Plaques cuisson</label>
+                        <label class="equipement-checkbox"><input type="checkbox" name="equipement" value="refrigerateur"> Réfrigérateur</label>
+                        <label class="equipement-checkbox"><input type="checkbox" name="equipement" value="lave_vaisselle"> Lave-vaisselle</label>
+                        <label class="equipement-checkbox"><input type="checkbox" name="equipement" value="lave_linge"> Lave-linge</label>
+                        <label class="equipement-checkbox"><input type="checkbox" name="equipement" value="seche_linge"> Sèche-linge</label>
+                        <label class="equipement-checkbox"><input type="checkbox" name="equipement" value="internet"> Internet fibre</label>
+                        <label class="equipement-checkbox"><input type="checkbox" name="equipement" value="tv"> TV</label>
+                        <label class="equipement-checkbox"><input type="checkbox" name="equipement" value="climatisation"> Climatisation</label>
+                        <label class="equipement-checkbox"><input type="checkbox" name="equipement" value="balcon"> Balcon</label>
+                        <label class="equipement-checkbox"><input type="checkbox" name="equipement" value="terrasse"> Terrasse</label>
+                        <label class="equipement-checkbox"><input type="checkbox" name="equipement" value="jardin"> Jardin</label>
+                        <label class="equipement-checkbox"><input type="checkbox" name="equipement" value="parking"> Parking</label>
+                        <label class="equipement-checkbox"><input type="checkbox" name="equipement" value="ascenseur"> Ascenseur</label>
+                    </div>
+                </div>
+
+                <!-- Étape 5 -->
+                <div class="wizard-step-content" id="wizard-step-5">
+                    <h3>Images et publication</h3>
+                    <div class="modal-form-grid">
+                        <div class="modal-form-field full-width">
+                            <label for="wizard-images">Images</label>
+                            <input type="file" name="images" id="wizard-images" class="modal-file-input" multiple accept="image/*">
+                            <div class="image-preview-grid" id="image-preview-grid"></div>
+                        </div>
+                        <div class="modal-form-field">
+                            <label for="wizard-statut">Statut initial</label>
+                            <select name="statut" id="wizard-statut" class="modal-select">
+                                <option value="disponible">Actif</option>
+                                <option value="reclame">Brouillon</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation wizard -->
+                <div class="wizard-navigation">
+                    <button type="button" class="btn-secondary" id="wizard-prev" onclick="wizardPrevious()" style="display: none;">Précédent</button>
+                    <button type="button" class="btn-secondary" id="wizard-next" onclick="wizardNext()">Suivant</button>
+                    <button type="submit" class="btn-primary" id="wizard-submit" style="display: none;">Créer logement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Styles -->
+<link rel="stylesheet" href="{% static 'core/admin/logements.css' %}">
+
+<!-- JavaScript -->
+<script src="{% static 'core/admin/logements.js' %}"></script>
+
+<script>
+    const currentSort = '{{ sort_by|default:"-date_creation" }}';
+    const prixRange = {
+        min: {{ prix_range.min_prix|default:0 }},
+        max: {{ prix_range.max_prix|default:5000 }}
+    };
+    const surfaceRange = {
+        min: {{ surface_range.min_surface|default:0 }},
+        max: {{ surface_range.max_surface|default:200 }}
+    };
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        initLogementsTable();
+        initFilters();
+        initRangeSliders();
+    });
+</script>
+{% endblock %}
+

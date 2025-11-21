@@ -1,0 +1,430 @@
+/* ============================================
+   BUSINESS MODEL CANVAS - PHASE 4 STYLES
+   ============================================ */
+
+.business-model-canvas-page {
+    margin: 0;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.canvas-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.header-left {
+    flex: 1;
+}
+
+.page-title-main {
+    font-size: 28px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 8px 0;
+}
+
+.page-subtitle {
+    font-size: 14px;
+    color: #6B7280;
+    margin: 0;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.save-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: #D1FAE5;
+    color: #065F46;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.save-indicator svg {
+    flex-shrink: 0;
+}
+
+.actions-dropdown {
+    position: relative;
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-danger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.btn-primary {
+    background: #D3580B;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #c4510a;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: white;
+    color: #111827;
+    border: 1px solid #E5E7EB;
+}
+
+.btn-secondary:hover {
+    background: #F9FAFB;
+    border-color: #D1D5DB;
+}
+
+.btn-danger {
+    background: #EF4444;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #DC2626;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 280px;
+    max-height: 400px;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+    z-index: 1000;
+}
+
+.actions-dropdown.active .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-header {
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6B7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.dropdown-item {
+    display: block;
+    padding: 12px 16px;
+    color: #111827;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background: #F3F4F6;
+}
+
+.dropdown-item-empty {
+    padding: 20px 16px;
+    text-align: center;
+    color: #9CA3AF;
+    font-size: 13px;
+}
+
+.version-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.version-title {
+    font-weight: 600;
+    color: #111827;
+}
+
+.version-date {
+    font-size: 12px;
+    color: #6B7280;
+}
+
+/* ============================================
+   CANVAS GRID
+   ============================================ */
+
+.canvas-container {
+    background: #F9FAFB;
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.canvas-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.canvas-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.canvas-column-center {
+    justify-content: center;
+}
+
+.canvas-bottom {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+/* ============================================
+   CANVAS BLOCKS
+   ============================================ */
+
+.canvas-block {
+    background: white;
+    border: 2px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 20px;
+    min-height: 180px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.canvas-block:hover {
+    border-color: #D3580B;
+    box-shadow: 0 4px 12px rgba(211, 88, 11, 0.1);
+}
+
+.canvas-block.editing {
+    border-color: #D3580B;
+    box-shadow: 0 6px 20px rgba(211, 88, 11, 0.2);
+}
+
+.canvas-block-center {
+    min-height: 400px;
+    background: rgba(211, 88, 11, 0.05);
+    border-color: #D3580B;
+}
+
+.canvas-block-center .block-title {
+    color: #D3580B;
+}
+
+.canvas-block-bottom {
+    min-height: 150px;
+}
+
+.block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #F3F4F6;
+}
+
+.block-title {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #374151;
+    margin: 0;
+}
+
+.block-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    background: #D3580B;
+    color: white;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.block-content {
+    flex: 1;
+}
+
+.block-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    line-height: 1.6;
+    color: #111827;
+    resize: none;
+    outline: none;
+    font-family: inherit;
+}
+
+.block-textarea::placeholder {
+    color: #9CA3AF;
+}
+
+.block-textarea-large {
+    min-height: 300px;
+    font-size: 16px;
+}
+
+.block-text-readonly {
+    font-size: 15px;
+    line-height: 1.6;
+    color: #111827;
+    white-space: pre-wrap;
+}
+
+.canvas-block-bottom .block-textarea {
+    min-height: 80px;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1400px) {
+    .canvas-grid {
+        grid-template-columns: 1fr 1.2fr 1fr;
+    }
+}
+
+@media (max-width: 1200px) {
+    .canvas-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .canvas-column-center {
+        order: 1;
+    }
+
+    .canvas-column:first-child {
+        order: 2;
+    }
+
+    .canvas-column:last-child {
+        order: 3;
+    }
+
+    .canvas-bottom {
+        order: 4;
+    }
+
+    .canvas-block-center {
+        min-height: 300px;
+    }
+
+    .block-textarea-large {
+        min-height: 250px;
+    }
+}
+
+@media (max-width: 768px) {
+    .canvas-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .header-actions {
+        justify-content: stretch;
+    }
+
+    .btn-primary,
+    .btn-secondary,
+    .btn-danger {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .canvas-container {
+        padding: 16px;
+    }
+
+    .canvas-grid {
+        gap: 16px;
+    }
+
+    .canvas-bottom {
+        grid-template-columns: 1fr;
+    }
+
+    .canvas-block {
+        min-height: 150px;
+        padding: 16px;
+    }
+
+    .canvas-block-center {
+        min-height: 250px;
+    }
+
+    .block-textarea {
+        min-height: 100px;
+    }
+
+    .block-textarea-large {
+        min-height: 200px;
+    }
+}
+
+@media (max-width: 480px) {
+    .canvas-container {
+        padding: 12px;
+    }
+
+    .canvas-block {
+        padding: 12px;
+        min-height: 120px;
+    }
+
+    .block-title {
+        font-size: 12px;
+    }
+
+    .block-textarea,
+    .block-text-readonly {
+        font-size: 14px;
+    }
+}
+

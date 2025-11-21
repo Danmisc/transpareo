@@ -1,0 +1,2550 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="connect-group-detail-page">
+    <div class="group-detail-container">
+        <!-- En-tête du groupe -->
+        <div class="group-header-section">
+            {% if group.cover_image %}
+                <div class="group-cover-image" style="background-image: url('{{ group.cover_image.url }}');"></div>
+            {% else %}
+                <div class="group-cover-placeholder">
+                    <div class="group-icon-header">{{ group.icon|default:"👥" }}</div>
+                </div>
+            {% endif %}
+            
+            <div class="group-header-content">
+                <div class="group-header-info">
+                    <div class="group-icon-badge">{{ group.icon|default:"👥" }}</div>
+                    <div class="group-title-section">
+                        <h1 class="group-title">{{ group.name }}</h1>
+                        <div class="group-meta">
+                            {% if group.is_public %}
+                                <span class="badge badge-public">Public</span>
+                            {% else %}
+                                <span class="badge badge-private">Privé</span>
+                            {% endif %}
+                            <span class="group-stat">{{ member_count }} membre{{ member_count|pluralize }}</span>
+                            <span class="group-stat">{{ post_count }} publication{{ post_count|pluralize }}</span>
+                            {% if group.ville %}
+                            <span class="group-stat">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"></path>
+                                    <circle cx="12" cy="9" r="3"></circle>
+                                </svg>
+                                {{ group.ville }}{% if group.region %}, {{ group.region }}{% endif %}
+                            </span>
+                            {% endif %}
+                        </div>
+                        {% if tags_list %}
+                        <div class="group-tags">
+                            {% for tag in tags_list %}
+                            <span class="group-tag">{{ tag }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if group.full_description %}
+                        <p class="group-description-full">{{ group.full_description|truncatewords:50 }}</p>
+                        {% endif %}
+                        <!-- Administrateurs en avant -->
+                        {% if admins_list %}
+                        <div class="group-admins-preview">
+                            <span class="admins-label">Administrateurs :</span>
+                            {% for admin in admins_list %}
+                            <a href="{% url 'profile-user' admin.id %}" class="admin-avatar-link" title="{{ admin.get_full_name|default:admin.username }}">
+                                {% if admin.avatar %}
+                                    <img src="{{ admin.avatar.url }}" alt="{{ admin.username }}" class="admin-avatar-mini">
+                                {% else %}
+                                    <div class="admin-avatar-mini-placeholder">{{ admin.username|first|upper }}</div>
+                                {% endif %}
+                            </a>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="group-header-actions">
+                    {% if is_admin %}
+                        <a href="{% url 'edit-group' group.id %}" class="btn-secondary">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                            </svg>
+                            Paramètres
+                        </a>
+                    {% endif %}
+                    
+                    {% if is_member %}
+                        {% if is_admin %}
+                        <button class="btn-secondary" onclick="inviteToGroup()">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="8.5" cy="7" r="4"></circle>
+                                <line x1="20" y1="8" x2="20" y2="14"></line>
+                                <line x1="23" y1="11" x2="17" y2="11"></line>
+                            </svg>
+                            Inviter
+                        </button>
+                        {% endif %}
+                        <button class="btn-danger" onclick="leaveGroup({{ group.id }})">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <polyline points="16 17 21 12 16 7"></polyline>
+                                <line x1="21" y1="12" x2="9" y2="12"></line>
+                            </svg>
+                            Quitter
+                        </button>
+                    {% else %}
+                        {% if membership and membership.status == 'pending' %}
+                            <button class="btn-secondary" disabled>
+                                Demande en attente
+                            </button>
+                        {% else %}
+                            <button class="btn-primary" onclick="joinGroup({{ group.id }})">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                {% if group.require_approval %}
+                                Demander à rejoindre
+                                {% else %}
+                                Rejoindre
+                                {% endif %}
+                            </button>
+                        {% endif %}
+                    {% endif %}
+                    
+                    {% if not is_admin and user.is_authenticated %}
+                    <div class="dropdown">
+                        <button class="btn-icon" onclick="toggleDropdown(this)">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="1"></circle>
+                                <circle cx="12" cy="5" r="1"></circle>
+                                <circle cx="12" cy="19" r="1"></circle>
+                            </svg>
+                        </button>
+                        <div class="dropdown-menu">
+                            <a href="#" class="dropdown-item danger" onclick="reportGroup({{ group.id }})">Signaler le groupe</a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Alertes pour admins (demandes en attente) -->
+        {% if is_admin and pending_requests %}
+        <div class="admin-alert">
+            <div class="alert-content">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span>{{ pending_requests|length }} demande{{ pending_requests|pluralize }} d'adhésion en attente</span>
+            </div>
+            <button class="btn-sm" onclick="showPendingRequests()">Voir les demandes</button>
+        </div>
+        {% endif %}
+
+        <!-- Description courte -->
+        {% if group.description %}
+        <div class="group-description-box">
+            <p>{{ group.description }}</p>
+        </div>
+        {% endif %}
+        
+        <!-- Widget statistiques -->
+        <div class="group-stats-widget">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ active_members }}</div>
+                    <div class="stat-label">Membres actifs</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📝</div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ posts_this_month }}</div>
+                    <div class="stat-label">Posts ce mois</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✨</div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ new_members_week }}</div>
+                    <div class="stat-label">Nouveaux cette semaine</div>
+                </div>
+            </div>
+            {% if contributors_list %}
+            <div class="stat-card leaderboard">
+                <div class="stat-icon">🏆</div>
+                <div class="stat-content">
+                    <div class="stat-label">Top contributeurs</div>
+                    <div class="leaderboard-list">
+                        {% for contrib in contributors_list %}
+                        <div class="leaderboard-item">
+                            {% if contrib.user.avatar %}
+                                <img src="{{ contrib.user.avatar.url }}" alt="{{ contrib.user.username }}" class="leaderboard-avatar">
+                            {% else %}
+                                <div class="leaderboard-avatar-placeholder">{{ contrib.user.username|first|upper }}</div>
+                            {% endif %}
+                            <span class="leaderboard-name">{{ contrib.user.username }}</span>
+                            <span class="leaderboard-count">{{ contrib.posts_count }} posts</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Événements à venir (Meetups) -->
+        {% if upcoming_meetups %}
+        <div class="group-meetups-section">
+            <h3 class="section-title">Événements à venir</h3>
+            <div class="meetups-list">
+                {% for meetup in upcoming_meetups %}
+                <article class="meetup-card">
+                    <div class="meetup-header">
+                        <h4 class="meetup-title">{{ meetup.title }}</h4>
+                        <span class="meetup-date">{{ meetup.date_start|date:"d F Y à H:i" }}</span>
+                    </div>
+                    {% if meetup.description %}
+                    <p class="meetup-description">{{ meetup.description|truncatewords:30 }}</p>
+                    {% endif %}
+                    <div class="meetup-actions">
+                        {% if meetup.is_live and meetup.visio_link %}
+                        <a href="{{ meetup.visio_link }}" target="_blank" class="btn-meetup-join">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                            </svg>
+                            Rejoindre la visio
+                        </a>
+                        {% elif meetup.replay_link %}
+                        <a href="{{ meetup.replay_link }}" target="_blank" class="btn-meetup-replay">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                            Voir le replay
+                        </a>
+                        {% endif %}
+                        <span class="meetup-participants">{{ meetup.participants.count }} participant{{ meetup.participants.count|pluralize }}</span>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Sous-groupes thématiques -->
+        {% if sous_groupes %}
+        <div class="group-sous-groupes-section">
+            <h3 class="section-title">Sous-groupes thématiques</h3>
+            <div class="sous-groupes-grid">
+                {% for sous_groupe in sous_groupes %}
+                <div class="sous-groupe-card">
+                    <div class="sous-groupe-icon">{{ sous_groupe.icon }}</div>
+                    <h4 class="sous-groupe-name">{{ sous_groupe.name }}</h4>
+                    {% if sous_groupe.description %}
+                    <p class="sous-groupe-description">{{ sous_groupe.description|truncatewords:15 }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Onglets -->
+        <div class="group-tabs">
+            <a href="?tab=discussion" class="tab-item {% if active_tab == 'discussion' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                Discussion
+            </a>
+            <a href="?tab=members" class="tab-item {% if active_tab == 'members' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                Membres
+            </a>
+            <a href="?tab=about" class="tab-item {% if active_tab == 'about' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                À propos
+            </a>
+        </div>
+
+        <!-- Contenu des onglets -->
+        <div class="group-tab-content">
+            {% if active_tab == 'discussion' %}
+                <!-- Onglet Discussion -->
+                <div class="discussion-tab">
+                    {% if is_member %}
+                    <!-- Bloc de publication -->
+                    <div class="post-creator">
+                        <form id="create-post-form" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="hidden" name="group_id" value="{{ group.id }}">
+                            <div class="post-creator-header">
+                                {% if user.avatar %}
+                                    <img src="{{ user.avatar.url }}" alt="{{ user.username }}" class="creator-avatar">
+                                {% else %}
+                                    <div class="creator-avatar-placeholder">{{ user.username|first|upper }}</div>
+                                {% endif %}
+                                <textarea name="content" id="post-content" placeholder="Partagez quelque chose avec le groupe..." rows="3" required></textarea>
+                            </div>
+                            <div class="post-creator-actions">
+                                <div class="post-attachments">
+                                    <button type="button" class="btn-attach" onclick="document.getElementById('post-images').click()">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                            <polyline points="21 15 16 10 5 21"></polyline>
+                                        </svg>
+                                        Photo
+                                    </button>
+                                    <input type="file" id="post-images" accept="image/*" multiple style="display: none;" onchange="handleImageSelect(event)">
+                                    <button type="button" class="btn-attach" onclick="document.getElementById('post-documents').click()">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                                        </svg>
+                                        Document
+                                    </button>
+                                    <input type="file" id="post-documents" accept=".pdf,.doc,.docx" multiple style="display: none;" onchange="handleDocumentSelect(event)">
+                                </div>
+                                <button type="submit" class="btn-primary">Publier</button>
+                            </div>
+                            <div id="post-preview" class="post-preview" style="display: none;"></div>
+                        </form>
+                    </div>
+                    {% else %}
+                    <div class="join-prompt">
+                        <p>Rejoignez ce groupe pour participer aux discussions et publier du contenu.</p>
+                        <button class="btn-primary" onclick="joinGroup({{ group.id }})">Rejoindre le groupe</button>
+                    </div>
+                    {% endif %}
+
+                    <!-- Filtres par type de contenu -->
+                    <div class="group-posts-filters">
+                        <select id="filter-content-type" class="filter-select" onchange="filterPostsByType(this.value)">
+                            <option value="">Tous les contenus</option>
+                            <option value="news" {% if tab_data.filter_content_type == 'news' %}selected{% endif %}>📰 Actualités</option>
+                            <option value="guide" {% if tab_data.filter_content_type == 'guide' %}selected{% endif %}>📚 Guides</option>
+                            <option value="offer" {% if tab_data.filter_content_type == 'offer' %}selected{% endif %}>💼 Offres</option>
+                            <option value="discussion" {% if tab_data.filter_content_type == 'discussion' %}selected{% endif %}>💬 Discussions</option>
+                            <option value="property" {% if tab_data.filter_content_type == 'property' %}selected{% endif %}>🏠 Logements</option>
+                            <option value="group" {% if tab_data.filter_content_type == 'group' %}selected{% endif %}>👥 Groupes</option>
+                        </select>
+                    </div>
+
+                    <!-- Fil d'actualité -->
+                    <div class="group-posts-feed">
+                        {% for post_data in tab_data.posts_with_data %}
+                            {% with post=post_data.post %}
+                            <article class="post-card post-type-{{ post.content_type }}" data-post-id="{{ post.id }}">
+                                <!-- Pavé couleur selon le type -->
+                                <div class="post-type-indicator post-type-{{ post.content_type }}-indicator">
+                                    {% if post.content_type == 'news' %}
+                                        <span class="type-icon">📰</span>
+                                        <span class="type-label">Actualité</span>
+                                    {% elif post.content_type == 'guide' %}
+                                        <span class="type-icon">📚</span>
+                                        <span class="type-label">Guide</span>
+                                    {% elif post.content_type == 'offer' %}
+                                        <span class="type-icon">💼</span>
+                                        <span class="type-label">Offre</span>
+                                    {% elif post.content_type == 'discussion' %}
+                                        <span class="type-icon">💬</span>
+                                        <span class="type-label">Discussion</span>
+                                    {% elif post.content_type == 'property' %}
+                                        <span class="type-icon">🏠</span>
+                                        <span class="type-label">Logement</span>
+                                    {% elif post.content_type == 'group' %}
+                                        <span class="type-icon">👥</span>
+                                        <span class="type-label">Groupe</span>
+                                    {% endif %}
+                                </div>
+                                <!-- Structure similaire à home.html pour les posts -->
+                                <div class="post-header">
+                                    {% if post.author and post.author.id %}
+                                    <a href="{% url 'profile-user' post.author.id %}" class="post-author">
+                                    {% else %}
+                                    <span class="post-author">
+                                    {% endif %}
+                                        {% if post.author.avatar %}
+                                            <img src="{{ post.author.avatar.url }}" alt="{{ post.author.username }}" class="post-avatar">
+                                        {% else %}
+                                            <div class="post-avatar-placeholder">{{ post.author.username|first|upper }}</div>
+                                        {% endif %}
+                                        <div class="post-author-info">
+                                            {% if post.author and post.author.id %}
+                                            <a href="{% url 'profile-user' post.author.id %}" class="post-author-name">{{ post.author.get_full_name|default:post.author.username }}</a>
+                                            {% else %}
+                                            <span class="post-author-name">{{ post.author.get_full_name|default:post.author.username }}</span>
+                                            {% endif %}
+                                            <span class="post-time">{{ post.created_at|timesince }}</span>
+                                        </div>
+                                    {% if post.author and post.author.id %}
+                                    </a>
+                                    {% else %}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <div class="post-content">
+                                    {{ post.content|linebreaks }}
+                                    {% if post_data.hashtags_list %}
+                                    <div class="post-hashtags">
+                                        {% for hashtag in post_data.hashtags_list %}
+                                        <a href="?filter_hashtag={{ hashtag }}" class="hashtag">{{ hashtag }}</a>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% if post.images.exists %}
+                                <div class="post-images">
+                                    {% for image in post.images.all %}
+                                    <img src="{{ image.image.url }}" alt="Image" class="post-image">
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                {% if post.documents.exists %}
+                                <div class="post-documents">
+                                    {% for doc in post.documents.all %}
+                                    <a href="{{ doc.document.url }}" target="_blank" class="post-document">{{ doc.title }}</a>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Sondage intégré -->
+                                {% if post_data.sondage_data %}
+                                <div class="post-sondage-widget">
+                                    <h4 class="sondage-question">{{ post_data.sondage_data.sondage.question }}</h4>
+                                    <div class="sondage-options">
+                                        {% for option in post_data.sondage_data.sondage.options.all %}
+                                        <div class="sondage-option {% if post_data.sondage_data.user_vote == option.id %}user-voted{% endif %}" 
+                                             onclick="voteSondage({{ post_data.sondage_data.sondage.id }}, {{ option.id }})">
+                                            <div class="option-content">
+                                                <span class="option-text">{{ option.text }}</span>
+                                                {% if post_data.sondage_data.total_votes > 0 %}
+                                                <span class="option-percentage">
+                                                    {{ option.votes_count|floatformat:0 }} vote{{ option.votes_count|pluralize }}
+                                                    ({% widthratio option.votes_count post_data.sondage_data.total_votes 100 %}%)
+                                                </span>
+                                                {% endif %}
+                                            </div>
+                                            {% if post_data.sondage_data.total_votes > 0 %}
+                                            <div class="option-bar">
+                                                <div class="option-bar-fill" style="width: {% widthratio option.votes_count post_data.sondage_data.total_votes 100 %}%"></div>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="sondage-footer">
+                                        <span class="sondage-total">{{ post_data.sondage_data.total_votes }} vote{{ post_data.sondage_data.total_votes|pluralize }}</span>
+                                        {% if post_data.sondage_data.sondage.show_results_public or is_admin %}
+                                        <button class="btn-link" onclick="showSondageDetails({{ post_data.sondage_data.sondage.id }})">Voir les détails</button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Question-Réponse intégrée -->
+                                {% if post_data.question_data %}
+                                <div class="post-question-widget">
+                                    <div class="question-header">
+                                        <span class="question-icon">❓</span>
+                                        <h4 class="question-title">Question : {{ post_data.question_data.question.question|truncatewords:20 }}</h4>
+                                        {% if post_data.question_data.question.is_solved %}
+                                        <span class="question-solved-badge">✓ Résolu</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if post_data.question_data.reponses %}
+                                    <div class="question-reponses">
+                                        {% for reponse in post_data.question_data.reponses %}
+                                        <div class="reponse-item {% if reponse.is_official %}official-solution{% endif %}">
+                                            <div class="reponse-header">
+                                                <div class="reponse-author">
+                                                    {% if reponse.author.avatar %}
+                                                        <img src="{{ reponse.author.avatar.url }}" alt="{{ reponse.author.username }}" class="reponse-avatar">
+                                                    {% else %}
+                                                        <div class="reponse-avatar-placeholder">{{ reponse.author.username|first|upper }}</div>
+                                                    {% endif %}
+                                                    <span class="reponse-author-name">{{ reponse.author.username }}</span>
+                                                    {% if reponse.is_official %}
+                                                    <span class="official-badge">Solution officielle</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="reponse-votes">
+                                                    <button class="vote-btn {% if post_data.question_data.user_voted %}voted{% endif %}" 
+                                                            onclick="voteReponse({{ reponse.id }})">
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <path d="M7 13l3 3 7-7"></path>
+                                                            <path d="M10.5 21.5v-4.5H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5.5"></path>
+                                                        </svg>
+                                                        {{ reponse.votes_count }}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <p class="reponse-content">{{ reponse.content|truncatewords:50 }}</p>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    {% if post_data.question_data.question.reponses.count > 5 %}
+                                    <button class="btn-link" onclick="loadMoreReponses({{ post_data.question_data.question.id }})">Voir toutes les réponses ({{ post_data.question_data.question.reponses.count }})</button>
+                                    {% endif %}
+                                    {% if is_member and not post_data.question_data.question.is_solved %}
+                                    <button class="btn-secondary btn-sm" onclick="showReponseForm({{ post_data.question_data.question.id }})">Répondre</button>
+                                    {% endif %}
+                                    {% if is_admin %}
+                                    <button class="btn-secondary btn-sm" onclick="markAsOfficial({{ post_data.question_data.question.id }})">Marquer comme solution officielle</button>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                
+                                <div class="post-actions">
+                                    <button class="post-action {% if post_data.is_liked %}liked{% endif %}" onclick="toggleLike({{ post.id }})">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="{% if post_data.is_liked %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2">
+                                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                        </svg>
+                                        <span class="action-count">{{ post.likes.count }}</span>
+                                    </button>
+                                    <button class="post-action" onclick="toggleComments({{ post.id }})">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                        </svg>
+                                        <span class="action-count">{{ post.comments.count }}</span>
+                                    </button>
+                                    <button class="post-action" onclick="sharePost({{ post.id }})">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="18" cy="5" r="3"></circle>
+                                            <circle cx="6" cy="12" r="3"></circle>
+                                            <circle cx="18" cy="19" r="3"></circle>
+                                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                                        </svg>
+                                        Partager
+                                    </button>
+                                </div>
+                            </article>
+                            {% endwith %}
+                        {% empty %}
+                            <div class="empty-posts">
+                                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="empty-icon">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                <p>Aucune publication pour le moment. Soyez le premier à publier !</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if tab_data.posts.has_other_pages %}
+                    <div class="posts-pagination">
+                        <div class="pagination">
+                            {% if tab_data.posts.has_previous %}
+                            <a href="?tab=discussion&page={{ tab_data.posts.previous_page_number }}" class="pagination-btn">Précédent</a>
+                            {% endif %}
+                            <span class="pagination-info">Page {{ tab_data.posts.number }} sur {{ tab_data.posts.paginator.num_pages }}</span>
+                            {% if tab_data.posts.has_next %}
+                            <a href="?tab=discussion&page={{ tab_data.posts.next_page_number }}" class="pagination-btn">Suivant</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+            {% elif active_tab == 'members' %}
+                <!-- Onglet Membres - Mini-annuaire avec filtres multicritères -->
+                <div class="members-tab">
+                    <!-- Filtres multicritères -->
+                    <div class="members-filters">
+                        <form method="get" class="filters-form">
+                            <input type="hidden" name="tab" value="members">
+                            <div class="filter-row">
+                                <div class="filter-group">
+                                    <label>Recherche</label>
+                                    <input type="text" name="search" value="{{ tab_data.member_search }}" placeholder="Nom, prénom, username..." class="filter-input">
+                                </div>
+                                <div class="filter-group">
+                                    <label>Ville</label>
+                                    <input type="text" name="filter_ville" value="{{ tab_data.filter_ville }}" placeholder="Filtrer par ville..." class="filter-input">
+                                </div>
+                                <div class="filter-group">
+                                    <label>Type de profil</label>
+                                    <select name="filter_type" class="filter-select">
+                                        <option value="">Tous</option>
+                                        <option value="locataire" {% if tab_data.filter_type == 'locataire' %}selected{% endif %}>Locataire</option>
+                                        <option value="proprietaire" {% if tab_data.filter_type == 'proprietaire' %}selected{% endif %}>Propriétaire</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label>Expérience (années)</label>
+                                    <select name="filter_experience" class="filter-select">
+                                        <option value="">Tous</option>
+                                        <option value="1" {% if tab_data.filter_experience == '1' %}selected{% endif %}>1+ an</option>
+                                        <option value="2" {% if tab_data.filter_experience == '2' %}selected{% endif %}>2+ ans</option>
+                                        <option value="5" {% if tab_data.filter_experience == '5' %}selected{% endif %}>5+ ans</option>
+                                    </select>
+                                </div>
+                                <div class="filter-actions">
+                                    <button type="submit" class="btn-primary">Filtrer</button>
+                                    <a href="?tab=members" class="btn-secondary">Réinitialiser</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="members-list">
+                        {% for membership in tab_data.members %}
+                        <div class="member-item">
+                            <div class="member-avatar">
+                                {% if membership.user.avatar %}
+                                    <img src="{{ membership.user.avatar.url }}" alt="{{ membership.user.username }}">
+                                {% else %}
+                                    <div class="avatar-placeholder">{{ membership.user.username|first|upper }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="member-info">
+                                <a href="{% url 'profile-user' membership.user.id %}" class="member-name">{{ membership.user.get_full_name|default:membership.user.username }}</a>
+                                <div class="member-meta">
+                                    {% if membership.role == 'admin' %}
+                                        <span class="role-badge role-admin">Administrateur</span>
+                                    {% elif membership.role == 'moderator' %}
+                                        <span class="role-badge role-moderator">Modérateur</span>
+                                    {% else %}
+                                        <span class="role-badge role-member">Membre</span>
+                                    {% endif %}
+                                    <span class="member-joined">Membre depuis {{ membership.joined_at|date:"M Y" }}</span>
+                                </div>
+                            </div>
+                            <div class="member-actions">
+                                {% if is_admin and membership.user != user %}
+                                <div class="dropdown">
+                                    <button class="btn-icon" onclick="toggleDropdown(this)">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="1"></circle>
+                                            <circle cx="12" cy="5" r="1"></circle>
+                                            <circle cx="12" cy="19" r="1"></circle>
+                                        </svg>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        {% if membership.role != 'moderator' %}
+                                        <a href="#" class="dropdown-item" onclick="promoteMember({{ membership.user.id }}, 'moderator')">Promouvoir modérateur</a>
+                                        {% endif %}
+                                        {% if membership.role != 'admin' %}
+                                        <a href="#" class="dropdown-item" onclick="promoteMember({{ membership.user.id }}, 'admin')">Promouvoir admin</a>
+                                        {% endif %}
+                                        <div class="dropdown-separator"></div>
+                                        <a href="#" class="dropdown-item danger" onclick="banMember({{ membership.user.id }})">Bannir</a>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                <a href="{% url 'connect-messages' %}?user={{ membership.user.id }}" class="btn-secondary-sm">Message</a>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="empty-members">
+                            <p>Aucun membre trouvé.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            {% elif active_tab == 'about' %}
+                <!-- Onglet À propos -->
+                <div class="about-tab">
+                    <div class="about-section">
+                        <h3>Description</h3>
+                        <p>{{ group.full_description|default:group.description|linebreaks }}</p>
+                    </div>
+
+                    {% if group.rules %}
+                    <div class="about-section">
+                        <h3>Règles du groupe</h3>
+                        <div class="rules-content">{{ group.rules|linebreaks }}</div>
+                    </div>
+                    {% endif %}
+
+                    <div class="about-section">
+                        <h3>Informations</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">Créé le :</span>
+                                <span class="info-value">{{ group.created_at|date:"d/m/Y" }}</span>
+                            </div>
+                            {% if group.creator %}
+                            <div class="info-item">
+                                <span class="info-label">Créé par :</span>
+                                <a href="{% url 'profile-user' group.creator.id %}" class="info-value link">{{ group.creator.get_full_name|default:group.creator.username }}</a>
+                            </div>
+                            {% endif %}
+                            <div class="info-item">
+                                <span class="info-label">Type :</span>
+                                <span class="info-value">{{ group.get_category_display }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Visibilité :</span>
+                                <span class="info-value">{% if group.is_public %}Public{% else %}Privé{% endif %}</span>
+                            </div>
+                            {% if group.require_approval %}
+                            <div class="info-item">
+                                <span class="info-label">Adhésion :</span>
+                                <span class="info-value">Sur approbation</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if tab_data.admins or tab_data.moderators %}
+                    <div class="about-section">
+                        <h3>Administration</h3>
+                        {% if tab_data.admins %}
+                        <div class="admins-list">
+                            <h4>Administrateurs</h4>
+                            <div class="staff-grid">
+                                {% for admin in tab_data.admins %}
+                                <div class="staff-item">
+                                    {% if admin.avatar %}
+                                        <img src="{{ admin.avatar.url }}" alt="{{ admin.username }}">
+                                    {% else %}
+                                        <div class="avatar-placeholder-small">{{ admin.username|first|upper }}</div>
+                                    {% endif %}
+                                    <a href="{% url 'profile-user' admin.id %}">{{ admin.get_full_name|default:admin.username }}</a>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if tab_data.moderators %}
+                        <div class="moderators-list">
+                            <h4>Modérateurs</h4>
+                            <div class="staff-grid">
+                                {% for moderator in tab_data.moderators %}
+                                <div class="staff-item">
+                                    {% if moderator.avatar %}
+                                        <img src="{{ moderator.avatar.url }}" alt="{{ moderator.username }}">
+                                    {% else %}
+                                        <div class="avatar-placeholder-small">{{ moderator.username|first|upper }}</div>
+                                    {% endif %}
+                                    <a href="{% url 'profile-user' moderator.id %}">{{ moderator.get_full_name|default:moderator.username }}</a>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal demandes en attente (pour admins) -->
+{% if is_admin and pending_requests %}
+<div id="pending-requests-modal" class="modal" style="display: none;">
+    <div class="modal-overlay" onclick="closePendingRequestsModal()"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Demandes d'adhésion en attente</h3>
+            <button class="modal-close" onclick="closePendingRequestsModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="pending-requests-list">
+                {% for request in pending_requests %}
+                <div class="pending-request-item">
+                    <div class="request-user">
+                        {% if request.user.avatar %}
+                            <img src="{{ request.user.avatar.url }}" alt="{{ request.user.username }}">
+                        {% else %}
+                            <div class="avatar-placeholder">{{ request.user.username|first|upper }}</div>
+                        {% endif %}
+                        <div class="request-user-info">
+                            <a href="{% url 'profile-user' request.user.id %}" class="request-user-name">{{ request.user.get_full_name|default:request.user.username }}</a>
+                            <span class="request-date">Demandé le {{ request.joined_at|date:"d/m/Y" }}</span>
+                        </div>
+                    </div>
+                    <div class="request-actions">
+                        <button class="btn-primary-sm" onclick="approveRequest({{ request.id }})">Accepter</button>
+                        <button class="btn-secondary-sm" onclick="rejectRequest({{ request.id }})">Refuser</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+    /* Styles généraux du groupe - similaire à home.html mais adapté */
+    .connect-group-detail-page {
+        min-height: calc(100vh - 70px);
+        background: #f5f5f5;
+        padding-top: 70px;
+    }
+
+    .group-detail-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 24px 32px;
+    }
+
+    /* En-tête du groupe */
+    .group-header-section {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        margin-bottom: 24px;
+    }
+
+    .group-cover-image,
+    .group-cover-placeholder {
+        width: 100%;
+        height: 200px;
+        background-size: cover;
+        background-position: center;
+    }
+
+    .group-cover-placeholder {
+        background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .group-icon-header {
+        font-size: 72px;
+    }
+
+    .group-header-content {
+        padding: 24px;
+    }
+
+    .group-header-info {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .group-icon-badge {
+        width: 80px;
+        height: 80px;
+        border-radius: 16px;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        flex-shrink: 0;
+    }
+
+    .group-title-section {
+        flex: 1;
+    }
+
+    .group-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0 0 12px 0;
+    }
+
+    .group-meta {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .badge-public {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .badge-private {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .group-stat {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        color: #666;
+    }
+
+    .group-header-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    /* Styles des onglets */
+    .group-tabs {
+        display: flex;
+        gap: 8px;
+        padding: 16px;
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .tab-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 500;
+        color: #666;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .tab-item:hover {
+        background: #f5f5f5;
+        color: #333;
+    }
+
+    .tab-item.active {
+        background: #D3580B;
+        color: white;
+    }
+
+    .group-tab-content {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Post styles - réutiliser depuis home.html */
+    .post-creator, .post-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .post-creator-header {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .creator-avatar, .creator-avatar-placeholder {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .creator-avatar-placeholder {
+        background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+    }
+
+    #post-content {
+        flex: 1;
+        border: none;
+        resize: none;
+        font-size: 15px;
+        font-family: inherit;
+        outline: none;
+    }
+
+    .post-creator-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .post-attachments {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-attach {
+        padding: 8px 12px;
+        background: #f5f5f5;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        color: #666;
+        transition: all 0.2s ease;
+    }
+
+    .btn-attach:hover {
+        background: #e5e5e5;
+        color: #333;
+    }
+
+    .post-header, .post-author {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .post-avatar, .post-avatar-placeholder {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+    }
+
+    .post-avatar-placeholder {
+        background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+    }
+
+    .post-author-name {
+        font-weight: 600;
+        color: #1a1a1a;
+        text-decoration: none;
+    }
+
+    .post-time {
+        font-size: 12px;
+        color: #999;
+    }
+
+    .post-content {
+        margin-bottom: 16px;
+        line-height: 1.6;
+        color: #333;
+    }
+
+    .post-hashtags {
+        margin-top: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .hashtag {
+        color: #D3580B;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .post-images {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 8px;
+        margin: 16px 0;
+    }
+
+    .post-image {
+        width: 100%;
+        border-radius: 8px;
+        object-fit: cover;
+    }
+
+    .post-documents {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin: 16px 0;
+    }
+
+    .post-document {
+        padding: 12px;
+        background: #f5f5f5;
+        border-radius: 8px;
+        text-decoration: none;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .post-actions {
+        display: flex;
+        gap: 16px;
+        padding-top: 16px;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .post-action {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        color: #666;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+
+    .post-action:hover {
+        background: #f5f5f5;
+        color: #D3580B;
+    }
+
+    .post-action.liked {
+        color: #D3580B;
+    }
+
+    .action-count {
+        font-weight: 600;
+    }
+
+    /* Membres */
+    .members-search {
+        margin-bottom: 24px;
+    }
+
+    .members-search form {
+        display: flex;
+        gap: 12px;
+    }
+
+    .search-input {
+        flex: 1;
+        padding: 10px 16px;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        font-size: 15px;
+    }
+
+    .search-btn {
+        padding: 10px 24px;
+        background: #D3580B;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .members-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .member-item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px;
+        background: #fafafa;
+        border-radius: 12px;
+    }
+
+    .member-avatar img, .avatar-placeholder {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+    }
+
+    .avatar-placeholder {
+        background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+    }
+
+    .member-info {
+        flex: 1;
+    }
+
+    .member-name {
+        font-weight: 600;
+        color: #1a1a1a;
+        text-decoration: none;
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    .member-meta {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .role-badge {
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .role-admin {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .role-moderator {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+
+    .role-member {
+        background: #f5f5f5;
+        color: #666;
+    }
+
+    .member-joined {
+        font-size: 12px;
+        color: #999;
+    }
+
+    .member-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .btn-icon {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #666;
+    }
+
+    .btn-secondary-sm {
+        padding: 8px 16px;
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #333;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    /* À propos */
+    .about-section {
+        margin-bottom: 32px;
+    }
+
+    .about-section h3 {
+        font-size: 20px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0 0 16px 0;
+    }
+
+    .about-section p {
+        line-height: 1.6;
+        color: #333;
+    }
+
+    .rules-content {
+        background: #f9f9f9;
+        padding: 16px;
+        border-radius: 8px;
+        border-left: 4px solid #D3580B;
+        line-height: 1.6;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 16px;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .info-label {
+        font-size: 12px;
+        color: #999;
+        text-transform: uppercase;
+    }
+
+    .info-value {
+        font-size: 15px;
+        font-weight: 500;
+        color: #333;
+    }
+
+    .info-value.link {
+        color: #D3580B;
+        text-decoration: none;
+    }
+
+    .staff-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+    }
+
+    .staff-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        text-align: center;
+    }
+
+    .staff-item img, .avatar-placeholder-small {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+    }
+
+    .avatar-placeholder-small {
+        background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+    }
+
+    .staff-item a {
+        font-size: 14px;
+        font-weight: 500;
+        color: #1a1a1a;
+        text-decoration: none;
+    }
+
+    /* Admin alert */
+    .admin-alert {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .alert-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #856404;
+    }
+
+    .btn-sm {
+        padding: 8px 16px;
+        background: #ffc107;
+        color: #856404;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    /* Modal */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 10000;
+    }
+
+    .modal-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+    }
+
+    .modal-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
+        z-index: 1;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px;
+        border-bottom: 1px solid #e5e5e5;
+    }
+
+    .modal-header h3 {
+        font-size: 20px;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .modal-close {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        background: transparent;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+    .modal-body {
+        padding: 24px;
+    }
+
+    .pending-requests-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .pending-request-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px;
+        background: #f9f9f9;
+        border-radius: 8px;
+    }
+
+    .request-user {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .request-user img, .request-user .avatar-placeholder {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+    }
+
+    .request-user-name {
+        font-weight: 600;
+        color: #1a1a1a;
+        text-decoration: none;
+        display: block;
+    }
+
+    .request-date {
+        font-size: 12px;
+        color: #999;
+    }
+
+    .request-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-primary-sm, .btn-secondary-sm {
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+    }
+
+    .btn-primary-sm {
+        background: #D3580B;
+        color: white;
+    }
+
+    .btn-secondary-sm {
+        background: #f5f5f5;
+        color: #333;
+        border: 1px solid #e5e5e5;
+    }
+
+    .btn-danger {
+        padding: 10px 20px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .dropdown {
+        position: relative;
+    }
+
+    .dropdown-menu {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        min-width: 200px;
+        padding: 8px;
+        opacity: 0;
+        visibility: hidden;
+        z-index: 1000;
+    }
+
+    .dropdown.active .dropdown-menu {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .dropdown-item {
+        display: block;
+        padding: 10px 12px;
+        border-radius: 6px;
+        font-size: 14px;
+        color: #333;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .dropdown-item:hover {
+        background: #f5f5f5;
+    }
+
+    .dropdown-item.danger {
+        color: #dc3545;
+    }
+
+    .dropdown-separator {
+        height: 1px;
+        background: #e5e5e5;
+        margin: 4px 0;
+    }
+
+    .empty-posts, .empty-members {
+        text-align: center;
+        padding: 60px 24px;
+        color: #999;
+    }
+
+    .empty-icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 16px;
+        color: #ddd;
+    }
+
+    .join-prompt {
+        background: #f9f9f9;
+        border: 2px dashed #ddd;
+        border-radius: 12px;
+        padding: 32px;
+        text-align: center;
+        margin-bottom: 24px;
+    }
+
+    .group-description-box {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .group-description-box p {
+        margin: 0;
+        line-height: 1.6;
+        color: #333;
+    }
+
+    .posts-pagination {
+        margin-top: 24px;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .pagination-btn {
+        padding: 8px 16px;
+        background: #f5f5f5;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        text-decoration: none;
+        color: #333;
+        font-size: 14px;
+    }
+
+    .pagination-info {
+        font-size: 14px;
+        color: #666;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .group-detail-container {
+            padding: 0 16px 24px;
+        }
+
+        .group-header-info {
+            flex-direction: column;
+        }
+
+        .group-header-actions {
+            width: 100%;
+        }
+
+        .group-tabs {
+            flex-wrap: wrap;
+        }
+
+        .post-creator-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
+    /* Pavés couleur par type de post */
+    .post-type-indicator {
+        padding: 8px 16px;
+        border-radius: 8px 8px 0 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        font-size: 14px;
+    }
+    .post-type-news-indicator { background: #e3f2fd; color: #1976d2; }
+    .post-type-guide-indicator { background: #f3e5f5; color: #7b1fa2; }
+    .post-type-offer-indicator { background: #fff3e0; color: #e65100; }
+    .post-type-discussion-indicator { background: #e8f5e9; color: #388e3c; }
+    .post-type-property-indicator { background: #fce4ec; color: #c2185b; }
+    .post-type-group-indicator { background: #e0f2f1; color: #00796b; }
+    
+    /* Widget sondage */
+    .post-sondage-widget {
+        margin: 16px 0;
+        padding: 16px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+    }
+    .sondage-question {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0 0 16px 0;
+        color: #1a1a1a;
+    }
+    .sondage-options {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .sondage-option {
+        padding: 12px;
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .sondage-option:hover {
+        border-color: #D3580B;
+        background: #fff5f0;
+    }
+    .sondage-option.user-voted {
+        border-color: #D3580B;
+        background: #fff5f0;
+    }
+    .option-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    .option-text {
+        font-weight: 500;
+    }
+    .option-percentage {
+        font-size: 12px;
+        color: #666;
+    }
+    .option-bar {
+        height: 6px;
+        background: #e0e0e0;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    .option-bar-fill {
+        height: 100%;
+        background: #D3580B;
+        transition: width 0.3s;
+    }
+    .sondage-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #e0e0e0;
+        font-size: 12px;
+        color: #666;
+    }
+    
+    /* Widget question-réponse */
+    .post-question-widget {
+        margin: 16px 0;
+        padding: 16px;
+        background: #f0f7ff;
+        border-radius: 8px;
+        border-left: 4px solid #2196f3;
+    }
+    .question-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    .question-icon {
+        font-size: 24px;
+    }
+    .question-title {
+        flex: 1;
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+    }
+    .question-solved-badge {
+        padding: 4px 12px;
+        background: #4caf50;
+        color: white;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .question-reponses {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .reponse-item {
+        padding: 12px;
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+    }
+    .reponse-item.official-solution {
+        border-color: #4caf50;
+        background: #f1f8f4;
+    }
+    .reponse-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    .reponse-author {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .reponse-avatar, .reponse-avatar-placeholder {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+    }
+    .reponse-avatar-placeholder {
+        background: #D3580B;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
+    .official-badge {
+        padding: 2px 8px;
+        background: #4caf50;
+        color: white;
+        border-radius: 8px;
+        font-size: 10px;
+        font-weight: 600;
+    }
+    .vote-btn {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 12px;
+        background: #f0f0f0;
+        border: none;
+        border-radius: 16px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+    .vote-btn:hover {
+        background: #e0e0e0;
+    }
+    .vote-btn.voted {
+        background: #4caf50;
+        color: white;
+    }
+    .reponse-content {
+        margin: 0;
+        color: #333;
+        line-height: 1.5;
+    }
+    
+    /* Widget statistiques */
+    .group-stats-widget {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    .stat-icon {
+        font-size: 32px;
+    }
+    .stat-content {
+        flex: 1;
+    }
+    .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1a1a1a;
+    }
+    .stat-label {
+        font-size: 12px;
+        color: #666;
+        margin-top: 4px;
+    }
+    .stat-card.leaderboard {
+        grid-column: span 2;
+    }
+    .leaderboard-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 12px;
+    }
+    .leaderboard-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .leaderboard-avatar, .leaderboard-avatar-placeholder {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+    }
+    .leaderboard-avatar-placeholder {
+        background: #D3580B;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
+    .leaderboard-name {
+        flex: 1;
+        font-weight: 500;
+    }
+    .leaderboard-count {
+        font-size: 12px;
+        color: #666;
+    }
+    
+    /* Meetups */
+    .group-meetups-section {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0 0 16px 0;
+    }
+    .meetups-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .meetup-card {
+        padding: 16px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+    }
+    .meetup-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    .meetup-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+    }
+    .meetup-date {
+        font-size: 12px;
+        color: #666;
+    }
+    .meetup-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 12px;
+    }
+    .btn-meetup-join, .btn-meetup-replay {
+        padding: 8px 16px;
+        background: #D3580B;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-meetup-replay {
+        background: #666;
+    }
+    
+    /* Sous-groupes */
+    .group-sous-groupes-section {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    .sous-groupes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px;
+    }
+    .sous-groupe-card {
+        padding: 16px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        text-align: center;
+        border: 1px solid #e0e0e0;
+    }
+    .sous-groupe-icon {
+        font-size: 32px;
+        margin-bottom: 8px;
+    }
+    .sous-groupe-name {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+    }
+    
+    /* Filtres de contenu */
+    .group-posts-filters {
+        margin-bottom: 16px;
+    }
+    .filter-select {
+        padding: 8px 16px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+        background: white;
+    }
+    
+    /* Filtres membres multicritères */
+    .members-filters {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    .filters-form {
+        width: 100%;
+    }
+    .filter-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        align-items: end;
+    }
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .filter-group label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #666;
+    }
+    .filter-input, .filter-select {
+        padding: 8px 12px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+    .filter-actions {
+        display: flex;
+        gap: 8px;
+    }
+    
+    /* Tags du groupe */
+    .group-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+    }
+    .group-tag {
+        padding: 4px 12px;
+        background: #f0f0f0;
+        border-radius: 12px;
+        font-size: 12px;
+        color: #666;
+    }
+    
+    /* Administrateurs en avant */
+    .group-admins-preview {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 12px;
+    }
+    .admins-label {
+        font-size: 12px;
+        color: #666;
+    }
+    .admin-avatar-link {
+        display: block;
+    }
+    .admin-avatar-mini, .admin-avatar-mini-placeholder {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+    }
+    .admin-avatar-mini-placeholder {
+        background: #D3580B;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
+    
+    /* Notifications toast */
+    .toast-notification {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        padding: 16px 24px;
+        background: #333;
+        color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        z-index: 10000;
+        animation: slideInRight 0.3s;
+    }
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+</style>
+
+<script>
+    function joinGroup(groupId) {
+        fetch(`{% url 'join-group' 0 %}`.replace('0', groupId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (data.requires_approval) {
+                    alert('Votre demande d\'adhésion a été envoyée.');
+                } else {
+                    alert('Vous avez rejoint le groupe !');
+                }
+                location.reload();
+            } else {
+                alert(data.error || 'Erreur lors de l\'adhésion');
+            }
+        });
+    }
+    
+    function leaveGroup(groupId) {
+        if (!confirm('Êtes-vous sûr de vouloir quitter ce groupe ?')) return;
+        fetch(`{% url 'leave-group' 0 %}`.replace('0', groupId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '{% url "connect-groups" %}';
+            }
+        });
+    }
+    
+    // Fonction pour signaler un groupe (Phase 12.3)
+    function reportGroup(groupId) {
+        const reason = prompt('Raison du signalement:\n1. Spam\n2. Harcèlement\n3. Arnaque/Fraude\n4. Contenu inapproprié\n5. Fausse information\n6. Violence\n7. Usurpation d\'identité\n8. Autre\n\nEntrez le numéro ou la raison:');
+        if (!reason || reason.trim() === '') return;
+        
+        const description = prompt('Description supplémentaire (optionnel):') || '';
+        
+        const formData = new FormData();
+        formData.append('reason', reason.trim());
+        formData.append('description', description.trim());
+        
+        fetch(`/connect/groups/${groupId}/report/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: formData,
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message || 'Groupe signalé. Notre équipe va examiner le signalement.');
+            } else {
+                alert(data.error || 'Erreur lors du signalement.');
+            }
+        })
+        .catch(err => {
+            console.error('Erreur:', err);
+            alert('Erreur lors du signalement.');
+        });
+    }
+    
+    function toggleDropdown(btn) {
+        const dropdown = btn.closest('.dropdown');
+        const menu = dropdown.querySelector('.dropdown-menu');
+        // Fermer tous les autres menus
+        document.querySelectorAll('.dropdown').forEach(d => {
+            if (d !== dropdown) {
+                d.classList.remove('active');
+            }
+        });
+        dropdown.classList.toggle('active');
+    }
+    
+    // Fermer les menus au clic extérieur
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown')) {
+            document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('active'));
+        }
+    });
+
+    function showPendingRequests() {
+        document.getElementById('pending-requests-modal').style.display = 'block';
+    }
+
+    function closePendingRequestsModal() {
+        document.getElementById('pending-requests-modal').style.display = 'none';
+    }
+
+    function approveRequest(requestId) {
+        fetch(`{% url 'approve-group-request' group_id=group.id membership_id=0 %}`.replace('0', requestId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+
+    function rejectRequest(requestId) {
+        fetch(`{% url 'reject-group-request' group_id=group.id membership_id=0 %}`.replace('0', requestId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+
+    function promoteMember(userId, role) {
+        fetch(`{% url 'promote-group-member' group_id=group.id user_id=0 %}`.replace('0', userId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ role: role })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+
+    function banMember(userId) {
+        if (!confirm('Bannir ce membre du groupe ?')) return;
+        fetch(`{% url 'ban-group-member' group_id=group.id user_id=0 %}`.replace('0', userId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+
+    // Fermer les dropdowns au clic extérieur
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown')) {
+            document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('active'));
+        }
+    });
+
+    // Toggle like, comment, share - réutiliser depuis home.html si nécessaire
+    function toggleLike(postId) {
+        // Code depuis home.html
+    }
+
+    function toggleComments(postId) {
+        // Code depuis home.html
+    }
+
+    function sharePost(postId) {
+        // Code depuis home.html
+    }
+
+    // Initialisation du formulaire de création de post
+    const createPostForm = document.getElementById('create-post-form');
+    if (createPostForm) {
+        createPostForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            fetch('{% url "create-post" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.error || 'Erreur lors de la publication');
+                }
+            });
+        });
+    }
+
+    function handleImageSelect(event) {
+        // Afficher les images sélectionnées en prévisualisation
+        const files = event.target.files;
+        const preview = document.getElementById('post-preview');
+        if (files.length > 0) {
+            preview.style.display = 'block';
+            // TODO: Afficher les miniatures
+        }
+    }
+
+    function handleDocumentSelect(event) {
+        // Afficher les documents sélectionnés
+        const files = event.target.files;
+        const preview = document.getElementById('post-preview');
+        if (files.length > 0) {
+            preview.style.display = 'block';
+            // TODO: Afficher les noms des documents
+        }
+    }
+    
+    // Filtrer les posts par type de contenu
+    function filterPostsByType(type) {
+        const url = new URL(window.location);
+        if (type) {
+            url.searchParams.set('filter_type', type);
+        } else {
+            url.searchParams.delete('filter_type');
+        }
+        window.location.href = url.toString();
+    }
+    
+    // Voter pour un sondage
+    function voteSondage(sondageId, optionId) {
+        fetch(`{% url 'api-vote-sondage' sondage_id=0 %}`.replace('0', sondageId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ option_id: optionId }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Vote enregistré !');
+                location.reload();
+            } else {
+                showToast(data.error || 'Erreur lors du vote', 'error');
+            }
+        })
+        .catch(err => {
+            console.error('Erreur:', err);
+            showToast('Erreur lors du vote', 'error');
+        });
+    }
+    
+    // Voter pour une réponse
+    function voteReponse(reponseId) {
+        fetch(`{% url 'api-vote-reponse' reponse_id=0 %}`.replace('0', reponseId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Vote enregistré !');
+                location.reload();
+            } else {
+                showToast(data.error || 'Erreur lors du vote', 'error');
+            }
+        })
+        .catch(err => {
+            console.error('Erreur:', err);
+            showToast('Erreur lors du vote', 'error');
+        });
+    }
+    
+    // Afficher les détails d'un sondage
+    function showSondageDetails(sondageId) {
+        // TODO: Implémenter modal avec détails complets
+        alert('Détails du sondage (à implémenter)');
+    }
+    
+    // Charger plus de réponses
+    function loadMoreReponses(questionId) {
+        fetch(`{% url 'api-load-reponses' question_id=0 %}`.replace('0', questionId))
+        .then(r => r.json())
+        .then(data => {
+            if (data.reponses) {
+                // Afficher toutes les réponses
+                const container = document.querySelector(`#question-${questionId}-reponses`);
+                if (container) {
+                    data.reponses.forEach(reponse => {
+                        const reponseEl = document.createElement('div');
+                        reponseEl.className = 'reponse-item';
+                        reponseEl.innerHTML = `
+                            <div class="reponse-header">
+                                <div class="reponse-author">
+                                    <span class="reponse-author-name">${reponse.author.username}</span>
+                                </div>
+                                <div class="reponse-votes">
+                                    <button class="vote-btn" onclick="voteReponse(${reponse.id})">
+                                        ${reponse.votes_count}
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="reponse-content">${reponse.content}</p>
+                        `;
+                        container.appendChild(reponseEl);
+                    });
+                }
+            }
+        });
+    }
+    
+    // Afficher le formulaire de réponse
+    function showReponseForm(questionId) {
+        const content = prompt('Votre réponse :');
+        if (!content || content.trim() === '') return;
+        
+        fetch(`{% url 'api-repondre-question' question_id=0 %}`.replace('0', questionId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ content: content }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Réponse publiée !');
+                location.reload();
+            } else {
+                showToast(data.error || 'Erreur lors de la publication', 'error');
+            }
+        });
+    }
+    
+    // Marquer comme solution officielle (admin)
+    function markAsOfficial(questionId) {
+        if (!confirm('Marquer cette question comme résolue avec une solution officielle ?')) return;
+        
+        const reponseId = prompt('ID de la réponse à marquer comme officielle :');
+        if (!reponseId) return;
+        
+        fetch(`{% url 'api-mark-official-solution' question_id=0 %}`.replace('0', questionId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ reponse_id: reponseId }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Solution officielle marquée !');
+                location.reload();
+            } else {
+                showToast(data.error || 'Erreur', 'error');
+            }
+        });
+    }
+    
+    // Notifications toast
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification';
+        toast.style.background = type === 'error' ? '#d32f2f' : '#4caf50';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.animation = 'slideInRight 0.3s reverse';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+    
+    // Notifications temps réel (simulation)
+    function initRealtimeNotifications() {
+        // Simuler des notifications pour les mises à jour majeures
+        // En production, utiliser WebSockets ou Server-Sent Events
+        setInterval(() => {
+            // Vérifier les nouvelles mises à jour
+            fetch(`{% url 'api-group-updates' group_id=group.id %}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.has_updates) {
+                    showToast('Nouvelle mise à jour dans le groupe !');
+                }
+            })
+            .catch(() => {});
+        }, 30000); // Vérifier toutes les 30 secondes
+    }
+    
+    // Initialiser les notifications temps réel
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initRealtimeNotifications);
+    } else {
+        initRealtimeNotifications();
+    }
+</script>
+{% endblock %}
+

@@ -1,0 +1,711 @@
+{% extends 'core/admin/base_admin.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block page_title %}Détails Utilisateur{% endblock %}
+
+{% block breadcrumb %}
+{{ block.super }}
+<span class="breadcrumb-separator">/</span>
+<span class="breadcrumb-link">Utilisateurs</span>
+<span class="breadcrumb-separator">/</span>
+<span class="breadcrumb-link">{{ user.username }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="admin-user-detail-page">
+    <!-- Header avec profil -->
+    <div class="user-profile-header">
+        <div class="profile-main">
+            <div class="profile-avatar-large-wrapper">
+                {% if user.avatar %}
+                <img src="{{ user.avatar.url }}" alt="{{ user.username }}" class="profile-avatar-large">
+                {% else %}
+                <div class="profile-avatar-large-placeholder">{{ user.username|first|upper }}</div>
+                {% endif %}
+            </div>
+            <div class="profile-details">
+                <h1 class="profile-name">{{ user_info.full_name }}</h1>
+                <p class="profile-username">@{{ user.username }}</p>
+                <div class="profile-badges-list">
+                    {% if user_info.badges.email_verified %}
+                    <span class="badge-item" title="Email vérifié">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Email
+                    </span>
+                    {% endif %}
+                    {% if user_info.badges.identity_verified %}
+                    <span class="badge-item" title="Identité vérifiée">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        Identité
+                    </span>
+                    {% endif %}
+                    {% if user_info.badges.owner_verified %}
+                    <span class="badge-item" title="Propriétaire vérifié">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                        Propriétaire
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="profile-actions">
+            <a href="{% url 'admin-users' %}" class="btn-back">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+                Retour
+            </a>
+            <div class="actions-dropdown">
+                <button class="btn-actions" onclick="toggleUserActions(this)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="1"></circle>
+                        <circle cx="12" cy="5" r="1"></circle>
+                        <circle cx="12" cy="19" r="1"></circle>
+                    </svg>
+                    Actions
+                </button>
+                <div class="dropdown-menu">
+                    <a href="#" class="dropdown-item" onclick="editUser({{ user.id }}); return false;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        Modifier
+                    </a>
+                    {% if not user.is_suspended and not user.is_banned %}
+                    <a href="#" class="dropdown-item dropdown-warning" onclick="suspendUser({{ user.id }}); return false;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        Suspendre
+                    </a>
+                    {% endif %}
+                    {% if not user.is_banned %}
+                    <a href="#" class="dropdown-item dropdown-danger" onclick="banUser({{ user.id }}); return false;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="15" y1="9" x2="9" y2="15"></line>
+                            <line x1="9" y1="9" x2="15" y2="15"></line>
+                        </svg>
+                        Bannir
+                    </a>
+                    {% endif %}
+                    <div class="dropdown-divider"></div>
+                    <a href="#" class="dropdown-item dropdown-danger" onclick="deleteUser({{ user.id }}); return false;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                        Supprimer
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Onglets -->
+    <div class="tabs-container">
+        <div class="tabs-nav">
+            <a href="?tab=info" class="tab-link {% if active_tab == 'info' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                Informations générales
+            </a>
+            <a href="?tab=activity" class="tab-link {% if active_tab == 'activity' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
+                Activité
+            </a>
+            {% if user.is_proprietaire %}
+            <a href="?tab=logements" class="tab-link {% if active_tab == 'logements' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+                Logements
+            </a>
+            {% endif %}
+            {% if user.is_locataire %}
+            <a href="?tab=candidatures" class="tab-link {% if active_tab == 'candidatures' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                Candidatures
+            </a>
+            {% endif %}
+            <a href="?tab=transactions" class="tab-link {% if active_tab == 'transactions' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+                Transactions
+            </a>
+            <a href="?tab=logs" class="tab-link {% if active_tab == 'logs' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                Logs
+            </a>
+        </div>
+
+        <div class="tabs-content">
+            <!-- Onglet 1 - Informations générales -->
+            {% if active_tab == 'info' %}
+            <div class="tab-panel active">
+                <div class="info-grid">
+                    <div class="info-card">
+                        <h3 class="info-card-title">Informations personnelles</h3>
+                        <div class="info-list">
+                            <div class="info-row">
+                                <span class="info-label">Nom complet</span>
+                                <span class="info-value">{{ user_info.full_name }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Email</span>
+                                <span class="info-value" onclick="copyEmail('{{ user_info.email }}')" style="cursor: pointer;">
+                                    {{ user_info.email }}
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; margin-left: 6px; opacity: 0.5;">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                    </svg>
+                                </span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Téléphone</span>
+                                <span class="info-value">{{ user_info.phone|default:"—" }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Type</span>
+                                <span class="info-value">
+                                    {% for type in user_info.type %}
+                                    <span class="type-badge {% if type == 'Locataire' %}type-tenant{% elif type == 'Propriétaire' %}type-owner{% else %}type-company{% endif %}">{{ type }}</span>
+                                    {% empty %}
+                                    —
+                                    {% endfor %}
+                                </span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Statut</span>
+                                <span class="info-value">
+                                    <span class="status-badge status-{{ user_info.status|lower }}">
+                                        {% if user_info.status == 'Suspendu' and user.suspended_until %}
+                                        Suspendu jusqu'au {{ user.suspended_until|date:"d/m/Y" }}
+                                        {% else %}
+                                        {{ user_info.status }}
+                                        {% endif %}
+                                    </span>
+                                </span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Date d'inscription</span>
+                                <span class="info-value">{{ user_info.date_joined|date:"d/m/Y à H:i" }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Ville</span>
+                                <span class="info-value">{{ user_info.ville|default:"—" }}</span>
+                            </div>
+                            {% if user_info.adresse_complete %}
+                            <div class="info-row">
+                                <span class="info-label">Adresse</span>
+                                <span class="info-value">{{ user_info.adresse_complete }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="info-card">
+                        <h3 class="info-card-title">Badges de vérification</h3>
+                        <div class="badges-grid">
+                            <div class="badge-card {% if user_info.badges.email_verified %}badge-verified{% else %}badge-unverified{% endif %}">
+                                <div class="badge-icon-large">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="badge-info">
+                                    <div class="badge-title">Email vérifié</div>
+                                    <div class="badge-status">{% if user_info.badges.email_verified %}Vérifié{% else %}Non vérifié{% endif %}</div>
+                                </div>
+                            </div>
+                            <div class="badge-card {% if user_info.badges.identity_verified %}badge-verified{% else %}badge-unverified{% endif %}">
+                                <div class="badge-icon-large">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                    </svg>
+                                </div>
+                                <div class="badge-info">
+                                    <div class="badge-title">Identité vérifiée</div>
+                                    <div class="badge-status">{% if user_info.badges.identity_verified %}Vérifié{% else %}Non vérifié{% endif %}</div>
+                                </div>
+                            </div>
+                            <div class="badge-card {% if user_info.badges.owner_verified %}badge-verified{% else %}badge-unverified{% endif %}">
+                                <div class="badge-icon-large">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="badge-info">
+                                    <div class="badge-title">Propriétaire vérifié</div>
+                                    <div class="badge-status">{% if user_info.badges.owner_verified %}Vérifié{% else %}Non vérifié{% endif %}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-card">
+                        <h3 class="info-card-title">Statistiques</h3>
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <div class="stat-value">{{ posts_count }}</div>
+                                <div class="stat-label">Posts publiés</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-value">{{ comments_count }}</div>
+                                <div class="stat-label">Commentaires</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-value">{{ messages_count }}</div>
+                                <div class="stat-label">Messages envoyés</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-value">{{ connections_count }}</div>
+                                <div class="stat-label">Connexions</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-value">{{ groups_count }}</div>
+                                <div class="stat-label">Groupes</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-value">{{ signalements_received }}</div>
+                                <div class="stat-label">Signalements reçus</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Onglet 2 - Activité -->
+            {% if active_tab == 'activity' %}
+            <div class="tab-panel active">
+                <div class="activity-section">
+                    <div class="section-header">
+                        <h3>Activité récente</h3>
+                        <span class="section-count">{{ recent_activities.count }} activité{{ recent_activities.count|pluralize }}</span>
+                    </div>
+                    <div class="activity-timeline">
+                        {% for activity in recent_activities %}
+                        <div class="activity-item">
+                            <div class="activity-icon-item">
+                                {% if activity.type_activite == 'login' %}
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                                    <polyline points="10 17 15 12 10 7"></polyline>
+                                    <line x1="15" y1="12" x2="3" y2="12"></line>
+                                </svg>
+                                {% elif 'post' in activity.type_activite %}
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                                {% else %}
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                                {% endif %}
+                            </div>
+                            <div class="activity-content-item">
+                                <div class="activity-text">{{ activity.description|default:activity.get_type_activite_display }}</div>
+                                <div class="activity-meta">
+                                    <span class="activity-time">{{ activity.created_at|naturaltime }}</span>
+                                    {% if activity.ip_address %}
+                                    <span class="activity-separator">•</span>
+                                    <span class="activity-ip">{{ activity.ip_address }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="empty-state">Aucune activité récente</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="activity-section">
+                    <div class="section-header">
+                        <h3>Connexions récentes</h3>
+                    </div>
+                    <div class="table-mini">
+                        <table class="mini-table">
+                            <thead>
+                                <tr>
+                                    <th>Date/Heure</th>
+                                    <th>IP</th>
+                                    <th>Localisation</th>
+                                    <th>Résultat</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for login in recent_logins %}
+                                <tr>
+                                    <td>{{ login.login_time|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ login.ip_address|default:"—" }}</td>
+                                    <td>{{ login.location|default:"—" }}</td>
+                                    <td>
+                                        <span class="status-badge {% if login.success %}status-active{% else %}status-banned{% endif %}">
+                                            {% if login.success %}Succès{% else %}Échec{% endif %}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="empty-state">Aucune connexion récente</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="activity-section">
+                    <div class="section-header">
+                        <h3>Sessions actives (24h)</h3>
+                    </div>
+                    <div class="sessions-list">
+                        {% for session in active_sessions %}
+                        <div class="session-item">
+                            <div class="session-info">
+                                <div class="session-device">{{ session.device_name|default:"Appareil inconnu" }}</div>
+                                <div class="session-details">
+                                    <span>{{ session.browser|default:"—" }}</span>
+                                    <span class="separator">•</span>
+                                    <span>{{ session.ip_address|default:"—" }}</span>
+                                    <span class="separator">•</span>
+                                    <span>Dernière activité: {{ session.last_activity|naturaltime }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="empty-state">Aucune session active</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Onglet 3 - Logements (si propriétaire) -->
+            {% if active_tab == 'logements' and user.is_proprietaire %}
+            <div class="tab-panel active">
+                <div class="properties-summary">
+                    <div class="summary-card">
+                        <div class="summary-value">{{ logements_data|length }}</div>
+                        <div class="summary-label">Logements publiés</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value">{{ total_baux }}</div>
+                        <div class="summary-label">Baux actifs</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value">{{ occupation_rate }}%</div>
+                        <div class="summary-label">Taux d'occupation</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value">{{ total_revenue|floatformat:0|intcomma }} €</div>
+                        <div class="summary-label">Revenus générés</div>
+                    </div>
+                </div>
+
+                <div class="logements-table-wrapper">
+                    <table class="logements-table">
+                        <thead>
+                            <tr>
+                                <th>Logement</th>
+                                <th>Adresse</th>
+                                <th>Prix</th>
+                                <th>Statut</th>
+                                <th>Baux actifs</th>
+                                <th>Revenus</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in logements_data %}
+                            <tr>
+                                <td>
+                                    <strong>{{ item.logement.titre }}</strong>
+                                </td>
+                                <td>{{ item.logement.adresse|truncatewords:5 }}</td>
+                                <td>{{ item.logement.prix|floatformat:0|intcomma }} €</td>
+                                <td>
+                                    <span class="status-badge status-{{ item.logement.statut }}">
+                                        {{ item.logement.get_statut_display }}
+                                    </span>
+                                </td>
+                                <td>{{ item.baux_actifs }}</td>
+                                <td>{{ item.revenu|floatformat:0|intcomma }} €</td>
+                                <td>
+                                    <a href="{% url 'logement-detail' item.logement.id %}" class="btn-link" target="_blank">
+                                        Voir
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="empty-state">Aucun logement publié</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Onglet 4 - Candidatures (si locataire) -->
+            {% if active_tab == 'candidatures' and user.is_locataire %}
+            <div class="tab-panel active">
+                <div class="candidatures-summary">
+                    <div class="summary-card">
+                        <div class="summary-value">{{ candidatures_data|length }}</div>
+                        <div class="summary-label">Total candidatures</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value">{{ candidatures_data|length|add:"-1" }}</div>
+                        <div class="summary-label">En attente</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value">{{ baux_actifs|length }}</div>
+                        <div class="summary-label">Baux actifs</div>
+                    </div>
+                </div>
+
+                <div class="candidatures-list">
+                    {% for candidature in candidatures_data %}
+                    <div class="candidature-item">
+                        <div class="candidature-header">
+                            <div class="candidature-logement">
+                                <strong>{{ candidature.logement.titre }}</strong>
+                                <span class="candidature-location">{{ candidature.logement.adresse|truncatewords:3 }}</span>
+                            </div>
+                            <span class="status-badge status-{{ candidature.statut }}">
+                                {{ candidature.get_statut_display }}
+                            </span>
+                        </div>
+                        <div class="candidature-details">
+                            <span>Date: {{ candidature.created_at|date:"d/m/Y" }}</span>
+                            {% if candidature.revenus_mensuels %}
+                            <span class="separator">•</span>
+                            <span>Revenus: {{ candidature.revenus_mensuels|intcomma }} €/mois</span>
+                            {% endif %}
+                        </div>
+                        {% if candidature.message %}
+                        <div class="candidature-message">{{ candidature.message|truncatewords:20 }}</div>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">Aucune candidature</div>
+                    {% endfor %}
+                </div>
+
+                {% if baux_actifs %}
+                <div class="baux-section">
+                    <h3>Baux actifs</h3>
+                    <div class="baux-list">
+                        {% for bail in baux_actifs %}
+                        <div class="bail-item">
+                            <div class="bail-header">
+                                <strong>{{ bail.logement.titre }}</strong>
+                                <span class="bail-amount">{{ bail.loyer_mensuel|floatformat:0|intcomma }} €/mois</span>
+                            </div>
+                            <div class="bail-details">
+                                <span>Début: {{ bail.date_debut|date:"d/m/Y" }}</span>
+                                {% if bail.date_fin %}
+                                <span class="separator">•</span>
+                                <span>Fin: {{ bail.date_fin|date:"d/m/Y" }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Onglet 5 - Transactions -->
+            {% if active_tab == 'transactions' %}
+            <div class="tab-panel active">
+                <div class="transactions-summary">
+                    {% if user.is_proprietaire %}
+                    <div class="summary-card">
+                        <div class="summary-value">{{ transactions_data.total_recu|floatformat:0|intcomma }} €</div>
+                        <div class="summary-label">Total reçu</div>
+                    </div>
+                    {% endif %}
+                    {% if user.is_locataire %}
+                    <div class="summary-card">
+                        <div class="summary-value">{{ transactions_data.total_envoye|floatformat:0|intcomma }} €</div>
+                        <div class="summary-label">Total envoyé</div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if user.is_proprietaire and transactions_data.paiements_recus %}
+                <div class="transactions-section">
+                    <h3>Paiements reçus</h3>
+                    <div class="table-mini">
+                        <table class="mini-table">
+                            <thead>
+                                <tr>
+                                    <th>Date échéance</th>
+                                    <th>Date paiement</th>
+                                    <th>Logement</th>
+                                    <th>Locataire</th>
+                                    <th>Montant</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for paiement in transactions_data.paiements_recus %}
+                                <tr>
+                                    <td>{{ paiement.date_echeance|date:"d/m/Y" }}</td>
+                                    <td>{{ paiement.date_paiement|date:"d/m/Y"|default:"—" }}</td>
+                                    <td>{{ paiement.bail.logement.titre|truncatewords:3 }}</td>
+                                    <td>{{ paiement.locataire.get_full_name|default:paiement.locataire.username }}</td>
+                                    <td><strong>{{ paiement.montant_total|floatformat:0|intcomma }} €</strong></td>
+                                    <td>
+                                        <span class="status-badge {% if paiement.statut == 'paye' %}status-active{% elif paiement.statut == 'en_retard' %}status-banned{% else %}status-suspended{% endif %}">
+                                            {{ paiement.get_statut_display }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if user.is_locataire and transactions_data.paiements_envoyes %}
+                <div class="transactions-section">
+                    <h3>Paiements envoyés</h3>
+                    <div class="table-mini">
+                        <table class="mini-table">
+                            <thead>
+                                <tr>
+                                    <th>Date échéance</th>
+                                    <th>Date paiement</th>
+                                    <th>Logement</th>
+                                    <th>Montant</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for paiement in transactions_data.paiements_envoyes %}
+                                <tr>
+                                    <td>{{ paiement.date_echeance|date:"d/m/Y" }}</td>
+                                    <td>{{ paiement.date_paiement|date:"d/m/Y"|default:"—" }}</td>
+                                    <td>{{ paiement.bail.logement.titre|truncatewords:3 }}</td>
+                                    <td><strong>{{ paiement.montant_total|floatformat:0|intcomma }} €</strong></td>
+                                    <td>
+                                        <span class="status-badge {% if paiement.statut == 'paye' %}status-active{% elif paiement.statut == 'en_retard' %}status-banned{% else %}status-suspended{% endif %}">
+                                            {{ paiement.get_statut_display }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Onglet 6 - Logs -->
+            {% if active_tab == 'logs' %}
+            <div class="tab-panel active">
+                <div class="logs-section">
+                    <div class="section-header">
+                        <h3>Historique des actions admin</h3>
+                        <span class="section-count">{{ admin_logs.count }} action{{ admin_logs.count|pluralize }}</span>
+                    </div>
+                    <div class="logs-list">
+                        {% for log in admin_logs %}
+                        <div class="log-item">
+                            <div class="log-date">{{ log.created_at|date:"d/m/Y H:i" }}</div>
+                            <div class="log-content">
+                                <div class="log-action">
+                                    <strong>{{ log.action }}</strong>
+                                    {% if log.admin_user %}
+                                    <span class="log-admin">par {{ log.admin_user.username }}</span>
+                                    {% endif %}
+                                </div>
+                                {% if log.details %}
+                                <div class="log-details">{{ log.details }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="empty-state">Aucun log admin pour cet utilisateur</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Styles -->
+<link rel="stylesheet" href="{% static 'core/admin/user-detail.css' %}">
+
+<!-- JavaScript -->
+<script src="{% static 'core/admin/users.js' %}"></script>
+
+<script>
+    function toggleUserActions(button) {
+        const dropdown = button.closest('.actions-dropdown');
+        dropdown.classList.toggle('active');
+    }
+
+    // Fermer dropdown au click extérieur
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.actions-dropdown')) {
+            document.querySelectorAll('.actions-dropdown').forEach(d => {
+                d.classList.remove('active');
+            });
+        }
+    });
+
+    function copyEmail(email) {
+        navigator.clipboard.writeText(email).then(() => {
+            alert('Email copié !');
+        });
+    }
+</script>
+{% endblock %}

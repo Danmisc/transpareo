@@ -1,0 +1,1048 @@
+{% load humanize %}
+{% load core_filters %}
+<!-- Toggle Vue Feed -->
+<div class="view-toggle-bar">
+    <button class="view-toggle-btn {% if not request.GET.feed %}active{% endif %}" onclick="switchToTableView()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="9" y1="3" x2="9" y2="21"></line>
+        </svg>
+        Vue Tableau
+    </button>
+    <button class="view-toggle-btn {% if request.GET.feed %}active{% endif %}" onclick="switchToFeedView()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+        Vue Feed
+    </button>
+</div>
+
+{% if request.GET.feed %}
+<!-- VUE FEED -->
+<div class="feed-view" id="feed-view">
+    <div class="feed-container">
+        {% for post in posts %}
+        <div class="feed-card" data-post-id="{{ post.id }}">
+            <div class="feed-card-header">
+                <div class="feed-author">
+                    <div class="avatar-medium">
+                        {% if post.author.avatar %}
+                        <img src="{{ post.author.avatar.url }}" alt="{{ post.author.username }}">
+                        {% else %}
+                        <div class="avatar-placeholder">{{ post.author.username|first|upper }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="feed-author-info">
+                        <strong>{{ post.author.username }}</strong>
+                        <span class="feed-timestamp">{{ post.created_at|timesince }}</span>
+                    </div>
+                </div>
+                <div class="feed-actions-dropdown">
+                    <button class="feed-actions-btn" onclick="toggleFeedActions(this)">⋯</button>
+                    <div class="dropdown-menu">
+                        <a href="#" class="dropdown-item" onclick="openPostDetail({{ post.id }})">Voir détail</a>
+                        <a href="#" class="dropdown-item" onclick="masquerPost({{ post.id }})">Masquer</a>
+                    </div>
+                </div>
+            </div>
+            <div class="feed-card-content">
+                <p>{{ post.content|linebreaks }}</p>
+                {% if post.hashtags %}
+                <div class="feed-hashtags">
+                    {% for tag in post.hashtags|split:"," %}
+                    <span class="hashtag">#{{ tag|trim }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            <div class="feed-card-footer">
+                <div class="feed-engagement">
+                    <button class="feed-action-btn">
+                        <span>❤️</span>
+                        <span>{{ post.likes_count }}</span>
+                    </button>
+                    <button class="feed-action-btn">
+                        <span>💬</span>
+                        <span>{{ post.comments_count }}</span>
+                    </button>
+                    <button class="feed-action-btn">
+                        <span>↗️</span>
+                        <span>{{ post.shares_count }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <p>Aucun post trouvé</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<!-- Filtres Avancés -->
+<div class="filters-section">
+    <div class="filters-header">
+        <h3>Filtres avancés</h3>
+        <button class="btn-ghost btn-small" onclick="toggleFilters()">
+            <span id="filters-toggle-text">Masquer</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        </button>
+    </div>
+    <div class="filters-content" id="filters-content">
+        <form method="GET" action="{% url 'admin-connect' %}" id="filters-form">
+            <input type="hidden" name="view" value="posts">
+            
+            <!-- Row 1 -->
+            <div class="filter-row">
+                <div class="filter-field filter-search">
+                    <label>Recherche globale</label>
+                    <div class="search-input-wrapper">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        <input type="text" name="search" value="{{ filters.search }}" 
+                               placeholder="Contenu, auteur, hashtags..." class="filter-input">
+                    </div>
+                </div>
+                <div class="filter-field">
+                    <label>Type post</label>
+                    <select name="type" multiple class="filter-select multi-select">
+                        <option value="news" {% if 'news' in filters.type %}selected{% endif %}>Actualité</option>
+                        <option value="guide" {% if 'guide' in filters.type %}selected{% endif %}>Guide</option>
+                        <option value="offer" {% if 'offer' in filters.type %}selected{% endif %}>Offre</option>
+                        <option value="discussion" {% if 'discussion' in filters.type %}selected{% endif %}>Discussion</option>
+                        <option value="property" {% if 'property' in filters.type %}selected{% endif %}>Logement</option>
+                        <option value="group" {% if 'group' in filters.type %}selected{% endif %}>Groupe</option>
+                    </select>
+                </div>
+                <div class="filter-field">
+                    <label>Statut</label>
+                    <select name="statut" class="filter-select">
+                        <option value="">Tous</option>
+                        <option value="quarantined" {% if filters.statut == 'quarantined' %}selected{% endif %}>En quarantaine</option>
+                        <option value="spam" {% if filters.statut == 'spam' %}selected{% endif %}>Spam</option>
+                        <option value="inappropriate" {% if filters.statut == 'inappropriate' %}selected{% endif %}>Inapproprié</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Row 2 -->
+            <div class="filter-row">
+                <div class="filter-field">
+                    <label>Auteur</label>
+                    <input type="text" name="auteur" value="{{ filters.auteur }}" 
+                           placeholder="Nom ou email..." class="filter-input autocomplete">
+                </div>
+                <div class="filter-field">
+                    <label>Groupe</label>
+                    <input type="text" name="groupe" value="{{ filters.groupe }}" 
+                           placeholder="Nom groupe..." class="filter-input autocomplete">
+                </div>
+                <div class="filter-field">
+                    <label>Date publication</label>
+                    <div class="date-range">
+                        <input type="date" name="date_debut" value="{{ filters.date_debut }}" class="filter-input">
+                        <span>à</span>
+                        <input type="date" name="date_fin" value="{{ filters.date_fin }}" class="filter-input">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="filter-actions">
+                <button type="submit" class="btn-primary">Appliquer filtres</button>
+                <button type="button" class="btn-secondary" onclick="resetFilters()">Réinitialiser</button>
+                <button type="button" class="btn-ghost" onclick="saveSearch()">Sauvegarder cette recherche</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Toggles tri rapide -->
+<div class="quick-filters">
+    <button class="quick-filter-pill {% if not filters.type and not filters.statut %}active{% endif %}" 
+            onclick="filterByCategory('')">
+        Tous <span class="pill-count">{{ count_by_category.tous }}</span>
+    </button>
+    <button class="quick-filter-pill" onclick="filterByCategory('recents')">
+        Récents <span class="pill-count">{{ count_by_category.recents }}</span>
+    </button>
+    <button class="quick-filter-pill" onclick="filterByCategory('populaires')">
+        Populaires <span class="pill-count badge-green">{{ count_by_category.populaires }}</span>
+    </button>
+    <button class="quick-filter-pill" onclick="filterByCategory('signales')">
+        Signalés <span class="pill-count badge-red">{{ count_by_category.signales }}</span>
+    </button>
+</div>
+
+<!-- Tableau Posts -->
+<div class="table-section">
+    <div class="table-header">
+        <div class="table-header-left">
+            <h3>Posts</h3>
+            <button class="btn-ghost btn-small" onclick="openColumnsModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="9" y1="3" x2="9" y2="21"></line>
+                </svg>
+                Colonnes
+            </button>
+            <button class="btn-ghost btn-small" onclick="switchToFeed()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+                Vue Feed
+            </button>
+        </div>
+    </div>
+
+    <!-- Actions bulk -->
+    <div class="bulk-actions-bar" id="bulk-actions-bar" style="display: none;">
+        <span class="bulk-count"><span id="bulk-count">0</span> posts sélectionnés</span>
+        <div class="bulk-buttons">
+            <button class="btn-secondary btn-small" onclick="bulkChangerStatut()">Changer statut</button>
+            <button class="btn-secondary btn-small" onclick="bulkEpingler()">Épingler tous</button>
+            <button class="btn-secondary btn-small" onclick="bulkDesactiverCommentaires()">Désactiver commentaires</button>
+            <button class="btn-secondary btn-small" onclick="bulkExport()">Exporter sélection</button>
+            <button class="btn-ghost btn-small" onclick="clearSelection()">Désélectionner tout</button>
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="col-checkbox sticky-left">
+                        <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
+                    </th>
+                    <th class="col-id">ID</th>
+                    <th class="col-auteur sticky-left-after-checkbox">Auteur</th>
+                    <th class="col-contenu">Contenu</th>
+                    <th class="col-type">Type</th>
+                    <th class="col-groupe">Groupe</th>
+                    <th class="col-date sortable" onclick="sortTable('created_at')">
+                        Date publication
+                        {% if sort_by == 'created_at' or sort_by == '-created_at' %}
+                        <span class="sort-indicator {% if sort_by == '-created_at' %}desc{% else %}asc{% endif %}"></span>
+                        {% endif %}
+                    </th>
+                    <th class="col-engagement">Engagement</th>
+                    <th class="col-statut">Statut</th>
+                    <th class="col-actions sticky-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for post in posts %}
+                <tr class="table-row" data-post-id="{{ post.id }}">
+                    <td class="col-checkbox sticky-left">
+                        <input type="checkbox" class="post-checkbox" value="{{ post.id }}" 
+                               onchange="updateBulkActions()">
+                    </td>
+                    <td class="col-id">
+                        <span class="id-text" onclick="copyToClipboard('{{ post.id }}')">{{ post.id }}</span>
+                    </td>
+                    <td class="col-auteur sticky-left-after-checkbox">
+                        <div class="auteur-cell">
+                            <div class="avatar-small">
+                                {% if post.author.avatar %}
+                                <img src="{{ post.author.avatar.url }}" alt="{{ post.author.username }}">
+                                {% else %}
+                                <div class="avatar-placeholder">{{ post.author.username|first|upper }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="auteur-info">
+                                <a href="/connect-admin/users/{{ post.author.id }}/" class="auteur-name">
+                                    <strong>{{ post.author.username }}</strong>
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="col-contenu">
+                        <div class="contenu-apercu" title="{{ post.content }}">
+                            {{ post.content|truncatewords:20 }}
+                        </div>
+                    </td>
+                    <td class="col-type">
+                        <span class="type-badge type-{{ post.content_type }}">{{ post.get_content_type_display }}</span>
+                    </td>
+                    <td class="col-groupe">
+                        {% if post.group %}
+                        <a href="?view=groupes&groupe={{ post.group.id }}">{{ post.group.name|truncatewords:3 }}</a>
+                        {% else %}
+                        <span class="badge-public">Public</span>
+                        {% endif %}
+                    </td>
+                    <td class="col-date">{{ post.created_at|timesince }}</td>
+                    <td class="col-engagement">
+                        <div class="engagement-metrics">
+                            <span class="metric-item">❤️ {{ post.likes_count }}</span>
+                            <span class="metric-item">💬 {{ post.comments_count }}</span>
+                            <span class="metric-item">↗️ {{ post.shares_count }}</span>
+                        </div>
+                    </td>
+                    <td class="col-statut">
+                        {% if post.is_quarantined %}
+                        <span class="statut-badge statut-quarantined">Quarantaine</span>
+                        {% elif post.is_spam %}
+                        <span class="statut-badge statut-spam">Spam</span>
+                        {% elif post.is_inappropriate %}
+                        <span class="statut-badge statut-inappropriate">Inapproprié</span>
+                        {% else %}
+                        <span class="statut-badge statut-publie">Publié</span>
+                        {% endif %}
+                    </td>
+                    <td class="col-actions sticky-right">
+                        <div class="actions-dropdown">
+                            <button class="actions-btn" onclick="toggleActionsDropdown(this)">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="1"></circle>
+                                    <circle cx="12" cy="5" r="1"></circle>
+                                    <circle cx="12" cy="19" r="1"></circle>
+                                </svg>
+                            </button>
+                            <div class="dropdown-menu">
+                                <a href="#" class="dropdown-item" onclick="openPostDetail({{ post.id }})">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                    Voir détail complet
+                                </a>
+                                <a href="#" class="dropdown-item" onclick="masquerPost({{ post.id }})">
+                                    Masquer post
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a href="#" class="dropdown-item dropdown-danger" onclick="supprimerPost({{ post.id }})">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    </svg>
+                                    Supprimer
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10" class="empty-state">
+                        <p>Aucun post trouvé</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if posts.has_other_pages %}
+    <div class="pagination-wrapper">
+        <div class="pagination-info">
+            <select class="per-page-select" onchange="changePerPage(this.value)">
+                <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+                <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                <option value="250" {% if per_page == 250 %}selected{% endif %}>250</option>
+            </select>
+            <span class="pagination-text">
+                Affichage {{ posts.start_index }}-{{ posts.end_index }} sur {{ posts.paginator.count|intcomma }} posts
+            </span>
+        </div>
+        <div class="pagination-controls">
+            {% if posts.has_previous %}
+            <a href="?page={{ posts.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">Précédent</a>
+            {% endif %}
+            {% for num in posts.paginator.page_range %}
+                {% if posts.number == num %}
+                <span class="page-current">{{ num }}</span>
+                {% elif num > posts.number|add:'-3' and num < posts.number|add:'3' %}
+                <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if posts.has_next %}
+            <a href="?page={{ posts.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">Suivant</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal Détail Post Complet -->
+<div class="modal-overlay" id="post-detail-modal" style="display: none;">
+    <div class="modal-content modal-extra-large">
+        <div class="modal-header">
+            <h2 id="modal-post-title">Détail post</h2>
+            <button class="modal-close" onclick="closePostDetailModal()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-detail-layout">
+                <div class="modal-detail-left">
+                    <!-- Header Post -->
+                    <div class="post-header">
+                        <div class="auteur-header">
+                            <div class="avatar-large">
+                                <img id="modal-post-avatar" src="" alt="">
+                            </div>
+                            <div class="auteur-info-large">
+                                <h3 id="modal-post-auteur">-</h3>
+                                <div class="post-meta">
+                                    <span id="modal-post-date">-</span>
+                                    <span class="type-badge" id="modal-post-type">-</span>
+                                    {% if post.group %}
+                                    <span class="groupe-badge" id="modal-post-groupe">-</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="post-actions-header">
+                            <div class="statut-badge" id="modal-post-statut">-</div>
+                        </div>
+                    </div>
+
+                    <!-- Contenu Post -->
+                    <div class="post-content-section">
+                        <div class="post-content-text" id="modal-post-content">-</div>
+                        <div class="post-hashtags" id="modal-post-hashtags"></div>
+                    </div>
+
+                    <!-- Médias -->
+                    <div class="post-medias-section" id="modal-post-medias" style="display: none;">
+                        <h4>Médias</h4>
+                        <div class="medias-grid" id="medias-grid"></div>
+                    </div>
+
+                    <!-- Engagement -->
+                    <div class="post-engagement-section">
+                        <div class="engagement-stats">
+                            <div class="engagement-stat-item">
+                                <span class="engagement-icon">❤️</span>
+                                <span class="engagement-count" id="engagement-likes">0</span>
+                                <span class="engagement-label">Likes</span>
+                            </div>
+                            <div class="engagement-stat-item">
+                                <span class="engagement-icon">💬</span>
+                                <span class="engagement-count" id="engagement-comments">0</span>
+                                <span class="engagement-label">Commentaires</span>
+                            </div>
+                            <div class="engagement-stat-item">
+                                <span class="engagement-icon">↗️</span>
+                                <span class="engagement-count" id="engagement-shares">0</span>
+                                <span class="engagement-label">Partages</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Liste Likes -->
+                        <div class="likes-list-section">
+                            <h4>Personnes ayant aimé</h4>
+                            <div class="likes-avatars-grid" id="likes-avatars-grid"></div>
+                            <button class="btn-ghost btn-small" onclick="voirTousLikes()">Voir tous</button>
+                        </div>
+                        
+                        <!-- Commentaires -->
+                        <div class="comments-section">
+                            <h4>Commentaires</h4>
+                            <div class="comments-list" id="comments-list"></div>
+                            <div class="add-comment-section">
+                                <textarea class="comment-input" id="new-comment-input" placeholder="Ajouter un commentaire..."></textarea>
+                                <button class="btn-primary btn-small" onclick="ajouterCommentaire()">Publier</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-detail-right">
+                    <!-- Widget Auteur -->
+                    <div class="modal-widget">
+                        <h4>Auteur post</h4>
+                        <div class="widget-content">
+                            <div class="avatar-large">
+                                <img id="widget-post-auteur-avatar" src="" alt="">
+                            </div>
+                            <div class="widget-info">
+                                <strong id="widget-post-auteur-nom">-</strong>
+                                <div id="widget-post-auteur-email">-</div>
+                            </div>
+                            <div class="widget-actions">
+                                <button class="btn-secondary btn-small" onclick="voirProfilAuteurPost()">Voir profil</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Widget Groupe -->
+                    <div class="modal-widget" id="widget-groupe" style="display: none;">
+                        <h4>Groupe</h4>
+                        <div class="widget-content">
+                            <div class="widget-info">
+                                <strong id="widget-groupe-nom">-</strong>
+                                <div id="widget-groupe-description">-</div>
+                            </div>
+                            <div class="widget-actions">
+                                <button class="btn-secondary btn-small" onclick="voirGroupePost()">Voir groupe</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Widget Statut -->
+                    <div class="modal-widget">
+                        <h4>Statut post</h4>
+                        <div class="widget-content">
+                            <div class="statut-display-large" id="widget-post-statut">-</div>
+                            <div class="widget-meta">
+                                <div>Date publication : <span id="widget-post-date-pub">-</span></div>
+                                <div>Score sécurité : <span id="widget-post-security-score">-</span>/100</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Widget Actions Rapides -->
+                    <div class="modal-widget">
+                        <h4>Actions rapides</h4>
+                        <div class="widget-actions-list">
+                            <button class="btn-secondary btn-small btn-block" onclick="masquerPostFromModal()">Masquer post</button>
+                            <button class="btn-secondary btn-small btn-block" onclick="epinglerPostFromModal()">Épingler</button>
+                            <button class="btn-secondary btn-small btn-block" onclick="desactiverCommentairesPost()">Désactiver commentaires</button>
+                            <button class="btn-secondary btn-small btn-block" onclick="partagerPost()">Partager lien</button>
+                            <button class="btn-danger btn-small btn-block" onclick="supprimerPostFromModal()">Supprimer définitivement</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="view-toggle-bar">
+    <button class="view-toggle-btn {% if not request.GET.feed %}active{% endif %}" onclick="switchToTableView()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="9" y1="3" x2="9" y2="21"></line>
+        </svg>
+        Vue Tableau
+    </button>
+    <button class="view-toggle-btn {% if request.GET.feed %}active{% endif %}" onclick="switchToFeedView()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+        Vue Feed
+    </button>
+</div>
+
+{% if request.GET.feed %}
+<!-- VUE FEED -->
+<div class="feed-view" id="feed-view">
+    <div class="feed-container">
+        {% for post in posts %}
+        <div class="feed-card" data-post-id="{{ post.id }}">
+            <div class="feed-card-header">
+                <div class="feed-author">
+                    <div class="avatar-medium">
+                        {% if post.author.avatar %}
+                        <img src="{{ post.author.avatar.url }}" alt="{{ post.author.username }}">
+                        {% else %}
+                        <div class="avatar-placeholder">{{ post.author.username|first|upper }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="feed-author-info">
+                        <strong>{{ post.author.username }}</strong>
+                        <span class="feed-timestamp">{{ post.created_at|timesince }}</span>
+                    </div>
+                </div>
+                <div class="feed-actions-dropdown">
+                    <button class="feed-actions-btn" onclick="toggleFeedActions(this)">⋯</button>
+                    <div class="dropdown-menu">
+                        <a href="#" class="dropdown-item" onclick="openPostDetail({{ post.id }})">Voir détail</a>
+                        <a href="#" class="dropdown-item" onclick="masquerPost({{ post.id }})">Masquer</a>
+                    </div>
+                </div>
+            </div>
+            <div class="feed-card-content">
+                <p>{{ post.content|linebreaks }}</p>
+                {% if post.hashtags %}
+                <div class="feed-hashtags">
+                    {% for tag in post.hashtags|split:"," %}
+                    <span class="hashtag">#{{ tag|trim }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            <div class="feed-card-footer">
+                <div class="feed-engagement">
+                    <button class="feed-action-btn">
+                        <span>❤️</span>
+                        <span>{{ post.likes_count }}</span>
+                    </button>
+                    <button class="feed-action-btn">
+                        <span>💬</span>
+                        <span>{{ post.comments_count }}</span>
+                    </button>
+                    <button class="feed-action-btn">
+                        <span>↗️</span>
+                        <span>{{ post.shares_count }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <p>Aucun post trouvé</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<!-- Filtres Avancés -->
+<div class="filters-section">
+    <div class="filters-header">
+        <h3>Filtres avancés</h3>
+        <button class="btn-ghost btn-small" onclick="toggleFilters()">
+            <span id="filters-toggle-text">Masquer</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        </button>
+    </div>
+    <div class="filters-content" id="filters-content">
+        <form method="GET" action="{% url 'admin-connect' %}" id="filters-form">
+            <input type="hidden" name="view" value="posts">
+            
+            <!-- Row 1 -->
+            <div class="filter-row">
+                <div class="filter-field filter-search">
+                    <label>Recherche globale</label>
+                    <div class="search-input-wrapper">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        <input type="text" name="search" value="{{ filters.search }}" 
+                               placeholder="Contenu, auteur, hashtags..." class="filter-input">
+                    </div>
+                </div>
+                <div class="filter-field">
+                    <label>Type post</label>
+                    <select name="type" multiple class="filter-select multi-select">
+                        <option value="news" {% if 'news' in filters.type %}selected{% endif %}>Actualité</option>
+                        <option value="guide" {% if 'guide' in filters.type %}selected{% endif %}>Guide</option>
+                        <option value="offer" {% if 'offer' in filters.type %}selected{% endif %}>Offre</option>
+                        <option value="discussion" {% if 'discussion' in filters.type %}selected{% endif %}>Discussion</option>
+                        <option value="property" {% if 'property' in filters.type %}selected{% endif %}>Logement</option>
+                        <option value="group" {% if 'group' in filters.type %}selected{% endif %}>Groupe</option>
+                    </select>
+                </div>
+                <div class="filter-field">
+                    <label>Statut</label>
+                    <select name="statut" class="filter-select">
+                        <option value="">Tous</option>
+                        <option value="quarantined" {% if filters.statut == 'quarantined' %}selected{% endif %}>En quarantaine</option>
+                        <option value="spam" {% if filters.statut == 'spam' %}selected{% endif %}>Spam</option>
+                        <option value="inappropriate" {% if filters.statut == 'inappropriate' %}selected{% endif %}>Inapproprié</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Row 2 -->
+            <div class="filter-row">
+                <div class="filter-field">
+                    <label>Auteur</label>
+                    <input type="text" name="auteur" value="{{ filters.auteur }}" 
+                           placeholder="Nom ou email..." class="filter-input autocomplete">
+                </div>
+                <div class="filter-field">
+                    <label>Groupe</label>
+                    <input type="text" name="groupe" value="{{ filters.groupe }}" 
+                           placeholder="Nom groupe..." class="filter-input autocomplete">
+                </div>
+                <div class="filter-field">
+                    <label>Date publication</label>
+                    <div class="date-range">
+                        <input type="date" name="date_debut" value="{{ filters.date_debut }}" class="filter-input">
+                        <span>à</span>
+                        <input type="date" name="date_fin" value="{{ filters.date_fin }}" class="filter-input">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="filter-actions">
+                <button type="submit" class="btn-primary">Appliquer filtres</button>
+                <button type="button" class="btn-secondary" onclick="resetFilters()">Réinitialiser</button>
+                <button type="button" class="btn-ghost" onclick="saveSearch()">Sauvegarder cette recherche</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Toggles tri rapide -->
+<div class="quick-filters">
+    <button class="quick-filter-pill {% if not filters.type and not filters.statut %}active{% endif %}" 
+            onclick="filterByCategory('')">
+        Tous <span class="pill-count">{{ count_by_category.tous }}</span>
+    </button>
+    <button class="quick-filter-pill" onclick="filterByCategory('recents')">
+        Récents <span class="pill-count">{{ count_by_category.recents }}</span>
+    </button>
+    <button class="quick-filter-pill" onclick="filterByCategory('populaires')">
+        Populaires <span class="pill-count badge-green">{{ count_by_category.populaires }}</span>
+    </button>
+    <button class="quick-filter-pill" onclick="filterByCategory('signales')">
+        Signalés <span class="pill-count badge-red">{{ count_by_category.signales }}</span>
+    </button>
+</div>
+
+<!-- Tableau Posts -->
+<div class="table-section">
+    <div class="table-header">
+        <div class="table-header-left">
+            <h3>Posts</h3>
+            <button class="btn-ghost btn-small" onclick="openColumnsModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="9" y1="3" x2="9" y2="21"></line>
+                </svg>
+                Colonnes
+            </button>
+            <button class="btn-ghost btn-small" onclick="switchToFeed()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+                Vue Feed
+            </button>
+        </div>
+    </div>
+
+    <!-- Actions bulk -->
+    <div class="bulk-actions-bar" id="bulk-actions-bar" style="display: none;">
+        <span class="bulk-count"><span id="bulk-count">0</span> posts sélectionnés</span>
+        <div class="bulk-buttons">
+            <button class="btn-secondary btn-small" onclick="bulkChangerStatut()">Changer statut</button>
+            <button class="btn-secondary btn-small" onclick="bulkEpingler()">Épingler tous</button>
+            <button class="btn-secondary btn-small" onclick="bulkDesactiverCommentaires()">Désactiver commentaires</button>
+            <button class="btn-secondary btn-small" onclick="bulkExport()">Exporter sélection</button>
+            <button class="btn-ghost btn-small" onclick="clearSelection()">Désélectionner tout</button>
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="col-checkbox sticky-left">
+                        <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
+                    </th>
+                    <th class="col-id">ID</th>
+                    <th class="col-auteur sticky-left-after-checkbox">Auteur</th>
+                    <th class="col-contenu">Contenu</th>
+                    <th class="col-type">Type</th>
+                    <th class="col-groupe">Groupe</th>
+                    <th class="col-date sortable" onclick="sortTable('created_at')">
+                        Date publication
+                        {% if sort_by == 'created_at' or sort_by == '-created_at' %}
+                        <span class="sort-indicator {% if sort_by == '-created_at' %}desc{% else %}asc{% endif %}"></span>
+                        {% endif %}
+                    </th>
+                    <th class="col-engagement">Engagement</th>
+                    <th class="col-statut">Statut</th>
+                    <th class="col-actions sticky-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for post in posts %}
+                <tr class="table-row" data-post-id="{{ post.id }}">
+                    <td class="col-checkbox sticky-left">
+                        <input type="checkbox" class="post-checkbox" value="{{ post.id }}" 
+                               onchange="updateBulkActions()">
+                    </td>
+                    <td class="col-id">
+                        <span class="id-text" onclick="copyToClipboard('{{ post.id }}')">{{ post.id }}</span>
+                    </td>
+                    <td class="col-auteur sticky-left-after-checkbox">
+                        <div class="auteur-cell">
+                            <div class="avatar-small">
+                                {% if post.author.avatar %}
+                                <img src="{{ post.author.avatar.url }}" alt="{{ post.author.username }}">
+                                {% else %}
+                                <div class="avatar-placeholder">{{ post.author.username|first|upper }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="auteur-info">
+                                <a href="/connect-admin/users/{{ post.author.id }}/" class="auteur-name">
+                                    <strong>{{ post.author.username }}</strong>
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="col-contenu">
+                        <div class="contenu-apercu" title="{{ post.content }}">
+                            {{ post.content|truncatewords:20 }}
+                        </div>
+                    </td>
+                    <td class="col-type">
+                        <span class="type-badge type-{{ post.content_type }}">{{ post.get_content_type_display }}</span>
+                    </td>
+                    <td class="col-groupe">
+                        {% if post.group %}
+                        <a href="?view=groupes&groupe={{ post.group.id }}">{{ post.group.name|truncatewords:3 }}</a>
+                        {% else %}
+                        <span class="badge-public">Public</span>
+                        {% endif %}
+                    </td>
+                    <td class="col-date">{{ post.created_at|timesince }}</td>
+                    <td class="col-engagement">
+                        <div class="engagement-metrics">
+                            <span class="metric-item">❤️ {{ post.likes_count }}</span>
+                            <span class="metric-item">💬 {{ post.comments_count }}</span>
+                            <span class="metric-item">↗️ {{ post.shares_count }}</span>
+                        </div>
+                    </td>
+                    <td class="col-statut">
+                        {% if post.is_quarantined %}
+                        <span class="statut-badge statut-quarantined">Quarantaine</span>
+                        {% elif post.is_spam %}
+                        <span class="statut-badge statut-spam">Spam</span>
+                        {% elif post.is_inappropriate %}
+                        <span class="statut-badge statut-inappropriate">Inapproprié</span>
+                        {% else %}
+                        <span class="statut-badge statut-publie">Publié</span>
+                        {% endif %}
+                    </td>
+                    <td class="col-actions sticky-right">
+                        <div class="actions-dropdown">
+                            <button class="actions-btn" onclick="toggleActionsDropdown(this)">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="1"></circle>
+                                    <circle cx="12" cy="5" r="1"></circle>
+                                    <circle cx="12" cy="19" r="1"></circle>
+                                </svg>
+                            </button>
+                            <div class="dropdown-menu">
+                                <a href="#" class="dropdown-item" onclick="openPostDetail({{ post.id }})">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                    Voir détail complet
+                                </a>
+                                <a href="#" class="dropdown-item" onclick="masquerPost({{ post.id }})">
+                                    Masquer post
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a href="#" class="dropdown-item dropdown-danger" onclick="supprimerPost({{ post.id }})">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    </svg>
+                                    Supprimer
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10" class="empty-state">
+                        <p>Aucun post trouvé</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if posts.has_other_pages %}
+    <div class="pagination-wrapper">
+        <div class="pagination-info">
+            <select class="per-page-select" onchange="changePerPage(this.value)">
+                <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+                <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                <option value="250" {% if per_page == 250 %}selected{% endif %}>250</option>
+            </select>
+            <span class="pagination-text">
+                Affichage {{ posts.start_index }}-{{ posts.end_index }} sur {{ posts.paginator.count|intcomma }} posts
+            </span>
+        </div>
+        <div class="pagination-controls">
+            {% if posts.has_previous %}
+            <a href="?page={{ posts.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">Précédent</a>
+            {% endif %}
+            {% for num in posts.paginator.page_range %}
+                {% if posts.number == num %}
+                <span class="page-current">{{ num }}</span>
+                {% elif num > posts.number|add:'-3' and num < posts.number|add:'3' %}
+                <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if posts.has_next %}
+            <a href="?page={{ posts.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">Suivant</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal Détail Post Complet -->
+<div class="modal-overlay" id="post-detail-modal" style="display: none;">
+    <div class="modal-content modal-extra-large">
+        <div class="modal-header">
+            <h2 id="modal-post-title">Détail post</h2>
+            <button class="modal-close" onclick="closePostDetailModal()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-detail-layout">
+                <div class="modal-detail-left">
+                    <!-- Header Post -->
+                    <div class="post-header">
+                        <div class="auteur-header">
+                            <div class="avatar-large">
+                                <img id="modal-post-avatar" src="" alt="">
+                            </div>
+                            <div class="auteur-info-large">
+                                <h3 id="modal-post-auteur">-</h3>
+                                <div class="post-meta">
+                                    <span id="modal-post-date">-</span>
+                                    <span class="type-badge" id="modal-post-type">-</span>
+                                    {% if post.group %}
+                                    <span class="groupe-badge" id="modal-post-groupe">-</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="post-actions-header">
+                            <div class="statut-badge" id="modal-post-statut">-</div>
+                        </div>
+                    </div>
+
+                    <!-- Contenu Post -->
+                    <div class="post-content-section">
+                        <div class="post-content-text" id="modal-post-content">-</div>
+                        <div class="post-hashtags" id="modal-post-hashtags"></div>
+                    </div>
+
+                    <!-- Médias -->
+                    <div class="post-medias-section" id="modal-post-medias" style="display: none;">
+                        <h4>Médias</h4>
+                        <div class="medias-grid" id="medias-grid"></div>
+                    </div>
+
+                    <!-- Engagement -->
+                    <div class="post-engagement-section">
+                        <div class="engagement-stats">
+                            <div class="engagement-stat-item">
+                                <span class="engagement-icon">❤️</span>
+                                <span class="engagement-count" id="engagement-likes">0</span>
+                                <span class="engagement-label">Likes</span>
+                            </div>
+                            <div class="engagement-stat-item">
+                                <span class="engagement-icon">💬</span>
+                                <span class="engagement-count" id="engagement-comments">0</span>
+                                <span class="engagement-label">Commentaires</span>
+                            </div>
+                            <div class="engagement-stat-item">
+                                <span class="engagement-icon">↗️</span>
+                                <span class="engagement-count" id="engagement-shares">0</span>
+                                <span class="engagement-label">Partages</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Liste Likes -->
+                        <div class="likes-list-section">
+                            <h4>Personnes ayant aimé</h4>
+                            <div class="likes-avatars-grid" id="likes-avatars-grid"></div>
+                            <button class="btn-ghost btn-small" onclick="voirTousLikes()">Voir tous</button>
+                        </div>
+                        
+                        <!-- Commentaires -->
+                        <div class="comments-section">
+                            <h4>Commentaires</h4>
+                            <div class="comments-list" id="comments-list"></div>
+                            <div class="add-comment-section">
+                                <textarea class="comment-input" id="new-comment-input" placeholder="Ajouter un commentaire..."></textarea>
+                                <button class="btn-primary btn-small" onclick="ajouterCommentaire()">Publier</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-detail-right">
+                    <!-- Widget Auteur -->
+                    <div class="modal-widget">
+                        <h4>Auteur post</h4>
+                        <div class="widget-content">
+                            <div class="avatar-large">
+                                <img id="widget-post-auteur-avatar" src="" alt="">
+                            </div>
+                            <div class="widget-info">
+                                <strong id="widget-post-auteur-nom">-</strong>
+                                <div id="widget-post-auteur-email">-</div>
+                            </div>
+                            <div class="widget-actions">
+                                <button class="btn-secondary btn-small" onclick="voirProfilAuteurPost()">Voir profil</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Widget Groupe -->
+                    <div class="modal-widget" id="widget-groupe" style="display: none;">
+                        <h4>Groupe</h4>
+                        <div class="widget-content">
+                            <div class="widget-info">
+                                <strong id="widget-groupe-nom">-</strong>
+                                <div id="widget-groupe-description">-</div>
+                            </div>
+                            <div class="widget-actions">
+                                <button class="btn-secondary btn-small" onclick="voirGroupePost()">Voir groupe</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Widget Statut -->
+                    <div class="modal-widget">
+                        <h4>Statut post</h4>
+                        <div class="widget-content">
+                            <div class="statut-display-large" id="widget-post-statut">-</div>
+                            <div class="widget-meta">
+                                <div>Date publication : <span id="widget-post-date-pub">-</span></div>
+                                <div>Score sécurité : <span id="widget-post-security-score">-</span>/100</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Widget Actions Rapides -->
+                    <div class="modal-widget">
+                        <h4>Actions rapides</h4>
+                        <div class="widget-actions-list">
+                            <button class="btn-secondary btn-small btn-block" onclick="masquerPostFromModal()">Masquer post</button>
+                            <button class="btn-secondary btn-small btn-block" onclick="epinglerPostFromModal()">Épingler</button>
+                            <button class="btn-secondary btn-small btn-block" onclick="desactiverCommentairesPost()">Désactiver commentaires</button>
+                            <button class="btn-secondary btn-small btn-block" onclick="partagerPost()">Partager lien</button>
+                            <button class="btn-danger btn-small btn-block" onclick="supprimerPostFromModal()">Supprimer définitivement</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

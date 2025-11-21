@@ -1,0 +1,311 @@
+{% load humanize %}
+<!-- Analytics Dashboard -->
+<div class="analytics-dashboard">
+    <!-- KPIs Cards -->
+    <div class="analytics-kpis">
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </div>
+                <h3>Utilisateurs actifs</h3>
+            </div>
+            <div class="kpi-value">{{ stats.users_actifs|intcomma }}</div>
+            <div class="kpi-chart-mini" id="dau-chart"></div>
+        </div>
+        
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+                <h3>Engagement global</h3>
+            </div>
+            <div class="kpi-value">{{ stats.taux_engagement|floatformat:1 }}%</div>
+        </div>
+        
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                </div>
+                <h3>Contenu créé</h3>
+            </div>
+            <div class="kpi-value">{{ stats.total_posts_mois|intcomma }}</div>
+            <div class="kpi-label">Posts ce mois</div>
+        </div>
+        
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <line x1="12" y1="2" x2="12" y2="6"></line>
+                        <line x1="12" y1="18" x2="12" y2="22"></line>
+                        <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+                        <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                        <line x1="2" y1="12" x2="6" y2="12"></line>
+                        <line x1="18" y1="12" x2="22" y2="12"></line>
+                        <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+                        <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </div>
+                <h3>Croissance</h3>
+            </div>
+            <div class="kpi-value">{{ stats.evolution_posts|floatformat:0 }}%</div>
+            <div class="kpi-label">Évolution posts</div>
+        </div>
+    </div>
+
+    <!-- Graphiques -->
+    <div class="analytics-charts">
+        <div class="chart-card">
+            <h3>Activité temporelle</h3>
+            <canvas id="evolution-chart"></canvas>
+        </div>
+        
+        <div class="chart-card">
+            <h3>Engagement par type contenu</h3>
+            <canvas id="engagement-type-chart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    // Données pour graphiques
+    const evolutionData = {{ evolution_data|safe }};
+    const engagementByType = {{ engagement_by_type|safe }};
+    
+    // Graphique évolution
+    const ctxEvolution = document.getElementById('evolution-chart');
+    if (ctxEvolution) {
+        new Chart(ctxEvolution, {
+            type: 'line',
+            data: {
+                labels: evolutionData.map(d => d.date),
+                datasets: [{
+                    label: 'Posts publiés',
+                    data: evolutionData.map(d => d.count),
+                    borderColor: '#D3580B',
+                    backgroundColor: 'rgba(211, 88, 11, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true
+                    }
+                }
+            }
+        });
+    }
+    
+    // Graphique engagement par type
+    const ctxEngagement = document.getElementById('engagement-type-chart');
+    if (ctxEngagement) {
+        new Chart(ctxEngagement, {
+            type: 'bar',
+            data: {
+                labels: engagementByType.map(d => d.type),
+                datasets: [{
+                    label: 'Likes moyens',
+                    data: engagementByType.map(d => d.avg_likes),
+                    backgroundColor: '#3B82F6'
+                }, {
+                    label: 'Commentaires moyens',
+                    data: engagementByType.map(d => d.avg_comments),
+                    backgroundColor: '#10B981'
+                }, {
+                    label: 'Partages moyens',
+                    data: engagementByType.map(d => d.avg_shares),
+                    backgroundColor: '#8B5CF6'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+</script>
+
+<!-- Analytics Dashboard -->
+<div class="analytics-dashboard">
+    <!-- KPIs Cards -->
+    <div class="analytics-kpis">
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </div>
+                <h3>Utilisateurs actifs</h3>
+            </div>
+            <div class="kpi-value">{{ stats.users_actifs|intcomma }}</div>
+            <div class="kpi-chart-mini" id="dau-chart"></div>
+        </div>
+        
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+                <h3>Engagement global</h3>
+            </div>
+            <div class="kpi-value">{{ stats.taux_engagement|floatformat:1 }}%</div>
+        </div>
+        
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                </div>
+                <h3>Contenu créé</h3>
+            </div>
+            <div class="kpi-value">{{ stats.total_posts_mois|intcomma }}</div>
+            <div class="kpi-label">Posts ce mois</div>
+        </div>
+        
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <line x1="12" y1="2" x2="12" y2="6"></line>
+                        <line x1="12" y1="18" x2="12" y2="22"></line>
+                        <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+                        <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                        <line x1="2" y1="12" x2="6" y2="12"></line>
+                        <line x1="18" y1="12" x2="22" y2="12"></line>
+                        <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+                        <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </div>
+                <h3>Croissance</h3>
+            </div>
+            <div class="kpi-value">{{ stats.evolution_posts|floatformat:0 }}%</div>
+            <div class="kpi-label">Évolution posts</div>
+        </div>
+    </div>
+
+    <!-- Graphiques -->
+    <div class="analytics-charts">
+        <div class="chart-card">
+            <h3>Activité temporelle</h3>
+            <canvas id="evolution-chart"></canvas>
+        </div>
+        
+        <div class="chart-card">
+            <h3>Engagement par type contenu</h3>
+            <canvas id="engagement-type-chart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    // Données pour graphiques
+    const evolutionData = {{ evolution_data|safe }};
+    const engagementByType = {{ engagement_by_type|safe }};
+    
+    // Graphique évolution
+    const ctxEvolution = document.getElementById('evolution-chart');
+    if (ctxEvolution) {
+        new Chart(ctxEvolution, {
+            type: 'line',
+            data: {
+                labels: evolutionData.map(d => d.date),
+                datasets: [{
+                    label: 'Posts publiés',
+                    data: evolutionData.map(d => d.count),
+                    borderColor: '#D3580B',
+                    backgroundColor: 'rgba(211, 88, 11, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true
+                    }
+                }
+            }
+        });
+    }
+    
+    // Graphique engagement par type
+    const ctxEngagement = document.getElementById('engagement-type-chart');
+    if (ctxEngagement) {
+        new Chart(ctxEngagement, {
+            type: 'bar',
+            data: {
+                labels: engagementByType.map(d => d.type),
+                datasets: [{
+                    label: 'Likes moyens',
+                    data: engagementByType.map(d => d.avg_likes),
+                    backgroundColor: '#3B82F6'
+                }, {
+                    label: 'Commentaires moyens',
+                    data: engagementByType.map(d => d.avg_comments),
+                    backgroundColor: '#10B981'
+                }, {
+                    label: 'Partages moyens',
+                    data: engagementByType.map(d => d.avg_shares),
+                    backgroundColor: '#8B5CF6'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+</script>
+

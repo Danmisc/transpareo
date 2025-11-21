@@ -1,0 +1,241 @@
+{% load humanize %}
+<!-- Filtres Événements -->
+<div class="filters-section">
+    <div class="filters-header">
+        <h3>Filtres</h3>
+    </div>
+    <div class="filters-content">
+        <form method="GET" action="{% url 'admin-connect' %}">
+            <input type="hidden" name="view" value="evenements">
+            <div class="filter-row">
+                <div class="filter-field filter-search">
+                    <label>Recherche</label>
+                    <div class="search-input-wrapper">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        <input type="text" name="search" placeholder="Titre, description, lieu..." class="filter-input">
+                    </div>
+                </div>
+                <div class="filter-field">
+                    <label>Statut</label>
+                    <select name="statut" class="filter-select">
+                        <option value="">Tous</option>
+                        <option value="a_venir">À venir</option>
+                        <option value="en_cours">En cours</option>
+                        <option value="termine">Terminé</option>
+                        <option value="annule">Annulé</option>
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn-primary">Rechercher</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tableau Événements -->
+<div class="table-section">
+    <div class="table-header">
+        <h3>Événements</h3>
+        <button class="btn-primary btn-small" onclick="creerEvenement()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Créer événement
+        </button>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="col-checkbox">Checkbox</th>
+                    <th class="col-image">Image</th>
+                    <th class="col-titre">Titre</th>
+                    <th class="col-date">Date/Heure</th>
+                    <th class="col-lieu">Lieu</th>
+                    <th class="col-organisateur">Organisateur</th>
+                    <th class="col-participants">Participants</th>
+                    <th class="col-statut">Statut</th>
+                    <th class="col-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="9" class="empty-state">
+                        <p>Aucun événement trouvé</p>
+                        <small>La gestion des événements sera implémentée prochainement</small>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Créer/Modifier Événement -->
+<div class="modal-overlay" id="evenement-modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modal-evenement-title">Créer événement</h2>
+            <button class="modal-close" onclick="closeEvenementModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <form id="evenement-form">
+                <div class="form-field">
+                    <label>Titre *</label>
+                    <input type="text" name="titre" required class="filter-input">
+                </div>
+                <div class="form-field">
+                    <label>Description</label>
+                    <textarea name="description" class="filter-input" rows="4"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label>Date début *</label>
+                        <input type="datetime-local" name="date_debut" required class="filter-input">
+                    </div>
+                    <div class="form-field">
+                        <label>Date fin</label>
+                        <input type="datetime-local" name="date_fin" class="filter-input">
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label>Lieu</label>
+                    <input type="text" name="lieu" placeholder="Adresse ou 'En ligne'" class="filter-input">
+                </div>
+                <div class="form-field">
+                    <label>Limite participants</label>
+                    <input type="number" name="limite" min="0" placeholder="0 = illimité" class="filter-input">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Créer</button>
+                    <button type="button" class="btn-secondary" onclick="closeEvenementModal()">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<div class="filters-section">
+    <div class="filters-header">
+        <h3>Filtres</h3>
+    </div>
+    <div class="filters-content">
+        <form method="GET" action="{% url 'admin-connect' %}">
+            <input type="hidden" name="view" value="evenements">
+            <div class="filter-row">
+                <div class="filter-field filter-search">
+                    <label>Recherche</label>
+                    <div class="search-input-wrapper">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        <input type="text" name="search" placeholder="Titre, description, lieu..." class="filter-input">
+                    </div>
+                </div>
+                <div class="filter-field">
+                    <label>Statut</label>
+                    <select name="statut" class="filter-select">
+                        <option value="">Tous</option>
+                        <option value="a_venir">À venir</option>
+                        <option value="en_cours">En cours</option>
+                        <option value="termine">Terminé</option>
+                        <option value="annule">Annulé</option>
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn-primary">Rechercher</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tableau Événements -->
+<div class="table-section">
+    <div class="table-header">
+        <h3>Événements</h3>
+        <button class="btn-primary btn-small" onclick="creerEvenement()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Créer événement
+        </button>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="col-checkbox">Checkbox</th>
+                    <th class="col-image">Image</th>
+                    <th class="col-titre">Titre</th>
+                    <th class="col-date">Date/Heure</th>
+                    <th class="col-lieu">Lieu</th>
+                    <th class="col-organisateur">Organisateur</th>
+                    <th class="col-participants">Participants</th>
+                    <th class="col-statut">Statut</th>
+                    <th class="col-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="9" class="empty-state">
+                        <p>Aucun événement trouvé</p>
+                        <small>La gestion des événements sera implémentée prochainement</small>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Créer/Modifier Événement -->
+<div class="modal-overlay" id="evenement-modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modal-evenement-title">Créer événement</h2>
+            <button class="modal-close" onclick="closeEvenementModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <form id="evenement-form">
+                <div class="form-field">
+                    <label>Titre *</label>
+                    <input type="text" name="titre" required class="filter-input">
+                </div>
+                <div class="form-field">
+                    <label>Description</label>
+                    <textarea name="description" class="filter-input" rows="4"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label>Date début *</label>
+                        <input type="datetime-local" name="date_debut" required class="filter-input">
+                    </div>
+                    <div class="form-field">
+                        <label>Date fin</label>
+                        <input type="datetime-local" name="date_fin" class="filter-input">
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label>Lieu</label>
+                    <input type="text" name="lieu" placeholder="Adresse ou 'En ligne'" class="filter-input">
+                </div>
+                <div class="form-field">
+                    <label>Limite participants</label>
+                    <input type="number" name="limite" min="0" placeholder="0 = illimité" class="filter-input">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Créer</button>
+                    <button type="button" class="btn-secondary" onclick="closeEvenementModal()">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+

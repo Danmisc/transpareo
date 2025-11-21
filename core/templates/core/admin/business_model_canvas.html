@@ -1,0 +1,235 @@
+{% extends 'core/admin/base_admin.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block page_title %}Business Model Canvas{% endblock %}
+
+{% block content %}
+<div class="business-model-canvas-page">
+    <!-- Header Actions -->
+    <div class="canvas-header">
+        <div class="header-left">
+            <h1 class="page-title-main">Business Model Canvas</h1>
+            <p class="page-subtitle">Définissez votre modèle d'affaires en 9 blocs clés</p>
+        </div>
+        <div class="header-actions">
+            <div class="save-indicator" id="save-indicator" style="display: none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span id="save-message">Sauvegardé</span>
+            </div>
+            <div class="actions-dropdown">
+                <button class="btn-secondary" onclick="toggleVersionsDropdown()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                    Historique versions
+                </button>
+                <div class="dropdown-menu" id="versions-dropdown">
+                    <div class="dropdown-header">10 dernières versions</div>
+                    {% for version in versions %}
+                    <a href="#" class="dropdown-item" onclick="restoreVersion({{ version.id }}); return false;">
+                        <div class="version-info">
+                            <div class="version-title">Version {{ version.version }}</div>
+                            <div class="version-date">{{ version.created_at|date:"d/m/Y H:i" }}</div>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="dropdown-item-empty">Aucune version disponible</div>
+                    {% endfor %}
+                </div>
+            </div>
+            <button class="btn-secondary" onclick="shareCanvas()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="18" cy="5" r="3"></circle>
+                    <circle cx="6" cy="12" r="3"></circle>
+                    <circle cx="18" cy="19" r="3"></circle>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                </svg>
+                Partager lien
+            </button>
+            <a href="{% url 'admin-business-model-canvas-export-pdf' %}" class="btn-primary" target="_blank">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Exporter PDF
+            </a>
+            <button class="btn-danger" onclick="resetCanvas()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="1 4 1 10 7 10"></polyline>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                </svg>
+                Réinitialiser
+            </button>
+        </div>
+    </div>
+
+    <!-- Canvas Grid -->
+    <div class="canvas-container">
+        <div class="canvas-grid">
+            <!-- Colonne 1 -->
+            <div class="canvas-column">
+                <!-- Partenaires Clés -->
+                <div class="canvas-block" data-bloc="partenaires_cles" {% if not readonly %}onclick="editBlock(this)"{% endif %}>
+                    <div class="block-header">
+                        <h3 class="block-title">PARTENAIRES CLÉS</h3>
+                    </div>
+                    <div class="block-content">
+                        {% if readonly %}
+                        <div class="block-text-readonly">{{ canvas.partenaires_cles|default:"Agences immobilières, notaires, assureurs, banques..."|linebreaks }}</div>
+                        {% else %}
+                        <textarea class="block-textarea" placeholder="Agences immobilières, notaires, assureurs, banques..." onblur="saveBlock(this)" oninput="debounceSave(this)">{{ canvas.partenaires_cles|default:"" }}</textarea>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Activités Clés -->
+                <div class="canvas-block" data-bloc="activites_cles" {% if not readonly %}onclick="editBlock(this)"{% endif %}>
+                    <div class="block-header">
+                        <h3 class="block-title">ACTIVITÉS CLÉS</h3>
+                    </div>
+                    <div class="block-content">
+                        {% if readonly %}
+                        <div class="block-text-readonly">{{ canvas.activites_cles|default:"Plateforme de mise en relation, vérification profils, gestion contrats..."|linebreaks }}</div>
+                        {% else %}
+                        <textarea class="block-textarea" placeholder="Plateforme de mise en relation, vérification profils, gestion contrats..." onblur="saveBlock(this)" oninput="debounceSave(this)">{{ canvas.activites_cles|default:"" }}</textarea>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Ressources Clés -->
+                <div class="canvas-block" data-bloc="ressources_cles" {% if not readonly %}onclick="editBlock(this)"{% endif %}>
+                    <div class="block-header">
+                        <h3 class="block-title">RESSOURCES CLÉS</h3>
+                    </div>
+                    <div class="block-content">
+                        {% if readonly %}
+                        <div class="block-text-readonly">{{ canvas.ressources_cles|default:"Équipe tech, base de données logements, algorithme matching..."|linebreaks }}</div>
+                        {% else %}
+                        <textarea class="block-textarea" placeholder="Équipe tech, base de données logements, algorithme matching..." onblur="saveBlock(this)" oninput="debounceSave(this)">{{ canvas.ressources_cles|default:"" }}</textarea>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Colonne 2 - Proposition de Valeur (centrale, plus grande) -->
+            <div class="canvas-column canvas-column-center">
+                <!-- Proposition de Valeur -->
+                <div class="canvas-block canvas-block-center" data-bloc="proposition_valeur" {% if not readonly %}onclick="editBlock(this)"{% endif %}>
+                    <div class="block-header">
+                        <h3 class="block-title">PROPOSITION DE VALEUR</h3>
+                        <span class="block-badge">Coeur du business</span>
+                    </div>
+                    <div class="block-content">
+                        {% if readonly %}
+                        <div class="block-text-readonly">{{ canvas.proposition_valeur|default:"Location transparente avec avis vérifiés, réseau social immobilier..."|linebreaks }}</div>
+                        {% else %}
+                        <textarea class="block-textarea block-textarea-large" placeholder="Location transparente avec avis vérifiés, réseau social immobilier..." onblur="saveBlock(this)" oninput="debounceSave(this)">{{ canvas.proposition_valeur|default:"" }}</textarea>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Colonne 3 -->
+            <div class="canvas-column">
+                <!-- Relations Clients -->
+                <div class="canvas-block" data-bloc="relations_clients" {% if not readonly %}onclick="editBlock(this)"{% endif %}>
+                    <div class="block-header">
+                        <h3 class="block-title">RELATIONS CLIENTS</h3>
+                    </div>
+                    <div class="block-content">
+                        {% if readonly %}
+                        <div class="block-text-readonly">{{ canvas.relations_clients|default:"Self-service, communauté, support personnalisé..."|linebreaks }}</div>
+                        {% else %}
+                        <textarea class="block-textarea" placeholder="Self-service, communauté, support personnalisé..." onblur="saveBlock(this)" oninput="debounceSave(this)">{{ canvas.relations_clients|default:"" }}</textarea>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Canaux -->
+                <div class="canvas-block" data-bloc="canaux" {% if not readonly %}onclick="editBlock(this)"{% endif %}>
+                    <div class="block-header">
+                        <h3 class="block-title">CANAUX</h3>
+                    </div>
+                    <div class="block-content">
+                        {% if readonly %}
+                        <div class="block-text-readonly">{{ canvas.canaux|default:"Site web, app mobile, réseaux sociaux, partenariats..."|linebreaks }}</div>
+                        {% else %}
+                        <textarea class="block-textarea" placeholder="Site web, app mobile, réseaux sociaux, partenariats..." onblur="saveBlock(this)" oninput="debounceSave(this)">{{ canvas.canaux|default:"" }}</textarea>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Segments Clients -->
+                <div class="canvas-block" data-bloc="segments_clients" {% if not readonly %}onclick="editBlock(this)"{% endif %}>
+                    <div class="block-header">
+                        <h3 class="block-title">SEGMENTS CLIENTS</h3>
+                    </div>
+                    <div class="block-content">
+                        {% if readonly %}
+                        <div class="block-text-readonly">{{ canvas.segments_clients|default:"Locataires 20-40 ans, propriétaires particuliers, entreprises..."|linebreaks }}</div>
+                        {% else %}
+                        <textarea class="block-textarea" placeholder="Locataires 20-40 ans, propriétaires particuliers, entreprises..." onblur="saveBlock(this)" oninput="debounceSave(this)">{{ canvas.segments_clients|default:"" }}</textarea>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bloc Supplémentaire en bas - Full width -->
+        <div class="canvas-bottom">
+            <!-- Structure de Coûts -->
+            <div class="canvas-block canvas-block-bottom" data-bloc="structure_couts" {% if not readonly %}onclick="editBlock(this)"{% endif %}>
+                <div class="block-header">
+                    <h3 class="block-title">STRUCTURE DE COÛTS</h3>
+                </div>
+                <div class="block-content">
+                    {% if readonly %}
+                    <div class="block-text-readonly">{{ canvas.structure_couts|default:"Développement, serveurs, marketing, salaires, support..."|linebreaks }}</div>
+                    {% else %}
+                    <textarea class="block-textarea" placeholder="Développement, serveurs, marketing, salaires, support..." onblur="saveBlock(this)" oninput="debounceSave(this)">{{ canvas.structure_couts|default:"" }}</textarea>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Flux de Revenus -->
+            <div class="canvas-block canvas-block-bottom" data-bloc="flux_revenus" {% if not readonly %}onclick="editBlock(this)"{% endif %}>
+                <div class="block-header">
+                    <h3 class="block-title">FLUX DE REVENUS</h3>
+                </div>
+                <div class="block-content">
+                    {% if readonly %}
+                    <div class="block-text-readonly">{{ canvas.flux_revenus|default:"Abonnements premium, commissions, services additionnels..."|linebreaks }}</div>
+                    {% else %}
+                    <textarea class="block-textarea" placeholder="Abonnements premium, commissions, services additionnels..." onblur="saveBlock(this)" oninput="debounceSave(this)">{{ canvas.flux_revenus|default:"" }}</textarea>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Styles -->
+<link rel="stylesheet" href="{% static 'core/admin/business-model-canvas.css' %}">
+
+<!-- JavaScript -->
+<script src="{% static 'core/admin/business-model-canvas.js' %}"></script>
+
+<script>
+    // Variables globales
+    const saveUrl = '{% url "admin-business-model-canvas-save" %}';
+    const shareToken = '{{ canvas.share_token }}';
+    const csrfToken = '{{ csrf_token }}';
+    
+    // Initialiser
+    document.addEventListener('DOMContentLoaded', function() {
+        initCanvas();
+    });
+</script>
+{% endblock %}
+

@@ -1,0 +1,578 @@
+/* ============================================
+   SUPPORT TICKETS - PHASE 9 STYLES
+   ============================================ */
+
+.support-tickets-page {
+    margin: 0;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.tickets-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.tickets-filters {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.filter-select {
+    padding: 8px 12px;
+    border: 1px solid #D1D5DB;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    color: #111827;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 150px;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #D3580B;
+    box-shadow: 0 0 0 3px rgba(211, 88, 11, 0.1);
+}
+
+/* ============================================
+   KANBAN BOARD
+   ============================================ */
+
+.kanban-board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-top: 32px;
+}
+
+.kanban-column {
+    background: #F9FAFB;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 20px;
+    min-height: 600px;
+}
+
+.column-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #E5E7EB;
+}
+
+.column-header h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.column-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 2px 8px;
+    background: #D1D5DB;
+    color: #374151;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.column-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 500px;
+}
+
+.empty-column {
+    text-align: center;
+    padding: 40px 20px;
+    color: #9CA3AF;
+    font-size: 14px;
+}
+
+/* ============================================
+   TICKET CARD
+   ============================================ */
+
+.ticket-card {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    padding: 16px;
+    cursor: move;
+    transition: all 0.2s ease;
+}
+
+.ticket-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #D3580B;
+}
+
+.ticket-card.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+}
+
+.ticket-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.ticket-id {
+    font-size: 12px;
+    font-weight: 700;
+    color: #6B7280;
+    font-family: monospace;
+}
+
+.priority-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.priority-urgent {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+
+.priority-high {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+
+.priority-medium {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.priority-low {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+.ticket-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 12px 0;
+    line-height: 1.4;
+}
+
+.ticket-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.ticket-user {
+    display: flex;
+    align-items: center;
+    color: #111827;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.ticket-user:hover {
+    color: #D3580B;
+}
+
+.ticket-category {
+    padding: 4px 8px;
+    background: #F3F4F6;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.ticket-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    color: #6B7280;
+    flex-wrap: wrap;
+}
+
+.ticket-assigned {
+    font-size: 11px;
+    color: #6B7280;
+}
+
+.ticket-unassigned {
+    font-size: 11px;
+    color: #EF4444;
+    font-weight: 600;
+}
+
+.ticket-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-view-ticket {
+    padding: 6px 12px;
+    background: #D3580B;
+    border: 1px solid #D3580B;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.btn-view-ticket:hover {
+    background: #c4510a;
+    border-color: #c4510a;
+}
+
+/* ============================================
+   TICKET DETAIL PAGE
+   ============================================ */
+
+.ticket-detail-page {
+    margin: 0;
+}
+
+.ticket-detail-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.ticket-info-card {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.ticket-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.info-item label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6B7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.category-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.category-technical {
+    background: #DBEAFE;
+    color: #1E40AF;
+}
+
+.category-account {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+.category-payment {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.category-feature {
+    background: #F3E8FF;
+    color: #7C3AED;
+}
+
+.status-select,
+.assign-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #D1D5DB;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    color: #111827;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.status-select:focus,
+.assign-select:focus {
+    outline: none;
+    border-color: #D3580B;
+    box-shadow: 0 0 0 3px rgba(211, 88, 11, 0.1);
+}
+
+.ticket-description-card {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.ticket-description-card h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 16px 0;
+}
+
+.ticket-description {
+    font-size: 14px;
+    color: #374151;
+    line-height: 1.7;
+}
+
+.ticket-conversation {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.ticket-conversation h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 20px 0;
+}
+
+.conversation-thread {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.conversation-message {
+    padding: 16px;
+    border-radius: 8px;
+}
+
+.message-user {
+    background: #F9FAFB;
+    border-left: 3px solid #D3580B;
+}
+
+.message-admin {
+    background: #FFF4E6;
+    border-left: 3px solid #D3580B;
+}
+
+.message-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.message-author {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.author-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.admin-badge {
+    padding: 2px 6px;
+    background: #D3580B;
+    color: white;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.message-date {
+    font-size: 12px;
+    color: #6B7280;
+}
+
+.message-content {
+    font-size: 14px;
+    color: #374151;
+    line-height: 1.6;
+}
+
+.empty-conversation {
+    text-align: center;
+    padding: 40px 20px;
+    color: #9CA3AF;
+    font-size: 14px;
+}
+
+.ticket-reply-section {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.ticket-reply-section h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 20px 0;
+}
+
+.reply-controls {
+    margin-bottom: 16px;
+}
+
+.template-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.template-selector label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.template-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #D1D5DB;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    color: #111827;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.template-select:focus {
+    outline: none;
+    border-color: #D3580B;
+    box-shadow: 0 0 0 3px rgba(211, 88, 11, 0.1);
+}
+
+.reply-textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #D1D5DB;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    line-height: 1.6;
+    color: #111827;
+    resize: vertical;
+    min-height: 150px;
+    transition: all 0.2s ease;
+}
+
+.reply-textarea:focus {
+    outline: none;
+    border-color: #D3580B;
+    box-shadow: 0 0 0 3px rgba(211, 88, 11, 0.1);
+}
+
+.reply-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+}
+
+/* ============================================
+   DRAG & DROP
+   ============================================ */
+
+.kanban-column.drag-over {
+    background: #FFF4E6;
+    border-color: #D3580B;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1024px) {
+    .kanban-board {
+        grid-template-columns: 1fr;
+    }
+
+    .tickets-filters {
+        width: 100%;
+    }
+
+    .filter-select {
+        flex: 1;
+        min-width: 120px;
+    }
+}
+
+@media (max-width: 768px) {
+    .ticket-detail-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .ticket-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ticket-meta {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+

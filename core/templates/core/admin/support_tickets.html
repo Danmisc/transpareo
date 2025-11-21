@@ -1,0 +1,219 @@
+{% extends 'core/admin/base_admin.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block page_title %}Tickets Support{% endblock %}
+
+{% block content %}
+<div class="support-tickets-page">
+    <!-- Header -->
+    <div class="tickets-header">
+        <div class="header-left">
+            <h1 class="page-title-main">Tickets Support</h1>
+            <p class="page-subtitle">Gérer les tickets de support avec workflow Kanban</p>
+        </div>
+        <div class="header-actions">
+            <!-- Filtres -->
+            <div class="tickets-filters">
+                <select id="filter-priority" class="filter-select" onchange="filterTickets()">
+                    <option value="">Toutes les priorités</option>
+                    <option value="urgent">Urgente</option>
+                    <option value="high">Haute</option>
+                    <option value="medium">Moyenne</option>
+                    <option value="low">Basse</option>
+                </select>
+                <select id="filter-category" class="filter-select" onchange="filterTickets()">
+                    <option value="">Toutes les catégories</option>
+                    <option value="technical">Technique</option>
+                    <option value="account">Compte</option>
+                    <option value="payment">Paiement</option>
+                    <option value="feature">Fonctionnalité</option>
+                    <option value="other">Autre</option>
+                </select>
+                <select id="filter-assigned" class="filter-select" onchange="filterTickets()">
+                    <option value="">Tous les tickets</option>
+                    <option value="me">Assignés à moi</option>
+                    <option value="unassigned">Non assignés</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kanban Board -->
+    <div class="kanban-board" id="kanban-board">
+        <!-- Colonne 1: Ouvert -->
+        <div class="kanban-column" data-status="open">
+            <div class="column-header">
+                <h3>Ouvert</h3>
+                <span class="column-count">{{ tickets_open|length }}</span>
+            </div>
+            <div class="column-cards" id="column-open">
+                {% for ticket in tickets_open %}
+                <div class="ticket-card" data-ticket-id="{{ ticket.ticket_id }}" draggable="true">
+                    <div class="ticket-header">
+                        <span class="ticket-id">#{{ ticket.ticket_id }}</span>
+                        <span class="priority-badge priority-{{ ticket.priority }}">{{ ticket.get_priority_display }}</span>
+                    </div>
+                    <h4 class="ticket-title">{{ ticket.title }}</h4>
+                    <div class="ticket-meta">
+                        <a href="{% url 'admin-user-detail' ticket.user.id %}" class="ticket-user">
+                            {% if ticket.user.profile.avatar %}
+                            <img src="{{ ticket.user.profile.avatar.url }}" alt="{{ ticket.user.username }}" class="user-avatar-small">
+                            {% else %}
+                            <div class="user-avatar-small-initial">{{ ticket.user.username|first|upper }}</div>
+                            {% endif %}
+                            {{ ticket.user.username }}
+                        </a>
+                        <span class="ticket-category">{{ ticket.get_category_display }}</span>
+                    </div>
+                    <div class="ticket-footer">
+                        <span class="ticket-date">{{ ticket.created_at|date:"d/m/Y" }}</span>
+                        {% if ticket.assigned_to %}
+                        <span class="ticket-assigned">Assigned: {{ ticket.assigned_to.username }}</span>
+                        {% else %}
+                        <span class="ticket-unassigned">Non assigné</span>
+                        {% endif %}
+                    </div>
+                    <div class="ticket-actions">
+                        <button type="button" class="btn-view-ticket" onclick="viewTicketDetail('{{ ticket.ticket_id }}')">Voir</button>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-column">
+                    <p>Aucun ticket ouvert</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Colonne 2: En cours -->
+        <div class="kanban-column" data-status="in_progress">
+            <div class="column-header">
+                <h3>En cours</h3>
+                <span class="column-count">{{ tickets_in_progress|length }}</span>
+            </div>
+            <div class="column-cards" id="column-in-progress">
+                {% for ticket in tickets_in_progress %}
+                <div class="ticket-card" data-ticket-id="{{ ticket.ticket_id }}" draggable="true">
+                    <div class="ticket-header">
+                        <span class="ticket-id">#{{ ticket.ticket_id }}</span>
+                        <span class="priority-badge priority-{{ ticket.priority }}">{{ ticket.get_priority_display }}</span>
+                    </div>
+                    <h4 class="ticket-title">{{ ticket.title }}</h4>
+                    <div class="ticket-meta">
+                        <a href="{% url 'admin-user-detail' ticket.user.id %}" class="ticket-user">
+                            {% if ticket.user.profile.avatar %}
+                            <img src="{{ ticket.user.profile.avatar.url }}" alt="{{ ticket.user.username }}" class="user-avatar-small">
+                            {% else %}
+                            <div class="user-avatar-small-initial">{{ ticket.user.username|first|upper }}</div>
+                            {% endif %}
+                            {{ ticket.user.username }}
+                        </a>
+                        <span class="ticket-category">{{ ticket.get_category_display }}</span>
+                    </div>
+                    <div class="ticket-footer">
+                        <span class="ticket-date">{{ ticket.created_at|date:"d/m/Y" }}</span>
+                        {% if ticket.assigned_to %}
+                        <span class="ticket-assigned">Assigned: {{ ticket.assigned_to.username }}</span>
+                        {% else %}
+                        <span class="ticket-unassigned">Non assigné</span>
+                        {% endif %}
+                    </div>
+                    <div class="ticket-actions">
+                        <button type="button" class="btn-view-ticket" onclick="viewTicketDetail('{{ ticket.ticket_id }}')">Voir</button>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-column">
+                    <p>Aucun ticket en cours</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Colonne 3: Résolu -->
+        <div class="kanban-column" data-status="resolved">
+            <div class="column-header">
+                <h3>Résolu</h3>
+                <span class="column-count">{{ tickets_resolved|length }}</span>
+            </div>
+            <div class="column-cards" id="column-resolved">
+                {% for ticket in tickets_resolved %}
+                <div class="ticket-card" data-ticket-id="{{ ticket.ticket_id }}" draggable="true">
+                    <div class="ticket-header">
+                        <span class="ticket-id">#{{ ticket.ticket_id }}</span>
+                        <span class="priority-badge priority-{{ ticket.priority }}">{{ ticket.get_priority_display }}</span>
+                    </div>
+                    <h4 class="ticket-title">{{ ticket.title }}</h4>
+                    <div class="ticket-meta">
+                        <a href="{% url 'admin-user-detail' ticket.user.id %}" class="ticket-user">
+                            {% if ticket.user.profile.avatar %}
+                            <img src="{{ ticket.user.profile.avatar.url }}" alt="{{ ticket.user.username }}" class="user-avatar-small">
+                            {% else %}
+                            <div class="user-avatar-small-initial">{{ ticket.user.username|first|upper }}</div>
+                            {% endif %}
+                            {{ ticket.user.username }}
+                        </a>
+                        <span class="ticket-category">{{ ticket.get_category_display }}</span>
+                    </div>
+                    <div class="ticket-footer">
+                        <span class="ticket-date">{{ ticket.created_at|date:"d/m/Y" }}</span>
+                        {% if ticket.assigned_to %}
+                        <span class="ticket-assigned">Assigned: {{ ticket.assigned_to.username }}</span>
+                        {% else %}
+                        <span class="ticket-unassigned">Non assigné</span>
+                        {% endif %}
+                    </div>
+                    <div class="ticket-actions">
+                        <button type="button" class="btn-view-ticket" onclick="viewTicketDetail('{{ ticket.ticket_id }}')">Voir</button>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-column">
+                    <p>Aucun ticket résolu</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Détail Ticket -->
+<div id="ticket-detail-modal" class="modal" style="display: none;">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2 id="ticket-detail-title">Détail du Ticket</h2>
+            <button type="button" class="btn-close-modal" onclick="closeTicketModal()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body" id="ticket-detail-body">
+            <!-- Contenu chargé dynamiquement -->
+        </div>
+    </div>
+</div>
+
+<!-- Styles -->
+<link rel="stylesheet" href="{% static 'core/admin/moderation.css' %}">
+<link rel="stylesheet" href="{% static 'core/admin/support-tickets.css' %}">
+
+<!-- JavaScript -->
+<script src="{% static 'core/admin/moderation.js' %}"></script>
+<script src="{% static 'core/admin/support-tickets.js' %}"></script>
+
+<script>
+    const updateStatusUrl = '{% url "admin-support-ticket-update-status" "TICKET_ID" %}'.replace('TICKET_ID/', '');
+    const ticketDetailUrl = '{% url "admin-support-ticket-detail" "TICKET_ID" %}'.replace('TICKET_ID/', '');
+    const csrfToken = '{{ csrf_token }}';
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        initSupportTickets();
+    });
+</script>
+{% endblock %}
+

@@ -1,0 +1,585 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load humanize %}
+{% load core_filters %}
+
+{% block title %}Transpareo Connect - Accueil{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'core/connect-home.css' %}">
+<style>
+    /* Masquer la navbar par défaut pour cette page */
+    .navbar {
+        display: none !important;
+    }
+    .navbar-spacer {
+        display: none !important;
+    }
+    /* Masquer le bouton "Aller au contenu principal" */
+    .skip-link {
+        display: none !important;
+    }
+    html {
+        overflow-y: scroll !important; /* Force le scrollbar à toujours être présent pour éviter les décalages */
+    }
+    body {
+        background-color: #F9FAFB !important;
+        margin: 0;
+        padding: 0;
+        scrollbar-gutter: stable !important; /* Réserve l'espace du scrollbar pour éviter les décalages */
+    }
+    #main-content {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- NAVBAR PRINCIPALE (FIXE TOP) -->
+<nav class="connect-navbar" id="connect-navbar">
+    <div class="navbar-container">
+        <!-- Section gauche -->
+        <div class="navbar-left">
+            <!-- Logo -->
+            <a href="{% url 'connect-home' %}" class="navbar-logo">
+                <span class="logo-text">Transpareo</span>
+            </a>
+            
+            <!-- Barre recherche -->
+            <div class="navbar-search" id="navbar-search-container">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input type="text" 
+                       id="navbar-search-input" 
+                       placeholder="Rechercher posts, personnes, groupes..." 
+                       class="search-input"
+                       autocomplete="off"
+                       aria-label="Recherche"
+                       aria-expanded="false"
+                       aria-controls="search-dropdown">
+                <div class="search-dropdown" id="search-dropdown" role="listbox" aria-label="Résultats de recherche" style="display: none;">
+                    <div class="search-dropdown-content">
+                        <!-- État de chargement -->
+                        <div class="search-loading" id="search-loading" style="display: none;">
+                            <div class="search-loading-spinner"></div>
+                            <span>Recherche en cours...</span>
+                        </div>
+                        
+                        <!-- Résultats -->
+                        <div class="search-results" id="search-results" style="display: none;">
+                            <!-- Posts -->
+                            <div class="search-results-section" id="search-posts-section" style="display: none;">
+                                <div class="search-section-header">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                    <h4>Posts</h4>
+                                </div>
+                                <div class="search-results-list" id="search-posts-results"></div>
+                            </div>
+                            
+                            <!-- Utilisateurs -->
+                            <div class="search-results-section" id="search-users-section" style="display: none;">
+                                <div class="search-section-header">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                    <h4>Personnes</h4>
+                                </div>
+                                <div class="search-results-list" id="search-users-results"></div>
+                            </div>
+                            
+                            <!-- Groupes -->
+                            <div class="search-results-section" id="search-groups-section" style="display: none;">
+                                <div class="search-section-header">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="9" cy="7" r="4"></circle>
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                    </svg>
+                                    <h4>Groupes</h4>
+                                </div>
+                                <div class="search-results-list" id="search-groups-results"></div>
+                            </div>
+                            
+                            <!-- Événements -->
+                            <div class="search-results-section" id="search-events-section" style="display: none;">
+                                <div class="search-section-header">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                    </svg>
+                                    <h4>Événements</h4>
+                                </div>
+                                <div class="search-results-list" id="search-events-results"></div>
+                            </div>
+                            
+                            <!-- Hashtags -->
+                            <div class="search-results-section" id="search-hashtags-section" style="display: none;">
+                                <div class="search-section-header">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="4" y1="9" x2="20" y2="9"></line>
+                                        <line x1="4" y1="15" x2="20" y2="15"></line>
+                                        <line x1="10" y1="3" x2="8" y2="21"></line>
+                                        <line x1="16" y1="3" x2="14" y2="21"></line>
+                                    </svg>
+                                    <h4>Hashtags</h4>
+                                </div>
+                                <div class="search-results-list" id="search-hashtags-results"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Message vide -->
+                        <div class="search-empty" id="search-empty" style="display: none;">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                            <p>Aucun résultat trouvé</p>
+                            <span>Essayez avec d'autres mots-clés</span>
+                        </div>
+                        
+                        <!-- Lien voir tous les résultats -->
+                        <div class="search-view-all-wrapper" id="search-view-all-wrapper" style="display: none;">
+                            <a href="#" class="search-view-all" id="search-view-all">
+                                <span>Voir tous les résultats</span>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Section droite (catégories + avatar) -->
+        <div class="navbar-right">
+            <!-- Catégories de navigation -->
+            <div class="navbar-nav-items">
+                <a href="{% url 'connect-home' %}" 
+                   class="nav-item {% if request.resolver_match.url_name == 'connect-home' %}active{% endif %}"
+                   title="Accueil">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span class="nav-label">Accueil</span>
+                </a>
+                
+                <a href="{% url 'connect-messages' %}" 
+                   class="nav-item"
+                   title="Messages">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span class="nav-label">Messages</span>
+                    {% if unread_messages_count > 0 %}
+                    <span class="nav-badge">{{ unread_messages_count }}</span>
+                    {% endif %}
+                </a>
+                
+                <div class="nav-item nav-notifications" id="nav-notifications" title="Notifications">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span class="nav-label">Notifications</span>
+                    {% if unread_notifications_count > 0 %}
+                    <span class="nav-badge">{{ unread_notifications_count }}</span>
+                    {% endif %}
+                    <div class="notifications-dropdown" id="notifications-dropdown" style="display: none;">
+                        <div class="dropdown-header">
+                            <h3>Notifications</h3>
+                            <a href="{% url 'connect-notifications' %}">Voir tout</a>
+                        </div>
+                        <div class="notifications-list" id="notifications-preview">
+                            <!-- Chargé via JS -->
+                        </div>
+                    </div>
+                </div>
+                
+                <a href="{% url 'connect-groups' %}" 
+                   class="nav-item"
+                   title="Groupes">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <span class="nav-label">Groupes</span>
+                </a>
+            </div>
+            <!-- Avatar utilisateur -->
+            <div class="user-menu" id="user-menu">
+                <button class="user-menu-btn" aria-haspopup="true" aria-expanded="false" id="user-menu-btn">
+                    {% if user.avatar %}
+                    <img src="{{ user.avatar.url }}" alt="{{ user.username }}" class="user-avatar">
+                    {% else %}
+                    <div class="user-avatar-placeholder">{{ user.username|first|upper }}</div>
+                    {% endif %}
+                    <span class="user-username">{{ user.username }}</span>
+                    <svg class="user-dropdown-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+                <div class="user-dropdown" id="user-dropdown">
+                    <div class="dropdown-user-info">
+                        <div class="dropdown-avatar">
+                            {% if user.avatar %}
+                            <img src="{{ user.avatar.url }}" alt="{{ user.username }}">
+                            {% else %}
+                            <div class="avatar-placeholder-large">{{ user.username|first|upper }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="dropdown-user-details">
+                            <strong>{{ user.get_full_name|default:user.username }}</strong>
+                            <span>{{ user.email }}</span>
+                        </div>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <a href="{% url 'profile' %}" class="dropdown-item">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        Voir mon profil
+                    </a>
+                    <a href="#" class="dropdown-item">Paramètres</a>
+                    {% if user.is_locataire %}
+                    <a href="#" class="dropdown-item">Gérer mon bail</a>
+                    {% endif %}
+                    {% if user.is_proprietaire %}
+                    <a href="{% url 'connect-properties' %}" class="dropdown-item">Gérer mes locations</a>
+                    {% endif %}
+                    <a href="#" class="dropdown-item">Aide et support</a>
+                    <div class="dropdown-divider"></div>
+                    <a href="{% url 'logout' %}" class="dropdown-item logout">Déconnexion</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- LAYOUT PAGE ACCUEIL (3 COLONNES) -->
+<div class="connect-page-container">
+    <!-- SIDEBAR GAUCHE (25%) -->
+    <aside class="connect-sidebar-left">
+        <!-- Widget Profil User -->
+        <div class="profile-widget">
+            <div class="profile-cover">
+                {% if user.cover_image %}
+                <img src="{{ user.cover_image.url }}" alt="Cover" class="cover-image">
+                {% else %}
+                <div class="cover-placeholder"></div>
+                {% endif %}
+                <button class="cover-upload-btn" title="Changer cover">📷</button>
+            </div>
+            <div class="profile-avatar-container">
+                {% if user.avatar %}
+                <img src="{{ user.avatar.url }}" alt="{{ user.username }}" class="profile-avatar-large">
+                {% else %}
+                <div class="profile-avatar-large placeholder">{{ user.username|first|upper }}</div>
+                {% endif %}
+                <button class="avatar-upload-btn" title="Changer avatar">📷</button>
+            </div>
+            <div class="profile-info">
+                <h3 class="profile-name">{{ user.get_full_name|default:user.username }}</h3>
+                <p class="profile-title" contenteditable="false" id="profile-title">
+                    {% if user.profession %}{{ user.profession }}{% else %}Ajouter un titre{% endif %}
+                </p>
+                <p class="profile-location">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    {{ user.ville|default:"Non renseigné" }}
+                </p>
+                <div class="profile-stats">
+                    <a href="#" class="stat-item">
+                        <strong>{{ user_connections_count }}</strong> connexions
+                    </a>
+                    <span class="stat-separator">|</span>
+                    <span class="stat-item">
+                        <strong>0</strong> vues profil ce mois
+                    </span>
+                </div>
+                <div class="profile-badges">
+                    {% if user.identity_verified %}
+                    <span class="badge-verified" title="Identité vérifiée">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </span>
+                    {% endif %}
+                    {% if user.proprietaire_verified %}
+                    <span class="badge-premium" title="Propriétaire vérifié">🏠</span>
+                    {% endif %}
+                </div>
+                <a href="{% url 'profile' %}" class="btn-secondary btn-full">Voir mon profil</a>
+            </div>
+        </div>
+        
+        <!-- Widget Navigation Rapide -->
+        <div class="nav-widget">
+            <a href="#" class="nav-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                <span>Mes posts</span>
+                <span class="nav-badge-small">{{ user_posts_count }}</span>
+            </a>
+            <a href="#" class="nav-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span>Posts sauvegardés</span>
+            </a>
+            <a href="#" class="nav-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span>Mes événements</span>
+            </a>
+            <a href="{% url 'connect-groups' %}" class="nav-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                <span>Groupes suivis</span>
+                <span class="nav-badge-small">{{ user_groups|length }}</span>
+            </a>
+            <a href="#" class="nav-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+                <span>Statistiques</span>
+            </a>
+        </div>
+        
+        <!-- Widget Hashtags Tendance -->
+        <div class="hashtags-widget">
+            <h4 class="widget-title">Tendances du jour</h4>
+            <div class="hashtags-list">
+                {% for hashtag_data in trending_hashtags %}
+                {% if hashtag_data.hashtags %}
+                {% for tag in hashtag_data.hashtags|split:"," %}
+                <a href="#" class="hashtag-item">
+                    <span class="hashtag-tag">#{{ tag|trim }}</span>
+                    <span class="hashtag-count">{{ hashtag_data.post_count }} posts</span>
+                </a>
+                {% endfor %}
+                {% endif %}
+                {% empty %}
+                <p class="empty-state">Aucun hashtag tendance</p>
+                {% endfor %}
+            </div>
+        </div>
+    </aside>
+    
+    <!-- FEED CENTRAL (50%) -->
+    <main class="connect-feed-main">
+        <!-- Zone Créer Post -->
+        <div class="create-post-card">
+            <div class="create-post-header">
+                {% if user.avatar %}
+                <img src="{{ user.avatar.url }}" alt="{{ user.username }}" class="create-post-avatar">
+                {% else %}
+                <div class="create-post-avatar placeholder">{{ user.username|first|upper }}</div>
+                {% endif %}
+                <input type="text" 
+                       id="create-post-input" 
+                       placeholder="Quoi de neuf, {{ user.first_name|default:user.username }} ?" 
+                       class="create-post-input"
+                       readonly>
+            </div>
+            <div class="create-post-actions">
+                <button class="post-action-btn" data-type="photo" onclick="openCreatePostModal('photo')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <span>Photo</span>
+                </button>
+                <button class="post-action-btn" data-type="video" onclick="openCreatePostModal('video')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                    </svg>
+                    <span>Vidéo</span>
+                </button>
+                <button class="post-action-btn" data-type="event" onclick="openCreatePostModal('event')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <span>Événement</span>
+                </button>
+                <button class="post-action-btn" data-type="poll" onclick="openCreatePostModal('poll')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    <span>Sondage</span>
+                </button>
+                <button class="post-action-btn" data-type="article" onclick="openCreatePostModal('article')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    <span>Article</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Filtres Feed -->
+        <div class="feed-filters">
+            <button class="filter-pill {% if feed_filter == 'for_you' %}active{% endif %}" 
+                    onclick="changeFeedFilter('for_you')">
+                Pour vous
+            </button>
+            <button class="filter-pill {% if feed_filter == 'recent' %}active{% endif %}" 
+                    onclick="changeFeedFilter('recent')">
+                Récents
+            </button>
+            <button class="filter-pill {% if feed_filter == 'popular' %}active{% endif %}" 
+                    onclick="changeFeedFilter('popular')">
+                Populaires
+            </button>
+            <button class="filter-pill {% if feed_filter == 'my_groups' %}active{% endif %}" 
+                    onclick="changeFeedFilter('my_groups')">
+                Mes groupes
+            </button>
+        </div>
+        
+        <!-- Feed Posts -->
+        <div class="posts-feed" id="posts-feed">
+            {% for post in posts %}
+            {% include 'core/connect/partials/post_card.html' with post=post %}
+            {% empty %}
+            <div class="empty-feed">
+                <p>Aucun post à afficher</p>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Infinite Scroll Loader -->
+        <div class="feed-loader" id="feed-loader" style="display: none;">
+            <div class="skeleton-post"></div>
+            <div class="skeleton-post"></div>
+        </div>
+        
+        <!-- Retour en haut -->
+        <button class="scroll-to-top" id="scroll-to-top" style="display: none;" onclick="scrollToTop()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="18 15 12 9 6 15"></polyline>
+            </svg>
+        </button>
+    </main>
+    
+    <!-- SIDEBAR DROITE (25%) -->
+    <aside class="connect-sidebar-right">
+        <!-- Widget Suggestions Connections -->
+        {% if suggestions %}
+        <div class="suggestions-widget">
+            <h4 class="widget-title">Personnes à suivre</h4>
+            <div class="suggestions-list">
+                {% for suggestion in suggestions %}
+                <div class="suggestion-item">
+                    {% if suggestion.avatar %}
+                    <img src="{{ suggestion.avatar.url }}" alt="{{ suggestion.username }}" class="suggestion-avatar">
+                    {% else %}
+                    <div class="suggestion-avatar placeholder">{{ suggestion.username|first|upper }}</div>
+                    {% endif %}
+                    <div class="suggestion-info">
+                        <a href="{% url 'profile-user' suggestion.id %}" class="suggestion-name">{{ suggestion.get_full_name|default:suggestion.username }}</a>
+                        <p class="suggestion-title">{{ suggestion.profession|default:"" }}</p>
+                        {% if suggestion.common_connections > 0 %}
+                        <p class="suggestion-common">{{ suggestion.common_connections }} connexions communes</p>
+                        {% endif %}
+                    </div>
+                    <button class="btn-follow" onclick="toggleFollow({{ suggestion.id }})">Suivre</button>
+                </div>
+                {% endfor %}
+            </div>
+            <a href="#" class="widget-link">Voir toutes les suggestions</a>
+        </div>
+        {% endif %}
+        
+        <!-- Widget Groupes Suggérés -->
+        {% if suggested_groups %}
+        <div class="groups-widget">
+            <h4 class="widget-title">Groupes recommandés</h4>
+            <div class="groups-list">
+                {% for group in suggested_groups %}
+                <div class="group-item">
+                    <div class="group-image">
+                        {% if group.image %}
+                        <img src="{{ group.image.url }}" alt="{{ group.name }}">
+                        {% else %}
+                        <div class="group-image-placeholder">{{ group.name|first|upper }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="group-info">
+                        <a href="{% url 'connect-group-detail' group.id %}" class="group-name">{{ group.name }}</a>
+                        <p class="group-members">{{ group.member_count }} membres</p>
+                        {% if group.tags %}
+                        <div class="group-tags">
+                            {% for tag in group.tags|split:","|slice:":2" %}
+                            <span class="tag-pill">{{ tag|trim }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <button class="btn-join" onclick="joinGroup({{ group.id }})">Rejoindre</button>
+                </div>
+                {% endfor %}
+            </div>
+            <a href="{% url 'connect-groups' %}" class="widget-link">Découvrir tous les groupes</a>
+        </div>
+        {% endif %}
+        
+        <!-- Widget Footer Links -->
+        <div class="footer-widget">
+            <div class="footer-links">
+                <a href="#">À propos</a>
+                <a href="#">Aide</a>
+                <a href="#">Confidentialité</a>
+                <a href="#">Conditions</a>
+                <a href="#">Publicité</a>
+            </div>
+            <p class="footer-copyright">Transpareo © 2025</p>
+        </div>
+    </aside>
+</div>
+
+<!-- Modal Création Post -->
+{% include 'core/connect/partials/create_post_modal.html' %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'core/connect-home.js' %}"></script>
+{% endblock %}
+

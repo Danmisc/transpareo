@@ -1,0 +1,1459 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="connect-property-detail-page">
+    <div class="property-detail-container">
+        <!-- En-tête avec vue d'ensemble -->
+        <div class="property-overview">
+            <div class="overview-header">
+                <div>
+                    <a href="{% url 'connect-properties' %}" class="btn-back">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                        Retour
+                    </a>
+                    <h1>{{ bail.logement.titre }}</h1>
+                </div>
+                <div class="property-status-badge status-{{ bail.statut }}">
+                    {{ bail.get_statut_display }}
+                </div>
+            </div>
+
+            <!-- Carte résumé -->
+            <div class="property-summary-card">
+                {% if bail.logement.images.first %}
+                    <img src="{{ bail.logement.images.first.image.url }}" alt="{{ bail.logement.titre }}" class="property-image">
+                {% else %}
+                    <div class="property-image-placeholder">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                    </div>
+                {% endif %}
+                
+                <div class="property-info">
+                    <p class="property-address">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"></path>
+                            <circle cx="12" cy="9" r="3"></circle>
+                        </svg>
+                        {{ bail.logement.adresse }}
+                    </p>
+                    
+                    <div class="tenant-section">
+                        <span class="label">Locataire :</span>
+                        <a href="{% url 'profile-user' bail.locataire.id %}" class="tenant-link">
+                            {% if bail.locataire.avatar %}
+                                <img src="{{ bail.locataire.avatar.url }}" alt="{{ bail.locataire.username }}" class="tenant-avatar">
+                            {% else %}
+                                <div class="tenant-avatar-placeholder">{{ bail.locataire.username|first|upper }}</div>
+                            {% endif %}
+                            <span>{{ bail.locataire.get_full_name|default:bail.locataire.username }}</span>
+                        </a>
+                    </div>
+
+                    <div class="lease-dates">
+                        <div class="date-item">
+                            <span class="date-label">Début du bail</span>
+                            <span class="date-value">{{ bail.date_debut|date:"d/m/Y" }}</span>
+                        </div>
+                        {% if bail.date_fin %}
+                        <div class="date-item">
+                            <span class="date-label">Fin du bail</span>
+                            <span class="date-value">{{ bail.date_fin|date:"d/m/Y" }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="lease-amount">
+                        <span class="amount-label">Loyer mensuel</span>
+                        <span class="amount-value">{{ bail.get_montant_total_mensuel }}€ / mois</span>
+                    </div>
+                </div>
+
+                <a href="{% url 'logement-detail' bail.logement.id %}" class="btn-view-property">
+                    Voir l'annonce
+                </a>
+            </div>
+
+            <!-- Statistiques rapides -->
+            <div class="property-stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Paiements reçus</span>
+                        <span class="stat-value">{{ paiements_recus }}</span>
+                    </div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-icon">⚠️</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Paiements en retard</span>
+                        <span class="stat-value">{{ paiements_en_retard }}</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🔧</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Demandes en attente</span>
+                        <span class="stat-value">{{ demandes_en_attente }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Onglets -->
+        <div class="property-tabs">
+            <a href="?tab=contract" class="tab-item {% if active_tab == 'contract' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                Contrat
+            </a>
+            <a href="?tab=payments" class="tab-item {% if active_tab == 'payments' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+                Paiements
+            </a>
+            <a href="?tab=maintenance" class="tab-item {% if active_tab == 'maintenance' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                </svg>
+                Demandes & Travaux
+            </a>
+            <a href="?tab=messages" class="tab-item {% if active_tab == 'messages' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                Messages
+            </a>
+            <a href="?tab=documents" class="tab-item {% if active_tab == 'documents' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                Documents
+            </a>
+            <a href="?tab=termination" class="tab-item {% if active_tab == 'termination' %}active{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+                Résiliation
+            </a>
+        </div>
+
+        <!-- Contenu des onglets -->
+        <div class="property-tab-content">
+            {% if active_tab == 'contract' %}
+                <!-- Onglet Contrat -->
+                <div class="contract-tab">
+                    <div class="section-card">
+                        <h2 class="section-title">Informations du bail</h2>
+                        
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">Locataire</span>
+                                <div class="info-value">
+                                    <a href="{% url 'profile-user' bail.locataire.id %}" class="link">{{ bail.locataire.get_full_name|default:bail.locataire.username }}</a>
+                                    <br>
+                                    <small>{{ bail.locataire.email }}</small>
+                                    {% if bail.locataire.telephone %}
+                                    <br>
+                                    <small>{{ bail.locataire.telephone }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Durée du bail</span>
+                                <span class="info-value">{{ bail.duree_mois }} mois</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Loyer mensuel</span>
+                                <span class="info-value">{{ bail.loyer_mensuel }}€</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Charges mensuelles</span>
+                                <span class="info-value">{{ bail.charges_mensuelles }}€</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Total mensuel</span>
+                                <span class="info-value highlight">{{ bail.get_montant_total_mensuel }}€</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Dépôt de garantie</span>
+                                <span class="info-value">{{ bail.depot_garantie }}€</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Jour de paiement</span>
+                                <span class="info-value">Le {{ bail.jour_paiement }} de chaque mois</span>
+                            </div>
+                        </div>
+
+                        <div class="contract-actions">
+                            {% if bail.is_actif %}
+                            <button class="btn-secondary" onclick="renewLease()">Renouveler le bail</button>
+                            <button class="btn-danger" onclick="terminateLease()">Résilier le bail</button>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Documents contractuels -->
+                    <div class="section-card">
+                        <h2 class="section-title">Documents contractuels</h2>
+                        
+                        <div class="documents-list">
+                            {% if bail.contrat_signe %}
+                            <div class="document-item">
+                                <div class="document-info">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                    <div>
+                                        <div class="document-name">Bail signé</div>
+                                        <div class="document-meta">Contrat de location</div>
+                                    </div>
+                                </div>
+                                <a href="{{ bail.contrat_signe.url }}" download class="btn-download">Télécharger</a>
+                            </div>
+                            {% endif %}
+
+                            {% if bail.etat_lieux_entree %}
+                            <div class="document-item">
+                                <div class="document-info">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                    <div>
+                                        <div class="document-name">État des lieux d'entrée</div>
+                                        <div class="document-meta">Inventaire d'entrée</div>
+                                    </div>
+                                </div>
+                                <a href="{{ bail.etat_lieux_entree.url }}" download class="btn-download">Télécharger</a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+            {% elif active_tab == 'payments' %}
+                <!-- Onglet Paiements -->
+                <div class="payments-tab">
+                    <!-- Prochain paiement -->
+                    {% if tab_data.prochain_paiement %}
+                    <div class="section-card highlight-card">
+                        <h2 class="section-title">Prochain paiement attendu</h2>
+                        <div class="next-payment-info">
+                            <div class="payment-amount">
+                                <span class="amount-label">Montant attendu</span>
+                                <span class="amount-value">{{ tab_data.prochain_paiement.montant_total }}€</span>
+                            </div>
+                            <div class="payment-due">
+                                <span class="due-label">Date d'échéance</span>
+                                <span class="due-value">{{ tab_data.prochain_paiement.date_echeance|date:"d/m/Y" }}</span>
+                                {% if tab_data.prochain_paiement.statut == 'en_retard' %}
+                                <span class="due-countdown urgent">EN RETARD</span>
+                                {% endif %}
+                            </div>
+                            {% if tab_data.prochain_paiement.statut == 'en_retard' %}
+                            <button class="btn-primary" onclick="sendPaymentReminder({{ tab_data.prochain_paiement.id }})">
+                                Envoyer un rappel
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Historique des paiements -->
+                    <div class="section-card">
+                        <h2 class="section-title">Historique des paiements</h2>
+                        
+                        <div class="payments-table">
+                            <div class="table-header">
+                                <div class="table-cell">Date paiement</div>
+                                <div class="table-cell">Échéance</div>
+                                <div class="table-cell">Montant</div>
+                                <div class="table-cell">Statut</div>
+                                <div class="table-cell">Actions</div>
+                            </div>
+                            {% for paiement in tab_data.paiements %}
+                            <div class="table-row">
+                                <div class="table-cell">
+                                    {% if paiement.date_paiement %}
+                                        {{ paiement.date_paiement|date:"d/m/Y" }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </div>
+                                <div class="table-cell">{{ paiement.date_echeance|date:"d/m/Y" }}</div>
+                                <div class="table-cell amount">{{ paiement.montant_total }}€</div>
+                                <div class="table-cell">
+                                    <span class="status-badge status-{{ paiement.statut }}">
+                                        {{ paiement.get_statut_display }}
+                                    </span>
+                                </div>
+                                <div class="table-cell">
+                                    {% if paiement.statut == 'paye' %}
+                                        <button class="btn-download-sm" onclick="generateQuittance({{ paiement.id }})">
+                                            Générer quittance
+                                        </button>
+                                    {% elif paiement.statut == 'en_retard' %}
+                                        <button class="btn-secondary-sm" onclick="sendPaymentReminder({{ paiement.id }})">
+                                            Rappel
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="empty-state">
+                                <p>Aucun paiement enregistré</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Dépôt de garantie -->
+                    <div class="section-card">
+                        <h2 class="section-title">Dépôt de garantie</h2>
+                        <div class="deposit-info">
+                            <div class="deposit-amount">
+                                <span class="amount-label">Montant reçu</span>
+                                <span class="amount-value">{{ bail.depot_garantie }}€</span>
+                            </div>
+                            <p class="deposit-note">Le dépôt de garantie sera restitué après l'état des lieux de sortie, déduction faite d'éventuels dommages.</p>
+                        </div>
+                    </div>
+                </div>
+
+            {% elif active_tab == 'maintenance' %}
+                <!-- Onglet Demandes & Travaux -->
+                <div class="maintenance-tab">
+                    <!-- Liste des demandes -->
+                    <div class="section-card">
+                        <h2 class="section-title">Demandes du locataire</h2>
+                        
+                        <div class="demandes-list">
+                            {% for demande in tab_data.demandes_entretien %}
+                            <div class="demande-card status-{{ demande.statut }}">
+                                <div class="demande-header">
+                                    <div class="demande-type">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                                        </svg>
+                                        {{ demande.get_type_probleme_display }}
+                                    </div>
+                                    <span class="status-badge status-{{ demande.statut }}">
+                                        {{ demande.get_statut_display }}
+                                    </span>
+                                    {% if demande.urgence == 'urgent' %}
+                                    <span class="urgent-badge">Urgent</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="demande-content">
+                                    <p>{{ demande.description|linebreaks }}</p>
+                                    
+                                    {% if demande.photos.exists %}
+                                    <div class="demande-photos">
+                                        {% for photo in demande.photos.all %}
+                                        <img src="{{ photo.image.url }}" alt="Photo" class="demande-photo" onclick="openPhotoModal('{{ photo.image.url }}')">
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+
+                                    <div class="demande-meta">
+                                        <span>Demandé le {{ demande.created_at|date:"d/m/Y à H:i" }}</span>
+                                    </div>
+
+                                    {% if demande.statut == 'en_attente' %}
+                                    <div class="demande-actions">
+                                        <form method="post" action="{% url 'respond-maintenance-request' demande.id %}" class="response-form">
+                                            {% csrf_token %}
+                                            <textarea name="reponse" class="form-textarea" rows="4" placeholder="Votre réponse au locataire..." required></textarea>
+                                            <div class="form-actions">
+                                                <button type="submit" name="action" value="en_cours" class="btn-secondary">Marquer en cours</button>
+                                                <button type="submit" name="action" value="resolu" class="btn-primary">Marquer résolu</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    {% elif demande.reponse_proprietaire %}
+                                    <div class="demande-reponse">
+                                        <div class="reponse-header">
+                                            <span class="reponse-label">Votre réponse</span>
+                                            <span class="reponse-date">{{ demande.date_reponse|date:"d/m/Y H:i" }}</span>
+                                        </div>
+                                        <p class="reponse-content">{{ demande.reponse_proprietaire|linebreaks }}</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="empty-state">
+                                <p>Aucune demande d'entretien pour le moment</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+            {% elif active_tab == 'messages' %}
+                <!-- Onglet Messages -->
+                <div class="messages-tab">
+                    <div class="messages-header">
+                        <h2>Messages avec votre locataire</h2>
+                        <a href="{% url 'connect-messages' %}?user={{ bail.locataire.id }}" class="btn-secondary">
+                            Ouvrir la conversation complète
+                        </a>
+                    </div>
+
+                    <div class="messages-area">
+                        {% for message in tab_data.messages %}
+                        <div class="message-item {% if message.sender == user %}message-sent{% else %}message-received{% endif %}">
+                            <div class="message-bubble">
+                                {% if message.sender != user %}
+                                <div class="message-sender">{{ message.sender.get_full_name|default:message.sender.username }}</div>
+                                {% endif %}
+                                <div class="message-content">{{ message.content|linebreaks }}</div>
+                                {% if message.image %}
+                                <div class="message-attachment">
+                                    <img src="{{ message.image.url }}" alt="Image" class="message-image">
+                                </div>
+                                {% endif %}
+                                <div class="message-time">{{ message.created_at|date:"d/m/Y H:i" }}</div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="empty-state">
+                            <p>Aucun message avec votre locataire pour le moment</p>
+                            <a href="{% url 'connect-messages' %}?user={{ bail.locataire.id }}" class="btn-primary">Envoyer un message</a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            {% elif active_tab == 'documents' %}
+                <!-- Onglet Documents -->
+                <div class="documents-tab">
+                    <div class="documents-header">
+                        <h2 class="section-title">Documents du bail</h2>
+                        <button class="btn-secondary" onclick="downloadAllDocuments()">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Télécharger tout (ZIP)
+                        </button>
+                    </div>
+
+                    <!-- Upload de document -->
+                    <div class="section-card">
+                        <h3 class="subsection-title">Ajouter un document</h3>
+                        <form method="post" action="{% url 'upload-lease-document' bail.id %}" enctype="multipart/form-data" class="upload-form">
+                            {% csrf_token %}
+                            <div class="upload-wrapper">
+                                <input type="file" id="document-file" name="document" accept=".pdf,.jpg,.jpeg,.png" required style="display: none;" onchange="document.getElementById('document-type').style.display='block'">
+                                <label for="document-file" class="btn-upload">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="17 8 12 3 7 8"></polyline>
+                                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                                    </svg>
+                                    Choisir un fichier
+                                </label>
+                                <select id="document-type" name="document_type" class="form-select" style="display: none;" required>
+                                    <option value="">Type de document</option>
+                                    <option value="autre">Autre document</option>
+                                    <option value="facture">Facture</option>
+                                    <option value="justificatif">Justificatif</option>
+                                </select>
+                                <button type="submit" class="btn-primary" style="display: none;" id="upload-submit">Uploader</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Liste des documents -->
+                    <div class="section-card">
+                        <h3 class="subsection-title">Tous les documents</h3>
+                        <div class="documents-grid">
+                            {% for document in tab_data.documents %}
+                            <div class="document-card">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                                <div class="document-card-info">
+                                    <div class="document-card-name">{{ document.get_type_document_display }}{% if document.title %} - {{ document.title }}{% endif %}</div>
+                                    <div class="document-card-meta">
+                                        Uploadé le {{ document.created_at|date:"d/m/Y" }}
+                                        {% if document.uploaded_by %}
+                                        par {{ document.uploaded_by.get_full_name|default:document.uploaded_by.username }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <a href="{{ document.document.url }}" download class="btn-download-sm">Télécharger</a>
+                            </div>
+                            {% empty %}
+                            <div class="empty-state">
+                                <p>Aucun document uploadé</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+            {% elif active_tab == 'termination' %}
+                <!-- Onglet Résiliation -->
+                <div class="termination-tab">
+                    {% if tab_data.resiliation %}
+                    <!-- Suivi de résiliation -->
+                    <div class="section-card">
+                        <h2 class="section-title">Résiliation en cours</h2>
+                        
+                        <div class="resiliation-status">
+                            <div class="status-info">
+                                <span class="status-label">Date de départ souhaitée</span>
+                                <span class="status-value">{{ tab_data.resiliation.date_depart_souhaitee|date:"d/m/Y" }}</span>
+                            </div>
+                            {% if tab_data.jours_restants %}
+                            <div class="status-info">
+                                <span class="status-label">Jours restants</span>
+                                <span class="status-value">{{ tab_data.jours_restants }} jours</span>
+                            </div>
+                            {% endif %}
+                            <div class="status-info">
+                                <span class="status-label">Statut</span>
+                                <span class="status-badge status-{{ tab_data.resiliation.statut }}">
+                                    {{ tab_data.resiliation.get_statut_display }}
+                                </span>
+                            </div>
+                            {% if tab_data.resiliation.raison %}
+                            <div class="status-info full-width">
+                                <span class="status-label">Raison du locataire</span>
+                                <p class="status-value">{{ tab_data.resiliation.raison }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        {% if tab_data.resiliation.statut == 'en_attente' %}
+                        <form method="post" action="{% url 'terminate-lease-owner' bail.id %}" class="termination-response-form">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label for="reponse_resiliation" class="form-label">Votre réponse au locataire</label>
+                                <textarea id="reponse_resiliation" name="reponse" class="form-textarea" rows="4" placeholder="Acceptez ou refusez la résiliation et indiquez la procédure à suivre..."></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" name="action" value="accepte" class="btn-primary">Accepter la résiliation</button>
+                                <button type="submit" name="action" value="refuse" class="btn-danger">Refuser la résiliation</button>
+                            </div>
+                        </form>
+                        {% elif tab_data.resiliation.reponse_proprietaire %}
+                        <div class="resiliation-reponse">
+                            <h3>Votre réponse</h3>
+                            <p>{{ tab_data.resiliation.reponse_proprietaire|linebreaks }}</p>
+                            <span class="reponse-date">Le {{ tab_data.resiliation.date_reponse|date:"d/m/Y à H:i" }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Checklist de sortie -->
+                    <div class="section-card">
+                        <h2 class="section-title">Checklist de sortie</h2>
+                        <div class="checklist-items">
+                            <label class="checklist-item">
+                                <input type="checkbox" {% if tab_data.resiliation.etat_lieux_sortie %}checked disabled{% endif %}>
+                                <span>État des lieux de sortie effectué</span>
+                            </label>
+                            <label class="checklist-item">
+                                <input type="checkbox" {% if tab_data.resiliation.cles_restituées %}checked disabled{% endif %}>
+                                <span>Clés récupérées</span>
+                            </label>
+                            <label class="checklist-item">
+                                <input type="checkbox" {% if tab_data.resiliation.logement_vide %}checked disabled{% endif %}>
+                                <span>Logement vidé et nettoyé</span>
+                            </label>
+                            <label class="checklist-item">
+                                <input type="checkbox" {% if tab_data.resiliation.depot_restitué %}checked disabled{% endif %}>
+                                <span>Dépôt de garantie restitué</span>
+                            </label>
+                        </div>
+                        
+                        {% if tab_data.resiliation.statut == 'accepte' %}
+                        <div class="checklist-actions">
+                            <button class="btn-primary" onclick="republishProperty()">Remettre en location</button>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <!-- Pas de résiliation en cours -->
+                    <div class="section-card">
+                        <div class="info-box">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            <div>
+                                <strong>Aucune résiliation en cours</strong>
+                                <p>Le locataire n'a pas encore demandé la résiliation de ce bail.</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal photo -->
+<div id="photo-modal" class="modal" style="display: none;">
+    <div class="modal-overlay" onclick="closePhotoModal()"></div>
+    <div class="modal-content photo-modal-content">
+        <button class="modal-close" onclick="closePhotoModal()">×</button>
+        <img id="photo-modal-img" src="" alt="Photo">
+    </div>
+</div>
+
+<style>
+    /* Styles réutilisés depuis lease.html - adaptés pour propriétaire */
+    .connect-property-detail-page {
+        min-height: calc(100vh - 70px);
+        background: #f5f5f5;
+        padding-top: 70px;
+    }
+
+    .property-detail-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 32px 24px;
+    }
+
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: white;
+        color: #333;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        margin-bottom: 16px;
+        transition: all 0.2s ease;
+    }
+
+    .btn-back:hover {
+        background: #f5f5f5;
+        border-color: #ddd;
+    }
+
+    /* Réutiliser les styles de lease.html pour cohérence */
+    /* Overview, tabs, cards, forms, etc. - structure similaire */
+    .property-overview {
+        margin-bottom: 32px;
+    }
+
+    .overview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .overview-header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0;
+    }
+
+    .property-status-badge {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .property-status-badge.status-actif {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .property-summary-card {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        margin-bottom: 24px;
+        display: flex;
+        gap: 24px;
+    }
+
+    .property-image,
+    .property-image-placeholder {
+        width: 200px;
+        height: 150px;
+        border-radius: 8px;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .property-image-placeholder {
+        background: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #999;
+    }
+
+    .property-info {
+        flex: 1;
+    }
+
+    .property-address {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #666;
+        margin-bottom: 16px;
+    }
+
+    .tenant-section {
+        margin-bottom: 16px;
+    }
+
+    .tenant-link {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #1a1a1a;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .tenant-avatar,
+    .tenant-avatar-placeholder {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .tenant-avatar-placeholder {
+        background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 14px;
+    }
+
+    .lease-dates {
+        display: flex;
+        gap: 24px;
+        margin-bottom: 16px;
+    }
+
+    .date-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .date-label {
+        font-size: 12px;
+        color: #999;
+        text-transform: uppercase;
+    }
+
+    .date-value {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1a1a1a;
+    }
+
+    .lease-amount {
+        margin-bottom: 16px;
+    }
+
+    .amount-label {
+        display: block;
+        font-size: 12px;
+        color: #999;
+        margin-bottom: 4px;
+    }
+
+    .amount-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #D3580B;
+    }
+
+    .btn-view-property {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        background: #D3580B;
+        color: white;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        align-self: flex-start;
+        height: fit-content;
+    }
+
+    .property-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 32px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        display: flex;
+        gap: 16px;
+        align-items: center;
+    }
+
+    .stat-card.warning {
+        border-left: 4px solid #ffc107;
+    }
+
+    .stat-icon {
+        font-size: 32px;
+    }
+
+    .stat-info {
+        flex: 1;
+    }
+
+    .stat-label {
+        display: block;
+        font-size: 12px;
+        color: #999;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    .stat-value {
+        display: block;
+        font-size: 24px;
+        font-weight: 700;
+        color: #1a1a1a;
+    }
+
+    /* Onglets - réutiliser styles de lease.html */
+    .property-tabs {
+        display: flex;
+        gap: 8px;
+        padding: 16px;
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        overflow-x: auto;
+    }
+
+    .tab-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #666;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .tab-item.active {
+        background: #D3580B;
+        color: white;
+    }
+
+    .property-tab-content {
+        background: white;
+        border-radius: 12px;
+        padding: 32px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Styles réutilisés - section-card, info-grid, etc. depuis lease.html */
+    .section-card {
+        margin-bottom: 32px;
+    }
+
+    .section-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0 0 24px 0;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .info-label {
+        font-size: 13px;
+        color: #999;
+        text-transform: uppercase;
+    }
+
+    .info-value {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1a1a1a;
+    }
+
+    .info-value.highlight {
+        color: #D3580B;
+        font-size: 20px;
+    }
+
+    .link {
+        color: #D3580B;
+        text-decoration: none;
+    }
+
+    .contract-actions {
+        display: flex;
+        gap: 12px;
+        padding-top: 24px;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    /* Réutiliser styles pour documents, payments, maintenance, etc. depuis lease.html */
+    .documents-list,
+    .payments-table,
+    .demandes-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .document-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px;
+        background: #fafafa;
+        border-radius: 8px;
+    }
+
+    .document-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .document-name {
+        font-weight: 600;
+        color: #1a1a1a;
+    }
+
+    .document-meta {
+        font-size: 12px;
+        color: #999;
+    }
+
+    .btn-download,
+    .btn-download-sm {
+        padding: 8px 16px;
+        background: #f5f5f5;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #333;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .btn-primary,
+    .btn-secondary,
+    .btn-danger {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+        background: #D3580B;
+        color: white;
+    }
+
+    .btn-secondary {
+        background: white;
+        color: #333;
+        border: 1px solid #e5e5e5;
+    }
+
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+
+    .highlight-card {
+        background: linear-gradient(135deg, rgba(211, 88, 11, 0.05) 0%, rgba(196, 81, 10, 0.05) 100%);
+        border: 2px solid #D3580B;
+    }
+
+    .table-header,
+    .table-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+        gap: 16px;
+        padding: 12px 0;
+        align-items: center;
+    }
+
+    .table-header {
+        border-bottom: 2px solid #e5e5e5;
+        font-weight: 600;
+        font-size: 13px;
+        color: #666;
+        text-transform: uppercase;
+    }
+
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .status-badge.status-paye {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-badge.status-en_retard {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .status-badge.status-en_attente {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    /* Demande d'entretien */
+    .demande-card {
+        background: #fafafa;
+        border-radius: 12px;
+        padding: 20px;
+        border-left: 4px solid #ddd;
+    }
+
+    .demande-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+    }
+
+    .demande-type {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        flex: 1;
+    }
+
+    .urgent-badge {
+        padding: 4px 10px;
+        background: #dc3545;
+        color: white;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .demande-content {
+        margin-bottom: 16px;
+    }
+
+    .demande-photos {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+    }
+
+    .demande-photo {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .response-form {
+        margin-top: 16px;
+        padding: 16px;
+        background: white;
+        border-radius: 8px;
+    }
+
+    .form-textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        font-family: inherit;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    /* Messages - réutiliser depuis lease.html */
+    .messages-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .messages-area {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        max-height: 600px;
+        overflow-y: auto;
+        padding: 16px;
+        background: #fafafa;
+        border-radius: 8px;
+    }
+
+    .message-item {
+        display: flex;
+        max-width: 70%;
+    }
+
+    .message-item.message-sent {
+        align-self: flex-end;
+    }
+
+    .message-bubble {
+        padding: 12px 16px;
+        border-radius: 12px;
+        background: white;
+    }
+
+    .message-sent .message-bubble {
+        background: #D3580B;
+        color: white;
+    }
+
+    /* Documents - réutiliser depuis lease.html */
+    .documents-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .documents-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 16px;
+    }
+
+    .document-card {
+        display: flex;
+        gap: 16px;
+        padding: 16px;
+        background: #fafafa;
+        border-radius: 8px;
+        align-items: center;
+    }
+
+    .upload-form {
+        margin-top: 16px;
+    }
+
+    .upload-wrapper {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .btn-upload {
+        padding: 12px 20px;
+        background: #f5f5f5;
+        border: 2px dashed #e5e5e5;
+        border-radius: 8px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .form-select {
+        padding: 10px 16px;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+    }
+
+    /* Résiliation */
+    .resiliation-status {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .status-info {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .status-label {
+        font-size: 12px;
+        color: #999;
+        text-transform: uppercase;
+    }
+
+    .termination-response-form {
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .checklist-items {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    .checklist-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: #f9f9f9;
+        border-radius: 8px;
+    }
+
+    .checklist-item input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        accent-color: #D3580B;
+    }
+
+    .info-box {
+        display: flex;
+        gap: 16px;
+        padding: 20px;
+        background: #e7f3ff;
+        border-left: 4px solid #0066cc;
+        border-radius: 8px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 24px;
+        color: #999;
+    }
+
+    .subsection-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 16px;
+    }
+
+    /* Modal */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 10000;
+    }
+
+    .modal-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+    }
+
+    .modal-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        border-radius: 16px;
+        z-index: 1;
+    }
+
+    .photo-modal-content {
+        max-width: 90vw;
+        max-height: 90vh;
+        padding: 0;
+    }
+
+    .photo-modal-content img {
+        width: 100%;
+        height: auto;
+        max-height: 90vh;
+        object-fit: contain;
+    }
+
+    .modal-close {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 36px;
+        height: 36px;
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        font-size: 24px;
+        cursor: pointer;
+        z-index: 1;
+    }
+
+    @media (max-width: 768px) {
+        .property-detail-container {
+            padding: 16px;
+        }
+
+        .property-summary-card {
+            flex-direction: column;
+        }
+
+        .property-image {
+            width: 100%;
+            height: 200px;
+        }
+
+        .property-tabs {
+            flex-wrap: wrap;
+        }
+
+        .property-tab-content {
+            padding: 20px;
+        }
+
+        .table-header,
+        .table-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+    function generateQuittance(paymentId) {
+        window.location.href = `{% url 'generate-quittance' 0 %}`.replace('0', paymentId);
+    }
+
+    function sendPaymentReminder(paymentId) {
+        if (!confirm('Envoyer un rappel de paiement au locataire ?')) return;
+        
+        fetch(`{% url 'send-payment-reminder' 0 %}`.replace('0', paymentId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Rappel envoyé avec succès');
+            } else {
+                alert(data.error || 'Erreur lors de l\'envoi');
+            }
+        });
+    }
+
+    function renewLease() {
+        if (!confirm('Renouveler ce bail ?')) return;
+        // Rediriger vers formulaire de renouvellement
+        window.location.href = `{% url 'renew-lease' bail.id %}`;
+    }
+
+    function terminateLease() {
+        if (!confirm('Êtes-vous sûr de vouloir résilier ce bail ? Cette action est irréversible.')) return;
+        window.location.href = `{% url 'terminate-lease-owner' bail.id %}?action=initiate`;
+    }
+
+    function downloadAllDocuments() {
+        window.location.href = '{% url "download-lease-documents" bail.id %}';
+    }
+
+    function republishProperty() {
+        if (!confirm('Remettre ce bien en location ?')) return;
+        window.location.href = '{% url "republish-property" bail.logement.id %}';
+    }
+
+    function openPhotoModal(imageUrl) {
+        document.getElementById('photo-modal-img').src = imageUrl;
+        document.getElementById('photo-modal').style.display = 'block';
+    }
+
+    function closePhotoModal() {
+        document.getElementById('photo-modal').style.display = 'none';
+    }
+
+    document.getElementById('document-file')?.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            document.getElementById('document-type').style.display = 'block';
+            document.getElementById('upload-submit').style.display = 'block';
+        }
+    });
+</script>
+{% endblock %}
+

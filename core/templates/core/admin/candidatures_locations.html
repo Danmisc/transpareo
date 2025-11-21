@@ -1,0 +1,138 @@
+{% extends 'core/admin/base_admin.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+<div class="admin-page candidatures-locations-page">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-left">
+            <h1>Candidatures et Locations</h1>
+            <nav class="breadcrumb">
+                <a href="{% url 'admin-connect' %}">Admin</a>
+                <span>/</span>
+                <a href="#">Gestion plateforme</a>
+                <span>/</span>
+                <span>Candidatures et Locations</span>
+            </nav>
+        </div>
+        <div class="header-actions">
+            <button class="btn-secondary" onclick="exportRapport()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Exporter rapport
+            </button>
+            <button class="btn-secondary" onclick="openStatsModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+                Statistiques
+            </button>
+            <button class="btn-secondary" onclick="openWorkflowSettings()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path>
+                </svg>
+                Paramètres workflow
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="view-tabs">
+        <button class="view-tab {% if view_type == 'candidatures' %}active{% endif %}" 
+                onclick="switchView('candidatures')">
+            Candidatures
+        </button>
+        <button class="view-tab {% if view_type == 'locations' %}active{% endif %}" 
+                onclick="switchView('locations')">
+            Locations actives
+        </button>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Candidatures en attente</div>
+                <div class="stat-value">{{ stats.candidatures_en_attente|intcomma }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Acceptées ce mois</div>
+                <div class="stat-value">{{ stats.candidatures_acceptees_mois|intcomma }}</div>
+                {% if stats.evolution_acceptation != 0 %}
+                <div class="stat-trend {% if stats.evolution_acceptation > 0 %}trend-up{% else %}trend-down{% endif %}">
+                    {{ stats.evolution_acceptation|floatformat:0 }}%
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Locations actives</div>
+                <div class="stat-value">{{ stats.locations_actives|intcomma }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Taux acceptation</div>
+                <div class="stat-value">{{ stats.taux_acceptation|floatformat:1 }}%</div>
+            </div>
+        </div>
+    </div>
+
+    {% if view_type == 'candidatures' %}
+    <!-- VUE CANDIDATURES -->
+    {% include 'core/admin/partials/candidatures_view.html' %}
+    {% else %}
+    <!-- VUE LOCATIONS -->
+    {% include 'core/admin/partials/locations_view.html' %}
+    {% endif %}
+</div>
+
+<!-- Styles -->
+<link rel="stylesheet" href="{% static 'core/admin/candidatures_locations.css' %}">
+
+<!-- JavaScript -->
+<script src="{% static 'core/admin/candidatures_locations.js' %}"></script>
+
+<script>
+    const currentView = '{{ view_type }}';
+    const currentSort = '{{ sort_by|default:"-created_at" }}';
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        initCandidaturesLocations();
+    });
+</script>
+{% endblock %}
+

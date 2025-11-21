@@ -1,0 +1,1086 @@
+{% extends 'core/admin/base_admin.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block page_title %}Paramètres & Configuration{% endblock %}
+
+{% block content %}
+<div class="settings-page">
+    <!-- Header -->
+    <div class="settings-header">
+        <div class="header-left">
+            <h1 class="page-title-main">Paramètres & Configuration</h1>
+            <p class="page-subtitle">Configurez tous les aspects de la plateforme Transpareo</p>
+        </div>
+    </div>
+
+    <div class="settings-layout">
+        <!-- Sidebar Sections -->
+        <div class="settings-sidebar">
+            <div class="settings-nav">
+                <button class="settings-nav-item active" data-section="general" onclick="switchSettingsSection('general')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    Général
+                </button>
+                <button class="settings-nav-item" data-section="users-roles" onclick="switchSettingsSection('users-roles')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    Utilisateurs & Rôles
+                </button>
+                <button class="settings-nav-item" data-section="payments" onclick="switchSettingsSection('payments')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    Paiements & Facturation
+                </button>
+                <button class="settings-nav-item" data-section="notifications" onclick="switchSettingsSection('notifications')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    Notifications
+                </button>
+                <button class="settings-nav-item" data-section="security" onclick="switchSettingsSection('security')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    </svg>
+                    Sécurité & Logs
+                </button>
+                <button class="settings-nav-item" data-section="integrations" onclick="switchSettingsSection('integrations')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    </svg>
+                    Intégrations
+                </button>
+                <button class="settings-nav-item" data-section="personalization" onclick="switchSettingsSection('personalization')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    Personnalisation
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="settings-content">
+            <!-- Section 1: Général -->
+            <div id="section-general" class="settings-section active">
+                <div class="section-header">
+                    <h2>Paramètres Généraux</h2>
+                    <p class="section-description">Informations entreprise, paramètres régionaux et maintenance</p>
+                </div>
+
+                <form id="settings-general-form" class="settings-form" method="POST" action="{% url 'admin-settings-save' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="section" value="general">
+
+                    <div class="form-section">
+                        <h3>Informations Entreprise</h3>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="site_name">Nom du site</label>
+                                <input type="text" id="site_name" name="site_name" class="input-field" value="{{ settings.site_name }}" required>
+                            </div>
+                            <div class="form-field">
+                                <label for="contact_email">Email de contact</label>
+                                <input type="email" id="contact_email" name="contact_email" class="input-field" value="{{ settings.contact_email }}" required>
+                            </div>
+                            <div class="form-field">
+                                <label for="contact_phone">Téléphone</label>
+                                <input type="tel" id="contact_phone" name="contact_phone" class="input-field" value="{{ settings.contact_phone }}">
+                            </div>
+                            <div class="form-field full-width">
+                                <label for="site_description">Description</label>
+                                <textarea id="site_description" name="site_description" class="textarea-field" rows="4">{{ settings.site_description }}</textarea>
+                            </div>
+                            <div class="form-field">
+                                <label for="site_logo">Logo</label>
+                                <input type="file" id="site_logo" name="site_logo" class="file-input" accept="image/*">
+                                {% if settings.site_logo %}
+                                <img src="{{ settings.site_logo.url }}" alt="Logo" class="preview-image">
+                                {% endif %}
+                            </div>
+                            <div class="form-field">
+                                <label for="site_favicon">Favicon</label>
+                                <input type="file" id="site_favicon" name="site_favicon" class="file-input" accept="image/*">
+                                {% if settings.site_favicon %}
+                                <img src="{{ settings.site_favicon.url }}" alt="Favicon" class="preview-image-small">
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Paramètres Régionaux</h3>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="default_language">Langue par défaut</label>
+                                <select id="default_language" name="default_language" class="select-field">
+                                    {% for code, name in default_language_choices %}
+                                    <option value="{{ code }}" {% if settings.default_language == code %}selected{% endif %}>{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="default_currency">Devise</label>
+                                <select id="default_currency" name="default_currency" class="select-field">
+                                    {% for code, name in default_currency_choices %}
+                                    <option value="{{ code }}" {% if settings.default_currency == code %}selected{% endif %}>{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="timezone">Fuseau horaire</label>
+                                <input type="text" id="timezone" name="timezone" class="input-field" value="{{ settings.timezone }}" placeholder="Europe/Paris">
+                            </div>
+                            <div class="form-field">
+                                <label for="date_format">Format de date</label>
+                                <input type="text" id="date_format" name="date_format" class="input-field" value="{{ settings.date_format }}" placeholder="DD/MM/YYYY">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Maintenance</h3>
+                        <div class="form-grid">
+                            <div class="form-field full-width">
+                                <label class="toggle-label">
+                                    <input type="checkbox" id="maintenance_mode" name="maintenance_mode" class="toggle-switch" {% if settings.maintenance_mode %}checked{% endif %}>
+                                    <span>Mode maintenance activé</span>
+                                </label>
+                            </div>
+                            <div class="form-field full-width">
+                                <label for="maintenance_message">Message de maintenance</label>
+                                <textarea id="maintenance_message" name="maintenance_message" class="textarea-field" rows="4" placeholder="Le site est actuellement en maintenance...">{{ settings.maintenance_message }}</textarea>
+                            </div>
+                            <div class="form-field full-width">
+                                <label for="maintenance_allowed_ips">IPs autorisées en maintenance (séparées par des virgules)</label>
+                                <input type="text" id="maintenance_allowed_ips" name="maintenance_allowed_ips" class="input-field" value="{{ settings.maintenance_allowed_ips|join:', ' }}" placeholder="192.168.1.1, 10.0.0.1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Section 2: Utilisateurs & Rôles -->
+            <div id="section-users-roles" class="settings-section">
+                <div class="section-header">
+                    <h2>Utilisateurs & Rôles</h2>
+                    <p class="section-description">Gérer les rôles, permissions et invitations administrateurs</p>
+                </div>
+
+                <!-- Rôles -->
+                <div class="form-section">
+                    <div class="section-header-inline">
+                        <h3>Rôles</h3>
+                        <button type="button" class="btn-secondary" onclick="openRoleModal()">+ Créer rôle</button>
+                    </div>
+
+                    <div class="roles-grid">
+                        {% for role in roles %}
+                        <div class="role-card {% if role.is_system %}system-role{% endif %}">
+                            <div class="role-header">
+                                <h4>{{ role.name }}</h4>
+                                {% if role.is_system %}
+                                <span class="badge-system">Système</span>
+                                {% else %}
+                                <div class="role-actions">
+                                    <button type="button" class="btn-icon" onclick="editRole({{ role.id }})" title="Éditer">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                        </svg>
+                                    </button>
+                                    <button type="button" class="btn-icon btn-danger" onclick="deleteRole({{ role.id }})" title="Supprimer">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% if role.description %}
+                            <p class="role-description">{{ role.description }}</p>
+                            {% endif %}
+                            <div class="role-permissions">
+                                <div class="permission-category">
+                                    <strong>Utilisateurs:</strong>
+                                    {% if role.can_view_users %}Voir{% endif %}{% if role.can_edit_users %}, Éditer{% endif %}{% if role.can_delete_users %}, Supprimer{% endif %}
+                                </div>
+                                <div class="permission-category">
+                                    <strong>Logements:</strong>
+                                    {% if role.can_view_properties %}Voir{% endif %}{% if role.can_edit_properties %}, Éditer{% endif %}{% if role.can_delete_properties %}, Supprimer{% endif %}
+                                </div>
+                                <div class="permission-category">
+                                    <strong>Modération:</strong>
+                                    {% if role.can_view_moderation %}Voir{% endif %}{% if role.can_treat_moderation %}, Traiter{% endif %}
+                                </div>
+                                <div class="permission-category">
+                                    <strong>Business:</strong>
+                                    {% if role.can_view_business %}Voir{% endif %}{% if role.can_edit_business %}, Éditer{% endif %}
+                                </div>
+                                <div class="permission-category">
+                                    <strong>Finance:</strong>
+                                    {% if role.can_view_finance %}Voir{% endif %}{% if role.can_edit_finance %}, Éditer{% endif %}
+                                </div>
+                                <div class="permission-category">
+                                    <strong>Paramètres:</strong>
+                                    {% if role.can_view_settings %}Voir{% endif %}{% if role.can_edit_settings %}, Éditer{% endif %}
+                                </div>
+                                <div class="permission-category">
+                                    <strong>Analytics:</strong>
+                                    {% if role.can_view_analytics %}Voir{% endif %}{% if role.can_export_analytics %}, Exporter{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="empty-state">
+                            <p>Aucun rôle configuré</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Liste Admins -->
+                <div class="form-section">
+                    <h3>Administrateurs</h3>
+                    <div class="admins-table-container">
+                        <table class="admins-table">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Email</th>
+                                    <th>Rôle</th>
+                                    <th>Dernière connexion</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for admin in admins %}
+                                <tr>
+                                    <td>
+                                        <div class="admin-info">
+                                            {% if admin.profile.avatar %}
+                                            <img src="{{ admin.profile.avatar.url }}" alt="{{ admin.username }}" class="user-avatar-small">
+                                            {% else %}
+                                            <div class="user-avatar-small-initial">{{ admin.username|first|upper }}</div>
+                                            {% endif %}
+                                            {{ admin.get_full_name|default:admin.username }}
+                                        </div>
+                                    </td>
+                                    <td>{{ admin.email }}</td>
+                                    <td><span class="badge-role">Admin</span></td>
+                                    <td>
+                                        {% if admin.last_login %}
+                                        {{ admin.last_login|date:"d/m/Y H:i" }}
+                                        {% else %}
+                                        Jamais connecté
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'admin-user-detail' admin.id %}" class="btn-link">Voir profil</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Inviter Admin -->
+                <div class="form-section">
+                    <h3>Inviter un administrateur</h3>
+                    <form id="invitation-form" class="settings-form" method="POST" action="{% url 'admin-invitation-send' %}">
+                        {% csrf_token %}
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="invitation_email">Email</label>
+                                <input type="email" id="invitation_email" name="email" class="input-field" required placeholder="admin@example.com">
+                            </div>
+                            <div class="form-field">
+                                <label for="invitation_role">Rôle</label>
+                                <select id="invitation_role" name="role_id" class="select-field">
+                                    <option value="">Aucun (super admin)</option>
+                                    {% for role in roles %}
+                                    <option value="{{ role.id }}">{{ role.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <button type="submit" class="btn-primary">Envoyer invitation</button>
+                            </div>
+                        </div>
+                    </form>
+
+                    {% if invitations %}
+                    <div class="invitations-list">
+                        <h4>Invitations en attente</h4>
+                        {% for invitation in invitations %}
+                        <div class="invitation-item">
+                            <span>{{ invitation.email }}</span>
+                            <span class="invitation-role">{{ invitation.role.name|default:"Super Admin" }}</span>
+                            <span class="invitation-date">Envoyée le {{ invitation.created_at|date:"d/m/Y" }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Section 3: Paiements & Facturation -->
+            <div id="section-payments" class="settings-section">
+                <div class="section-header">
+                    <h2>Paiements & Facturation</h2>
+                    <p class="section-description">Configuration des moyens de paiement, tarification et facturation</p>
+                </div>
+
+                <form id="payment-config-form" class="settings-form" method="POST" action="{% url 'admin-payment-config-save' %}">
+                    {% csrf_token %}
+
+                    <div class="form-section">
+                        <h3>Moyens de Paiement</h3>
+                        <div class="form-grid">
+                            <div class="form-field full-width">
+                                <label class="toggle-label">
+                                    <input type="checkbox" id="stripe_enabled" name="stripe_enabled" class="toggle-switch" {% if payment_config.stripe_enabled %}checked{% endif %}>
+                                    <span>Stripe activé</span>
+                                </label>
+                            </div>
+                            <div class="form-field">
+                                <label for="stripe_public_key">Clé publique Stripe</label>
+                                <input type="text" id="stripe_public_key" name="stripe_public_key" class="input-field" value="{{ payment_config.stripe_public_key }}" placeholder="pk_test_...">
+                            </div>
+                            <div class="form-field">
+                                <label for="stripe_secret_key">Clé secrète Stripe</label>
+                                <input type="password" id="stripe_secret_key" name="stripe_secret_key" class="input-field" value="{{ payment_config.stripe_secret_key }}" placeholder="sk_test_...">
+                            </div>
+
+                            <div class="form-field full-width">
+                                <label class="toggle-label">
+                                    <input type="checkbox" id="paypal_enabled" name="paypal_enabled" class="toggle-switch" {% if payment_config.paypal_enabled %}checked{% endif %}>
+                                    <span>PayPal activé</span>
+                                </label>
+                            </div>
+                            <div class="form-field">
+                                <label for="paypal_client_id">PayPal Client ID</label>
+                                <input type="text" id="paypal_client_id" name="paypal_client_id" class="input-field" value="{{ payment_config.paypal_client_id }}">
+                            </div>
+                            <div class="form-field">
+                                <label for="paypal_secret">PayPal Secret</label>
+                                <input type="password" id="paypal_secret" name="paypal_secret" class="input-field" value="{{ payment_config.paypal_secret }}">
+                            </div>
+
+                            <div class="form-field full-width">
+                                <label class="toggle-label">
+                                    <input type="checkbox" id="bank_transfer_enabled" name="bank_transfer_enabled" class="toggle-switch" {% if payment_config.bank_transfer_enabled %}checked{% endif %}>
+                                    <span>Virement bancaire activé</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Tarification</h3>
+                        <div class="pricing-table-container">
+                            <table class="pricing-table" id="pricing-table">
+                                <thead>
+                                    <tr>
+                                        <th>Plan</th>
+                                        <th>Prix mensuel (€)</th>
+                                        <th>Prix annuel (€)</th>
+                                        <th>Fonctionnalités</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pricing-table-body">
+                                    <!-- Sera rempli dynamiquement via JS -->
+                                </tbody>
+                            </table>
+                            <button type="button" class="btn-secondary" onclick="addPricingRow()">+ Ajouter un plan</button>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Commissions</h3>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="commission_rate_lease">Taux commission location (%)</label>
+                                <input type="number" id="commission_rate_lease" name="commission_rate_lease" class="input-field" value="{{ payment_config.commission_rate_lease|floatformat:2 }}" step="0.01" min="0" max="100">
+                            </div>
+                            <div class="form-field">
+                                <label for="commission_rate_services">Taux commission services (%)</label>
+                                <input type="number" id="commission_rate_services" name="commission_rate_services" class="input-field" value="{{ payment_config.commission_rate_services|floatformat:2 }}" step="0.01" min="0" max="100">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Facturation</h3>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="billing_company_name">Nom entreprise</label>
+                                <input type="text" id="billing_company_name" name="billing_company_name" class="input-field" value="{{ payment_config.billing_company_name }}">
+                            </div>
+                            <div class="form-field">
+                                <label for="billing_siret">SIRET</label>
+                                <input type="text" id="billing_siret" name="billing_siret" class="input-field" value="{{ payment_config.billing_siret }}" maxlength="14">
+                            </div>
+                            <div class="form-field">
+                                <label for="billing_vat">Numéro TVA</label>
+                                <input type="text" id="billing_vat" name="billing_vat" class="input-field" value="{{ payment_config.billing_vat }}">
+                            </div>
+                            <div class="form-field full-width">
+                                <label for="billing_address">Adresse facturation</label>
+                                <textarea id="billing_address" name="billing_address" class="textarea-field" rows="3">{{ payment_config.billing_address }}</textarea>
+                            </div>
+                            <div class="form-field full-width">
+                                <label for="invoice_template">Template facture</label>
+                                <textarea id="invoice_template" name="invoice_template" class="textarea-field rich-editor" rows="10">{{ payment_config.invoice_template }}</textarea>
+                                <button type="button" class="btn-secondary" onclick="previewInvoice()">Aperçu facture</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Section 4: Notifications -->
+            <div id="section-notifications" class="settings-section">
+                <div class="section-header">
+                    <h2>Notifications</h2>
+                    <p class="section-description">Configuration des notifications utilisateurs et templates emails</p>
+                </div>
+
+                <form id="notification-config-form" class="settings-form" method="POST" action="{% url 'admin-notification-config-save' %}">
+                    {% csrf_token %}
+
+                    <div class="form-section">
+                        <h3>Notifications par Défaut</h3>
+                        <div class="form-grid">
+                            <div class="form-field full-width">
+                                <label class="toggle-label">
+                                    <input type="checkbox" id="email_enabled_default" name="email_enabled_default" class="toggle-switch" {% if notification_config.email_enabled_default %}checked{% endif %}>
+                                    <span>Email activé par défaut</span>
+                                </label>
+                            </div>
+                            <div class="form-field full-width">
+                                <label class="toggle-label">
+                                    <input type="checkbox" id="push_enabled_default" name="push_enabled_default" class="toggle-switch" {% if notification_config.push_enabled_default %}checked{% endif %}>
+                                    <span>Push navigateur activé par défaut</span>
+                                </label>
+                            </div>
+                            <div class="form-field full-width">
+                                <label class="toggle-label">
+                                    <input type="checkbox" id="sms_enabled_default" name="sms_enabled_default" class="toggle-switch" {% if notification_config.sms_enabled_default %}checked{% endif %}>
+                                    <span>SMS activé par défaut</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Notifications par Événement</h3>
+                        <div class="event-notifications-container">
+                            <table class="event-notifications-table" id="event-notifications-table">
+                                <thead>
+                                    <tr>
+                                        <th>Événement</th>
+                                        <th>Email</th>
+                                        <th>Push</th>
+                                        <th>SMS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Sera rempli dynamiquement via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Enregistrer</button>
+                    </div>
+                </form>
+
+                <!-- Templates Emails -->
+                <div class="form-section">
+                    <div class="section-header-inline">
+                        <h3>Templates Emails</h3>
+                        <button type="button" class="btn-secondary" onclick="openTemplateModal()">+ Créer template</button>
+                    </div>
+
+                    <div class="templates-grid">
+                        {% for template in notification_templates %}
+                        <div class="template-card">
+                            <div class="template-header">
+                                <h4>{{ template.name }}</h4>
+                                <span class="template-type-badge">{{ template.get_template_type_display }}</span>
+                            </div>
+                            <p class="template-subject">{{ template.subject }}</p>
+                            <div class="template-actions">
+                                <button type="button" class="btn-secondary" onclick="editTemplate({{ template.id }})">Éditer</button>
+                                <button type="button" class="btn-secondary" onclick="previewTemplate({{ template.id }})">Aperçu</button>
+                                <button type="button" class="btn-secondary" onclick="testTemplate({{ template.id }})">Tester</button>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="empty-state">
+                            <p>Aucun template configuré</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 5: Sécurité & Logs -->
+            <div id="section-security" class="settings-section">
+                <div class="section-header">
+                    <h2>Sécurité & Logs</h2>
+                    <p class="section-description">Configuration sécurité et consultation des logs d'activité</p>
+                </div>
+
+                <form id="security-config-form" class="settings-form" method="POST" action="{% url 'admin-security-config-save' %}">
+                    {% csrf_token %}
+
+                    <div class="form-section">
+                        <h3>Sécurité</h3>
+                        <div class="form-grid">
+                            <div class="form-field full-width">
+                                <label class="toggle-label">
+                                    <input type="checkbox" id="two_factor_required_admins" name="two_factor_required_admins" class="toggle-switch" {% if security_config.two_factor_required_admins %}checked{% endif %}>
+                                    <span>2FA obligatoire pour admins</span>
+                                </label>
+                            </div>
+                            <div class="form-field">
+                                <label for="session_duration_minutes">Durée session (minutes)</label>
+                                <input type="number" id="session_duration_minutes" name="session_duration_minutes" class="input-field" value="{{ security_config.session_duration_minutes }}" min="30" max="43200">
+                            </div>
+                            <div class="form-field full-width">
+                                <h4>Politique Mot de Passe</h4>
+                            </div>
+                            <div class="form-field">
+                                <label for="password_min_length">Longueur minimum</label>
+                                <input type="number" id="password_min_length" name="password_min_length" class="input-field" value="{{ security_config.password_min_length }}" min="4" max="32">
+                            </div>
+                            <div class="form-field full-width">
+                                <label class="toggle-label">
+                                    <input type="checkbox" id="password_require_uppercase" name="password_require_uppercase" class="toggle-switch" {% if security_config.password_require_uppercase %}checked{% endif %}>
+                                    <span>Requis majuscule</span>
+                                </label>
+                            </div>
+                            <div class="form-field full-width">
+                                <label class="toggle-label">
+                                    <input type="checkbox" id="password_require_lowercase" name="password_require_lowercase" class="toggle-switch" {% if security_config.password_require_lowercase %}checked{% endif %}>
+                                    <span>Requis minuscule</span>
+                                </label>
+                            </div>
+                            <div class="form-field full-width">
+                                <label class="toggle-label">
+                                    <input type="checkbox" id="password_require_number" name="password_require_number" class="toggle-switch" {% if security_config.password_require_number %}checked{% endif %}>
+                                    <span>Requis chiffre</span>
+                                </label>
+                            </div>
+                            <div class="form-field full-width">
+                                <label class="toggle-label">
+                                    <input type="checkbox" id="password_require_special" name="password_require_special" class="toggle-switch" {% if security_config.password_require_special %}checked{% endif %}>
+                                    <span>Requis caractère spécial</span>
+                                </label>
+                            </div>
+                            <div class="form-field full-width">
+                                <label for="admin_allowed_ips">IPs autorisées admin (séparées par des virgules)</label>
+                                <input type="text" id="admin_allowed_ips" name="admin_allowed_ips" class="input-field" value="{{ security_config.admin_allowed_ips|join:', ' }}" placeholder="192.168.1.1, 10.0.0.1">
+                            </div>
+                            <div class="form-field">
+                                <label for="api_rate_limit">Limite requêtes API/minute</label>
+                                <input type="number" id="api_rate_limit" name="api_rate_limit" class="input-field" value="{{ security_config.api_rate_limit }}" min="10" max="10000">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Enregistrer</button>
+                    </div>
+                </form>
+
+                <!-- Logs d'Activité -->
+                <div class="form-section">
+                    <div class="section-header-inline">
+                        <h3>Logs d'Activité</h3>
+                        <a href="{% url 'admin-activity-logs-export' %}" class="btn-secondary">Exporter CSV</a>
+                    </div>
+
+                    <!-- Filtres -->
+                    <form method="GET" class="logs-filters">
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="filter_log_admin">Admin</label>
+                                <select id="filter_log_admin" name="admin" class="select-field" onchange="this.form.submit()">
+                                    <option value="">Tous</option>
+                                    {% for admin in admins %}
+                                    <option value="{{ admin.id }}" {% if request.GET.admin == admin.id|stringformat:"s" %}selected{% endif %}>{{ admin.username }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="filter_log_action">Action</label>
+                                <select id="filter_log_action" name="action" class="select-field" onchange="this.form.submit()">
+                                    <option value="">Toutes</option>
+                                    {% for code, name in activity_log_action_choices %}
+                                    <option value="{{ code }}" {% if request.GET.action == code %}selected{% endif %}>{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="filter_log_resource">Ressource</label>
+                                <select id="filter_log_resource" name="resource" class="select-field" onchange="this.form.submit()">
+                                    <option value="">Toutes</option>
+                                    {% for code, name in activity_log_resource_type_choices %}
+                                    <option value="{{ code }}" {% if request.GET.resource == code %}selected{% endif %}>{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Tableau Logs -->
+                    <div class="logs-table-container">
+                        <table class="logs-table">
+                            <thead>
+                                <tr>
+                                    <th>Date/Heure</th>
+                                    <th>Admin</th>
+                                    <th>Action</th>
+                                    <th>Ressource</th>
+                                    <th>Détails</th>
+                                    <th>IP</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in logs %}
+                                <tr>
+                                    <td>{{ log.created_at|date:"d/m/Y H:i:s" }}</td>
+                                    <td>{{ log.admin.username|default:"Unknown" }}</td>
+                                    <td><span class="badge-action">{{ log.get_action_display }}</span></td>
+                                    <td>
+                                        <span class="badge-resource">{{ log.get_resource_type_display }}</span>
+                                        {% if log.resource_id %}
+                                        #{{ log.resource_id }}
+                                        {% endif %}
+                                        {% if log.resource_name %}
+                                        - {{ log.resource_name }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if log.details %}
+                                        <button type="button" class="btn-link" onclick="viewLogDetails({{ log.id }})">Voir détails</button>
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ log.ip_address|default:"-" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="empty-row">Aucun log d'activité</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if logs.has_other_pages %}
+                    <div class="pagination">
+                        {% if logs.has_previous %}
+                        <a href="?page={{ logs.previous_page_number }}{% if request.GET.admin %}&admin={{ request.GET.admin }}{% endif %}{% if request.GET.action %}&action={{ request.GET.action }}{% endif %}{% if request.GET.resource %}&resource={{ request.GET.resource }}{% endif %}" class="pagination-link">Précédent</a>
+                        {% endif %}
+                        <span class="pagination-info">Page {{ logs.number }} sur {{ logs.paginator.num_pages }}</span>
+                        {% if logs.has_next %}
+                        <a href="?page={{ logs.next_page_number }}{% if request.GET.admin %}&admin={{ request.GET.admin }}{% endif %}{% if request.GET.action %}&action={{ request.GET.action }}{% endif %}{% if request.GET.resource %}&resource={{ request.GET.resource }}{% endif %}" class="pagination-link">Suivant</a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Section 6: Intégrations -->
+            <div id="section-integrations" class="settings-section">
+                <div class="section-header">
+                    <h2>Intégrations</h2>
+                    <p class="section-description">Configuration des APIs tierces et webhooks</p>
+                </div>
+
+                <form id="integration-config-form" class="settings-form" method="POST" action="{% url 'admin-integration-config-save' %}">
+                    {% csrf_token %}
+
+                    <div class="form-section">
+                        <h3>Google Maps</h3>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="google_maps_api_key">Clé API Google Maps</label>
+                                <input type="text" id="google_maps_api_key" name="google_maps_api_key" class="input-field" value="{{ integration_config.google_maps_api_key }}" placeholder="AIza...">
+                            </div>
+                            <div class="form-field full-width">
+                                <label class="toggle-label">
+                                    <input type="checkbox" id="google_maps_enabled" name="google_maps_enabled" class="toggle-switch" {% if integration_config.google_maps_enabled %}checked{% endif %}>
+                                    <span>Google Maps activé</span>
+                                </label>
+                            </div>
+                            <div class="form-field">
+                                <button type="button" class="btn-secondary" onclick="testGoogleMaps()">Tester connexion</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Google Analytics</h3>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="google_analytics_id">ID Google Analytics</label>
+                                <input type="text" id="google_analytics_id" name="google_analytics_id" class="input-field" value="{{ integration_config.google_analytics_id }}" placeholder="G-XXXXXXXXXX">
+                            </div>
+                            <div class="form-field full-width">
+                                <label class="toggle-label">
+                                    <input type="checkbox" id="google_analytics_enabled" name="google_analytics_enabled" class="toggle-switch" {% if integration_config.google_analytics_enabled %}checked{% endif %}>
+                                    <span>Google Analytics activé</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Service Email (Mailchimp/Sendinblue)</h3>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="email_service">Service</label>
+                                <select id="email_service" name="email_service" class="select-field">
+                                    {% for code, name in email_service_choices %}
+                                    <option value="{{ code }}" {% if integration_config.email_service == code %}selected{% endif %}>{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="email_service_api_key">Clé API</label>
+                                <input type="text" id="email_service_api_key" name="email_service_api_key" class="input-field" value="{{ integration_config.email_service_api_key }}">
+                            </div>
+                            <div class="form-field">
+                                <label for="email_service_list_id">ID liste de diffusion</label>
+                                <input type="text" id="email_service_list_id" name="email_service_list_id" class="input-field" value="{{ integration_config.email_service_list_id }}">
+                            </div>
+                            <div class="form-field full-width">
+                                <label class="toggle-label">
+                                    <input type="checkbox" id="email_service_auto_sync" name="email_service_auto_sync" class="toggle-switch" {% if integration_config.email_service_auto_sync %}checked{% endif %}>
+                                    <span>Sync automatique utilisateurs</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Webhooks (Zapier/Make)</h3>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="zapier_webhook_url">URL Webhook Zapier</label>
+                                <input type="url" id="zapier_webhook_url" name="zapier_webhook_url" class="input-field" value="{{ integration_config.zapier_webhook_url }}" placeholder="https://hooks.zapier.com/...">
+                            </div>
+                            <div class="form-field">
+                                <label for="make_webhook_url">URL Webhook Make</label>
+                                <input type="url" id="make_webhook_url" name="make_webhook_url" class="input-field" value="{{ integration_config.make_webhook_url }}" placeholder="https://hook.integromat.com/...">
+                            </div>
+                            <div class="form-field full-width">
+                                <label>Événements déclencheurs</label>
+                                <div class="webhook-events-list" id="webhook-events-list">
+                                    <!-- Sera rempli dynamiquement via JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Webhooks Personnalisés</h3>
+                        <div class="custom-webhooks-container" id="custom-webhooks-container">
+                            <!-- Sera rempli dynamiquement via JS -->
+                        </div>
+                        <button type="button" class="btn-secondary" onclick="addCustomWebhook()">+ Ajouter webhook</button>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Section 7: Personnalisation -->
+            <div id="section-personalization" class="settings-section">
+                <div class="section-header">
+                    <h2>Personnalisation</h2>
+                    <p class="section-description">Thème, pages légales et SEO</p>
+                </div>
+
+                <form id="settings-personalization-form" class="settings-form" method="POST" action="{% url 'admin-settings-save' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="section" value="personalization">
+
+                    <div class="form-section">
+                        <h3>Thème</h3>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="primary_color">Couleur primaire</label>
+                                <div class="color-picker-container">
+                                    <input type="color" id="primary_color" name="primary_color" class="color-input" value="{{ settings.primary_color }}">
+                                    <input type="text" class="color-text-input" value="{{ settings.primary_color }}" onchange="document.getElementById('primary_color').value = this.value">
+                                </div>
+                            </div>
+                            <div class="form-field">
+                                <label for="secondary_color">Couleur secondaire</label>
+                                <div class="color-picker-container">
+                                    <input type="color" id="secondary_color" name="secondary_color" class="color-input" value="{{ settings.secondary_color }}">
+                                    <input type="text" class="color-text-input" value="{{ settings.secondary_color }}" onchange="document.getElementById('secondary_color').value = this.value">
+                                </div>
+                            </div>
+                            <div class="form-field">
+                                <label for="font_family">Police principale</label>
+                                <select id="font_family" name="font_family" class="select-field">
+                                    {% for font, name in font_family_choices %}
+                                    <option value="{{ font }}" {% if settings.font_family == font %}selected{% endif %}>{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="header_logo">Logo header</label>
+                                <input type="file" id="header_logo" name="header_logo" class="file-input" accept="image/*">
+                                {% if settings.header_logo %}
+                                <img src="{{ settings.header_logo.url }}" alt="Logo header" class="preview-image">
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Pages Légales</h3>
+                        <div class="form-grid">
+                            <div class="form-field full-width">
+                                <label for="cgu_content">CGU (Conditions Générales d'Utilisation)</label>
+                                <textarea id="cgu_content" name="cgu_content" class="textarea-field rich-editor" rows="12">{{ settings.cgu_content }}</textarea>
+                            </div>
+                            <div class="form-field full-width">
+                                <label for="privacy_policy_content">Politique de Confidentialité</label>
+                                <textarea id="privacy_policy_content" name="privacy_policy_content" class="textarea-field rich-editor" rows="12">{{ settings.privacy_policy_content }}</textarea>
+                            </div>
+                            <div class="form-field full-width">
+                                <label for="legal_notices_content">Mentions Légales</label>
+                                <textarea id="legal_notices_content" name="legal_notices_content" class="textarea-field rich-editor" rows="12">{{ settings.legal_notices_content }}</textarea>
+                            </div>
+                            <div class="form-field full-width">
+                                <label>FAQ</label>
+                                <div class="faq-container" id="faq-container">
+                                    <!-- Sera rempli dynamiquement via JS -->
+                                </div>
+                                <button type="button" class="btn-secondary" onclick="addFAQItem()">+ Ajouter question</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>SEO</h3>
+                        <div class="form-grid">
+                            <div class="form-field full-width">
+                                <label for="meta_title">Meta Title</label>
+                                <input type="text" id="meta_title" name="meta_title" class="input-field" value="{{ settings.meta_title }}" placeholder="Transpareo - Location transparente">
+                            </div>
+                            <div class="form-field full-width">
+                                <label for="meta_description">Meta Description</label>
+                                <textarea id="meta_description" name="meta_description" class="textarea-field" rows="3" placeholder="Description pour les moteurs de recherche...">{{ settings.meta_description }}</textarea>
+                            </div>
+                            <div class="form-field full-width">
+                                <label for="meta_keywords">Mots-clés (tags, séparés par des virgules)</label>
+                                <input type="text" id="meta_keywords" name="meta_keywords" class="input-field tags-input" value="{{ settings.meta_keywords|join:', ' }}" placeholder="location, immobilier, avis vérifiés">
+                                <div class="tags-list" id="meta-keywords-tags">
+                                    <!-- Sera rempli dynamiquement via JS -->
+                                </div>
+                            </div>
+                            <div class="form-field full-width">
+                                <label class="toggle-label">
+                                    <input type="checkbox" id="sitemap_auto_generate" name="sitemap_auto_generate" class="toggle-switch" {% if settings.sitemap_auto_generate %}checked{% endif %}>
+                                    <span>Génération automatique sitemap</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Rôle -->
+<div id="role-modal" class="modal" style="display: none;">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2 id="role-modal-title">Créer un rôle</h2>
+            <button type="button" class="btn-close-modal" onclick="closeRoleModal()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="role-form" method="POST" action="">
+                {% csrf_token %}
+                <input type="hidden" id="role_id" name="role_id" value="">
+                <div class="form-field">
+                    <label for="role_name">Nom du rôle</label>
+                    <input type="text" id="role_name" name="name" class="input-field" required>
+                </div>
+                <div class="form-field">
+                    <label for="role_description">Description</label>
+                    <textarea id="role_description" name="description" class="textarea-field" rows="3"></textarea>
+                </div>
+                <div class="permissions-grid">
+                    <div class="permission-category-card">
+                        <h4>Utilisateurs</h4>
+                        <label class="checkbox-label"><input type="checkbox" name="can_view_users"> Voir</label>
+                        <label class="checkbox-label"><input type="checkbox" name="can_edit_users"> Éditer</label>
+                        <label class="checkbox-label"><input type="checkbox" name="can_delete_users"> Supprimer</label>
+                    </div>
+                    <div class="permission-category-card">
+                        <h4>Logements</h4>
+                        <label class="checkbox-label"><input type="checkbox" name="can_view_properties"> Voir</label>
+                        <label class="checkbox-label"><input type="checkbox" name="can_edit_properties"> Éditer</label>
+                        <label class="checkbox-label"><input type="checkbox" name="can_delete_properties"> Supprimer</label>
+                    </div>
+                    <div class="permission-category-card">
+                        <h4>Modération</h4>
+                        <label class="checkbox-label"><input type="checkbox" name="can_view_moderation"> Voir</label>
+                        <label class="checkbox-label"><input type="checkbox" name="can_treat_moderation"> Traiter</label>
+                    </div>
+                    <div class="permission-category-card">
+                        <h4>Business</h4>
+                        <label class="checkbox-label"><input type="checkbox" name="can_view_business"> Voir</label>
+                        <label class="checkbox-label"><input type="checkbox" name="can_edit_business"> Éditer</label>
+                    </div>
+                    <div class="permission-category-card">
+                        <h4>Finance</h4>
+                        <label class="checkbox-label"><input type="checkbox" name="can_view_finance"> Voir</label>
+                        <label class="checkbox-label"><input type="checkbox" name="can_edit_finance"> Éditer</label>
+                    </div>
+                    <div class="permission-category-card">
+                        <h4>Paramètres</h4>
+                        <label class="checkbox-label"><input type="checkbox" name="can_view_settings"> Voir</label>
+                        <label class="checkbox-label"><input type="checkbox" name="can_edit_settings"> Éditer</label>
+                    </div>
+                    <div class="permission-category-card">
+                        <h4>Analytics</h4>
+                        <label class="checkbox-label"><input type="checkbox" name="can_view_analytics"> Voir</label>
+                        <label class="checkbox-label"><input type="checkbox" name="can_export_analytics"> Exporter</label>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Enregistrer</button>
+                    <button type="button" class="btn-secondary" onclick="closeRoleModal()">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Template Notification -->
+<div id="template-modal" class="modal" style="display: none;">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2 id="template-modal-title">Créer un template</h2>
+            <button type="button" class="btn-close-modal" onclick="closeTemplateModal()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="template-form" method="POST" action="{% url 'admin-notification-template-save' %}">
+                {% csrf_token %}
+                <input type="hidden" id="template_id" name="template_id" value="">
+                <div class="form-field">
+                    <label for="template_name">Nom du template</label>
+                    <input type="text" id="template_name" name="name" class="input-field" required>
+                </div>
+                <div class="form-field">
+                    <label for="template_type">Type</label>
+                    <select id="template_type" name="template_type" class="select-field">
+                        {% for code, name in template_type_choices %}
+                        <option value="{{ code }}">{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label for="template_subject">Sujet</label>
+                    <input type="text" id="template_subject" name="subject" class="input-field" required>
+                </div>
+                <div class="form-field">
+                    <label for="template_body">Corps de l'email (HTML)</label>
+                    <textarea id="template_body" name="body" class="textarea-field rich-editor" rows="15" required></textarea>
+                    <p class="help-text">Variables disponibles: {user_name}, {user_email}, {site_name}, etc.</p>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Enregistrer</button>
+                    <button type="button" class="btn-secondary" onclick="closeTemplateModal()">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Styles -->
+<link rel="stylesheet" href="{% static 'core/admin/settings.css' %}">
+
+<!-- JavaScript -->
+<script src="{% static 'core/admin/settings.js' %}"></script>
+
+<script>
+    const settingsSaveUrl = '{% url "admin-settings-save" %}';
+    const roleCreateUrl = '{% url "admin-role-create" %}';
+    const roleUpdateUrl = '{% url "admin-role-update" 0 %}'.replace('0/', '');
+    const roleDeleteUrl = '{% url "admin-role-delete" 0 %}'.replace('0/', '');
+    const invitationSendUrl = '{% url "admin-invitation-send" %}';
+    const paymentConfigSaveUrl = '{% url "admin-payment-config-save" %}';
+    const notificationConfigSaveUrl = '{% url "admin-notification-config-save" %}';
+    const notificationTemplateSaveUrl = '{% url "admin-notification-template-save" %}';
+    const securityConfigSaveUrl = '{% url "admin-security-config-save" %}';
+    const integrationConfigSaveUrl = '{% url "admin-integration-config-save" %}';
+    const csrfToken = '{{ csrf_token }}';
+    
+    const pricingData = {{ payment_pricing_json|safe }};
+    const eventNotificationsData = {{ event_notifications_json|safe }};
+    const customWebhooksData = {{ custom_webhooks_json|safe }};
+    const faqData = {{ faq_json|safe }};
+    const metaKeywordsData = {{ meta_keywords_json|safe }};
+    const webhookEventsData = {{ webhook_events_json|safe }};
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        initSettings();
+    });
+</script>
+{% endblock %}
+

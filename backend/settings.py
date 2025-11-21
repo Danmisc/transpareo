@@ -9,11 +9,30 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    # Essayer de charger .env depuis backend/
+    env_file = BASE_DIR / '.env'
+    if env_file.exists():
+        load_dotenv(env_file, override=True)
+    
+    # Toujours essayer de charger auth.env dans backend/backend/ (priorité plus élevée)
+    auth_env_file = BASE_DIR / 'backend' / 'auth.env'
+    if auth_env_file.exists():
+        load_dotenv(auth_env_file, override=True)
+        if DEBUG:
+            print(f"✅ Fichier auth.env chargé depuis: {auth_env_file}")
+except ImportError:
+    print("⚠️  python-dotenv n'est pas installé. Installez-le avec: pip install python-dotenv")
+except Exception as e:
+    print(f"⚠️  Erreur lors du chargement du fichier .env: {e}")
 
 
 # Quick-start development settings - unsuitable for production
@@ -37,17 +56,43 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',  # Filtres de formatage humain (naturaltime, intcomma, etc.)
+    'django.contrib.sites',  # Requis pour allauth
+    
+    # Apps locales
     'core',
-    #'captcha',#
+    
+    # Third party
     'phonenumber_field',
+    'corsheaders',
+    'channels',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.facebook',
+    'allauth.socialaccount.providers.apple',
 ]
+
+# Django Channels
+ASGI_APPLICATION = 'backend.asgi.application'
+
+# Configuration Channels (pour développement, utiliser InMemoryChannelLayer)
+# Pour production, utiliser Redis: channels_redis.core.RedisChannelLayer
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer'
+    }
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'allauth.account.middleware.AccountMiddleware',  # Requis pour allauth
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -57,13 +102,15 @@ ROOT_URLCONF = 'backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'core' / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.connect_context',  # Compteurs Connect
+                'core.context_processors.admin_context',  # Compteurs Admin
             ],
         },
     },
@@ -118,7 +165,17 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+# Static files (CSS, JavaScript, Images)
+STATIC_URL = '/static/'
+
+# Ajoute cette ligne si elle n'existe pas
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Si tu as des dossiers statiques personnalisés, ajoute aussi:
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'core', 'static'),
+]
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -162,3 +219,114 @@ LOGOUT_REDIRECT_URL = 'landing-page'
 
 # Site URL
 SITE_URL = 'http://127.0.0.1:8000'
+
+# Django Allauth Configuration
+SITE_ID = 1
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+# Allauth settings
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_VERIFICATION = 'optional'  # Changé de 'mandatory' à 'optional' pour permettre OAuth
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_SESSION_REMEMBER = True
+ACCOUNT_SIGNUP_EMAIL_ENTER_TWICE = False
+ACCOUNT_USERNAME_MIN_LENGTH = 3
+ACCOUNT_PASSWORD_MIN_LENGTH = 8
+ACCOUNT_LOGIN_ATTEMPTS_LIMIT = 5
+ACCOUNT_LOGIN_ATTEMPTS_TIMEOUT = 900  # 15 minutes
+ACCOUNT_LOGOUT_ON_GET = False
+ACCOUNT_LOGOUT_REDIRECT_URL = '/'
+ACCOUNT_LOGIN_REDIRECT_URL = '/'
+ACCOUNT_ADAPTER = 'core.adapters.CustomAccountAdapter'  # Adapter personnalisé pour les redirections
+
+# Social account settings
+SOCIALACCOUNT_QUERY_EMAIL = True
+SOCIALACCOUNT_EMAIL_REQUIRED = False  # Changé pour permettre OAuth même sans email
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_STORE_TOKENS = False
+SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'  # Pas besoin de vérifier l'email pour les comptes sociaux
+SOCIALACCOUNT_ADAPTER = 'core.adapters.CustomSocialAccountAdapter'  # Adapter personnalisé pour gérer les redirections
+SOCIALACCOUNT_LOGIN_ON_GET = True  # Redirige directement vers le fournisseur OAuth sans page intermédiaire
+
+# Social providers (à configurer avec vos clés API)
+# Récupération des credentials Google
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '').strip()
+GOOGLE_SECRET = os.environ.get('GOOGLE_SECRET', '').strip()
+
+# Vérification que les credentials sont configurés (avertissement en mode DEBUG uniquement au démarrage)
+import sys
+if not hasattr(sys.modules[__name__], '_google_oauth_warning_shown'):
+    if not GOOGLE_CLIENT_ID or not GOOGLE_SECRET:
+        print("⚠️  AVERTISSEMENT: Les credentials Google OAuth ne sont pas configurés.")
+        print("   GOOGLE_CLIENT_ID:", "✅ Configuré" if GOOGLE_CLIENT_ID else "❌ Manquant")
+        print("   GOOGLE_SECRET:", "✅ Configuré" if GOOGLE_SECRET else "❌ Manquant")
+        print("   Le bouton OAuth Google ne fonctionnera pas. Consultez CONFIGURATION_OAUTH.md pour la configuration.")
+        print(f"   Fichiers .env recherchés:")
+        print(f"     - {BASE_DIR / '.env'}")
+        print(f"     - {BASE_DIR / 'backend' / 'auth.env'}")
+    elif DEBUG:
+        print("✅ Credentials Google OAuth configurés correctement")
+        print(f"   Client ID: {GOOGLE_CLIENT_ID[:20]}...")
+    sys.modules[__name__]._google_oauth_warning_shown = True
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'APP': {
+            'client_id': GOOGLE_CLIENT_ID,
+            'secret': GOOGLE_SECRET,
+            'key': ''
+        }
+    },
+    'facebook': {
+        'METHOD': 'oauth2',
+        'SCOPE': ['email', 'public_profile'],
+        'AUTH_PARAMS': {'auth_type': 'reauthenticate'},
+        'INIT_PARAMS': {'cookie': True},
+        'FIELDS': [
+            'id',
+            'first_name',
+            'last_name',
+            'middle_name',
+            'name',
+            'name_format',
+            'picture',
+            'short_name'
+        ],
+        'EXCHANGE_TOKEN': True,
+        'APP': {
+            'client_id': os.environ.get('FACEBOOK_CLIENT_ID', ''),
+            'secret': os.environ.get('FACEBOOK_SECRET', ''),
+        }
+    },
+    'apple': {
+        'APP': {
+            'client_id': os.environ.get('APPLE_CLIENT_ID', ''),
+            'secret': os.environ.get('APPLE_SECRET', ''),
+            'key': os.environ.get('APPLE_KEY', ''),
+        }
+    }
+}
+
+# Security settings améliorés
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+CSRF_COOKIE_SECURE = False  # Mettre à True en production avec HTTPS
+SESSION_COOKIE_SECURE = False  # Mettre à True en production avec HTTPS
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SAMESITE = 'Lax'

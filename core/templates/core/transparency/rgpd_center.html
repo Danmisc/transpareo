@@ -1,0 +1,507 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Vos droits, vos données - Transpareo{% endblock %}
+
+{% block extra_head %}
+<style>
+    .rgpd-hero {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+        padding: 80px 20px;
+        text-align: center;
+    }
+    
+    .rgpd-hero h1 {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        font-weight: 700;
+    }
+    
+    .rgpd-hero p {
+        font-size: 1.2rem;
+        opacity: 0.95;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .rgpd-content {
+        max-width: 1200px;
+        margin: 60px auto;
+        padding: 0 20px;
+    }
+    
+    .rights-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin: 40px 0;
+    }
+    
+    .right-card {
+        background: white;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .right-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+    
+    .right-card .icon {
+        font-size: 3rem;
+        margin-bottom: 15px;
+    }
+    
+    .right-card h3 {
+        color: #11998e;
+        margin-bottom: 15px;
+        font-size: 1.5rem;
+    }
+    
+    .right-card p {
+        color: #666;
+        line-height: 1.7;
+        margin-bottom: 20px;
+    }
+    
+    .action-button {
+        background: #11998e;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: background 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .action-button:hover {
+        background: #0d7a6f;
+    }
+    
+    .action-button.danger {
+        background: #dc3545;
+    }
+    
+    .action-button.danger:hover {
+        background: #c82333;
+    }
+    
+    .stats-section {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 40px;
+        margin: 40px 0;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 30px;
+        margin-top: 30px;
+    }
+    
+    .stat-card {
+        background: white;
+        padding: 25px;
+        border-radius: 8px;
+        text-align: center;
+        border: 2px solid #e9ecef;
+    }
+    
+    .stat-card .number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #11998e;
+        margin-bottom: 10px;
+    }
+    
+    .stat-card .label {
+        color: #666;
+        font-size: 1rem;
+    }
+    
+    .activity-preview {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        margin: 30px 0;
+        border: 2px solid #e9ecef;
+    }
+    
+    .activity-item {
+        padding: 15px;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+    
+    .activity-item .type {
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .activity-item .date {
+        color: #999;
+        font-size: 0.9rem;
+    }
+    
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 2000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(5px);
+    }
+    
+    .modal-content {
+        background: white;
+        margin: 5% auto;
+        padding: 40px;
+        border-radius: 12px;
+        max-width: 600px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+    
+    .modal-content h3 {
+        color: #dc3545;
+        margin-bottom: 20px;
+    }
+    
+    .modal-content .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .modal-content label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .modal-content input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e9ecef;
+        border-radius: 6px;
+        font-size: 1rem;
+    }
+    
+    .modal-content input:focus {
+        outline: none;
+        border-color: #11998e;
+    }
+    
+    .modal-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+    }
+    
+    .section {
+        margin-bottom: 60px;
+    }
+    
+    .section h2 {
+        font-size: 2.5rem;
+        color: #333;
+        margin-bottom: 30px;
+        border-bottom: 3px solid #11998e;
+        padding-bottom: 15px;
+    }
+    
+    @media (max-width: 768px) {
+        .rgpd-hero h1 {
+            font-size: 2rem;
+        }
+        
+        .rights-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="rgpd-hero">
+    <h1>🔒 Vos droits, vos données</h1>
+    <p>Centre RGPD - Contrôlez vos données personnelles en toute transparence</p>
+</div>
+
+<div class="rgpd-content">
+    <!-- Statistiques -->
+    <div class="stats-section">
+        <h2 style="margin-top: 0;">Vos données sur Transpareo</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="number">{{ total_activities|intcomma }}</div>
+                <div class="label">Activités enregistrées</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">{{ activities_last_30_days|intcomma }}</div>
+                <div class="label">Activités (30 derniers jours)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vos droits -->
+    <section class="section">
+        <h2>Vos droits RGPD</h2>
+        
+        <div class="rights-grid">
+            <div class="right-card">
+                <div class="icon">📥</div>
+                <h3>Droit d'accès</h3>
+                <p>
+                    Vous avez le droit de savoir quelles données nous détenons sur vous.
+                    Consultez votre journal d'activité ci-dessous ou exportez toutes vos données.
+                </p>
+                <a href="{% url 'export-activity-journal' %}?format=json" class="action-button">
+                    Voir mes données
+                </a>
+            </div>
+            
+            <div class="right-card">
+                <div class="icon">📤</div>
+                <h3>Portabilité des données</h3>
+                <p>
+                    Exportez toutes vos données au format JSON standard. Vous pouvez les importer
+                    dans une autre plateforme compatible.
+                </p>
+                <button onclick="exportData()" class="action-button">
+                    Exporter mes données
+                </button>
+            </div>
+            
+            <div class="right-card">
+                <div class="icon">✏️</div>
+                <h3>Droit de rectification</h3>
+                <p>
+                    Modifiez vos informations personnelles à tout moment depuis votre profil.
+                    Vos données sont mises à jour instantanément.
+                </p>
+                <a href="{% url 'profile-edit' %}" class="action-button">
+                    Modifier mon profil
+                </a>
+            </div>
+            
+            <div class="right-card">
+                <div class="icon">🗑️</div>
+                <h3>Droit à l'effacement</h3>
+                <p>
+                    Supprimez votre compte et toutes vos données personnelles. Cette action est
+                    irréversible et définitive.
+                </p>
+                <button onclick="showDeleteModal()" class="action-button danger">
+                    Supprimer mon compte
+                </button>
+            </div>
+            
+            <div class="right-card">
+                <div class="icon">📊</div>
+                <h3>Journal d'activité</h3>
+                <p>
+                    Consultez l'historique complet de toutes vos actions sur la plateforme.
+                    Exportable en CSV ou JSON.
+                </p>
+                <a href="{% url 'connect-settings' %}?tab=activity" class="action-button">
+                    Voir mon journal
+                </a>
+            </div>
+            
+            <div class="right-card">
+                <div class="icon">🔐</div>
+                <h3>Contrôle de confidentialité</h3>
+                <p>
+                    Gérez finement la visibilité de vos données : activité, réseau, logements,
+                    statistiques, etc.
+                </p>
+                <a href="{% url 'connect-settings' %}?tab=privacy" class="action-button">
+                    Paramètres de confidentialité
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Aperçu des activités récentes -->
+    <section class="section">
+        <h2>Aperçu de vos activités récentes</h2>
+        
+        <div class="activity-preview">
+            {% if recent_activities %}
+                {% for activity in recent_activities %}
+                <div class="activity-item">
+                    <div>
+                        <div class="type">{{ activity.get_type_activite_display }}</div>
+                        <div style="color: #666; font-size: 0.9rem; margin-top: 5px;">
+                            {{ activity.description|truncatechars:100 }}
+                        </div>
+                    </div>
+                    <div class="date">{{ activity.created_at|naturaltime }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p style="text-align: center; color: #999; padding: 40px;">
+                    Aucune activité enregistrée pour le moment.
+                </p>
+            {% endif %}
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="{% url 'connect-settings' %}?tab=activity" class="action-button">
+                Voir toutes mes activités
+            </a>
+        </div>
+    </section>
+
+    <!-- Informations sur les données -->
+    <section class="section">
+        <h2>Quelles données collectons-nous ?</h2>
+        
+        <div class="activity-preview">
+            <h3 style="margin-bottom: 20px; color: #333;">Données collectées :</h3>
+            <ul style="line-height: 2; color: #666;">
+                <li><strong>Données de profil :</strong> Nom, prénom, email, téléphone, adresse, profession</li>
+                <li><strong>Données d'activité :</strong> Posts, commentaires, messages, connexions, favoris</li>
+                <li><strong>Données de logement :</strong> Annonces créées, candidatures, avis postés</li>
+                <li><strong>Données de navigation :</strong> Pages visitées, recherches effectuées (anonymisées)</li>
+                <li><strong>Données de sécurité :</strong> Historique de connexion, sessions actives, alertes</li>
+            </ul>
+            
+            <h3 style="margin-top: 30px; margin-bottom: 20px; color: #333;">Données que nous ne collectons PAS :</h3>
+            <ul style="line-height: 2; color: #666;">
+                <li>❌ Données de localisation GPS en temps réel</li>
+                <li>❌ Historique de navigation externe</li>
+                <li>❌ Données de paiement (gérées par des tiers sécurisés)</li>
+                <li>❌ Données biométriques</li>
+                <li>❌ Données de santé</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Partage des données -->
+    <section class="section">
+        <h2>Partage des données</h2>
+        
+        <div class="activity-preview">
+            <p style="font-size: 1.1rem; line-height: 1.8; color: #666;">
+                <strong>Nous ne vendons JAMAIS vos données personnelles.</strong>
+            </p>
+            <p style="font-size: 1.1rem; line-height: 1.8; color: #666; margin-top: 15px;">
+                Nous partageons uniquement les données strictement nécessaires avec :
+            </p>
+            <ul style="line-height: 2; color: #666; margin-top: 15px;">
+                <li><strong>Prestataires de services :</strong> Hébergement (données chiffrées), emails (SendGrid), paiements (Stripe)</li>
+                <li><strong>Obligations légales :</strong> En cas de demande judiciaire ou administrative légale</li>
+                <li><strong>Avec votre consentement :</strong> Uniquement si vous avez explicitement accepté</li>
+            </ul>
+        </div>
+    </section>
+</div>
+
+<!-- Modal de suppression de compte -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <h3>⚠️ Supprimer mon compte</h3>
+        <p style="color: #666; margin-bottom: 20px;">
+            Cette action est <strong>irréversible</strong>. Toutes vos données seront définitivement supprimées :
+        </p>
+        <ul style="color: #666; margin-bottom: 20px; line-height: 2;">
+            <li>Votre profil et toutes vos informations personnelles</li>
+            <li>Tous vos posts, commentaires et messages</li>
+            <li>Toutes vos annonces et candidatures</li>
+            <li>Toutes vos connexions et favoris</li>
+            <li>Votre historique d'activité</li>
+        </ul>
+        
+        <form id="deleteForm" method="POST" action="{% url 'delete-user-account' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="password">Confirmez votre mot de passe :</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <div class="form-group">
+                <label for="confirm_text">Tapez "SUPPRIMER" pour confirmer :</label>
+                <input type="text" id="confirm_text" name="confirm_text" required>
+            </div>
+            <div class="modal-actions">
+                <button type="button" onclick="closeDeleteModal()" class="action-button" style="background: #6c757d;">
+                    Annuler
+                </button>
+                <button type="submit" class="action-button danger">
+                    Supprimer définitivement
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function exportData() {
+    window.location.href = "{% url 'export-user-data' %}";
+}
+
+function showDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'block';
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+    document.getElementById('deleteForm').reset();
+}
+
+// Fermer la modal en cliquant en dehors
+window.onclick = function(event) {
+    const modal = document.getElementById('deleteModal');
+    if (event.target == modal) {
+        closeDeleteModal();
+    }
+}
+
+// Gérer la soumission du formulaire de suppression
+document.getElementById('deleteForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const response = await fetch("{% url 'delete-user-account' %}", {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+        }
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+        alert('Votre compte a été supprimé avec succès. Vous allez être redirigé.');
+        window.location.href = "{% url 'landing-page' %}";
+    } else {
+        alert('Erreur : ' + data.error);
+    }
+});
+</script>
+{% endblock %}
+

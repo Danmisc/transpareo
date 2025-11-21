@@ -2,361 +2,3236 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="{% static 'core/map.css' %}"> 
-  <title>Carte interactive Transpareo</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-      background-color: #f0f2f5;
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Carte Interactive - Transpareo</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: #1a1a1a;
+            overflow: hidden;
+            height: 100vh;
+            background: #fafafa;
+        }
+        
+        /* ========== NAVBAR (EXACTE DE LA LANDING PAGE) ========== */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+            background: transparent;
+    border-bottom: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    z-index: 1000;
+    transition: background 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                backdrop-filter 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                        box-shadow 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                        transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            will-change: transform, background, backdrop-filter;
+        }
+
+        .navbar.scrolled {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+        }
+
+.navbar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    font-weight: 800;
+    font-size: 20px;
+    color: #1a1a1a;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+.logo-text {
+    background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.navbar-logo:hover {
+    transform: translateY(-2px);
+}
+
+.nav-center {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 0;
+    align-items: center;
+    flex: 1;
+    justify-content: center;
+}
+
+.nav-link {
+    color: #333;
+    text-decoration: none;
+    padding: 10px 16px;
+    font-weight: 500;
+    font-size: 14px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.nav-link:hover {
+    background: rgba(0, 0, 0, 0.04);
+    color: #D3580B;
+}
+
+.dropdown {
+    position: relative;
+    z-index: 1500;
+}
+
+.dropbtn {
+    background: transparent;
+    border: none;
+    color: #333;
+    padding: 10px 16px;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.dropbtn:hover {
+    background: rgba(0, 0, 0, 0.04);
+    color: #D3580B;
+}
+
+.dropdown-chevron {
+    font-size: 0.75em;
+    transition: transform 0.3s ease;
+    display: inline-flex;
+}
+
+.dropdown:hover .dropdown-chevron,
+.dropbtn[aria-expanded="true"] .dropdown-chevron {
+    transform: rotate(180deg);
+}
+
+.dropdown-content {
+    position: absolute;
+    top: calc(100% + 16px);
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+    background: white;
+    border-radius: 20px;
+    box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.15),
+        0 0 0 1px rgba(0, 0, 0, 0.05),
+        0 8px 24px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    min-width: 920px;
+    max-width: 1000px;
+    z-index: 10;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    overflow: hidden;
+}
+
+.dropdown-content::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 12px;
+    height: 12px;
+    background: white;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    border-left: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: -2px -2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.dropdown:hover .dropdown-content,
+.dropbtn[aria-expanded="true"] ~ .dropdown-content,
+.dropdown-content[aria-hidden="false"] {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+}
+
+.dropdown-inner {
+    display: flex;
+    gap: 0;
+    padding: 0;
+    height: 100%;
+    border-radius: 20px;
+    overflow: hidden;
+    min-height: 400px;
+}
+
+.connect-section {
+    width: 38%;
+    padding: 40px;
+    background: linear-gradient(135deg, rgba(211, 88, 11, 0.04) 0%, rgba(211, 88, 11, 0.01) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+    border-right: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+        .connect-header h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 12px 0;
+}
+
+.connect-section p {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.7;
+    margin: 0;
+}
+
+.connect-image {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 16px;
+    margin: 24px 0;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.btn-more {
+    color: #D3580B;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.features-section {
+    flex: 1;
+    padding: 40px;
+    overflow-y: auto;
+            max-height: 100%;
+    background: white;
+}
+
+.features-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 28px 0;
+}
+
+.feature-category {
+    margin-bottom: 28px;
+}
+
+.feature-category-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #1a1a1a;
+    margin-bottom: 12px;
+}
+
+.feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.feature-list a {
+    font-size: 14px;
+    color: #555;
+    text-decoration: none;
+    padding: 10px 14px;
+    border-radius: 10px;
+            display: block;
+    transition: all 0.3s ease;
+}
+
+.feature-list a:hover {
+    background: rgba(211, 88, 11, 0.06);
+    color: #D3580B;
+        }
+
+.user {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 12px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.user-profile-dropdown {
+    position: relative;
+    list-style: none;
+}
+
+.user-profile-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: transparent;
+    border: none;
+    padding: 6px 12px 6px 6px;
+    border-radius: 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.user-profile-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+        .user-avatar,
+        .user-avatar-placeholder {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.user-avatar-placeholder {
+    background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.user-username {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.user-dropdown-chevron {
+            width: 16px;
+            height: 16px;
+    color: #666;
+    transition: all 0.3s ease;
+}
+
+.user-dropdown-content {
+    position: absolute;
+    top: calc(100% + 16px);
+    right: 0;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.15),
+        0 0 0 1px rgba(0, 0, 0, 0.05),
+        0 8px 24px rgba(0, 0, 0, 0.1);
+    min-width: 240px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+            transition: all 0.4s ease;
+    z-index: 1000;
+    padding: 8px 0;
+    transform: translateY(-8px);
+}
+
+.user-profile-dropdown:hover .user-dropdown-content,
+        .user-dropdown-content[style*="opacity: 1"] {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.user-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    color: #333;
+    text-decoration: none;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.user-dropdown-item:hover {
+    background: rgba(211, 88, 11, 0.06);
+    color: #D3580B;
+}
+
+.user-dropdown-item svg {
+    width: 18px;
+    height: 18px;
+}
+
+.user-dropdown-divider {
+    height: 1px;
+    background: rgba(0, 0, 0, 0.08);
+    margin: 8px 12px;
+}
+
+.btn-login {
+    padding: 8px 16px;
+    background: transparent;
+    color: #333;
+    border: 1.5px solid #333;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    display: inline-block;
+}
+
+.btn-login:hover {
+    border-color: #D3580B;
+    color: #D3580B;
+}
+
+.btn-signup {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    display: inline-block;
+}
+
+.btn-signup:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(211, 88, 11, 0.25);
+}
+
+        .navbar-spacer {
+            height: 70px;
+            flex-shrink: 0;
+        }
+
+        .btn-login, .btn-signup {
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-login {
+            color: #333;
+        }
+
+        .btn-signup {
+            background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+            color: white;
+        }
+
+        /* ========== MAIN CONTAINER ========== */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 70px);
+            padding-top: 0;
+            flex-direction: row; /* Carte à gauche, liste à droite */
+            overflow: hidden;
+        }
+
+        .map-container {
+            flex: 1;
+            position: relative;
+            background: #f5f5f5;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Style pour les marqueurs carrés personnalisés */
+        .custom-square-marker {
+            background: transparent !important;
+            border: none !important;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .custom-square-marker:hover {
+            transform: scale(1.3);
+            z-index: 1000 !important;
+        }
+
+        .custom-square-marker div {
+            width: 8px !important;
+            height: 8px !important;
+            background: #D3580B !important;
+            border: 1px solid white !important;
+            border-radius: 1px !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3) !important;
+            transition: all 0.2s ease;
+        }
+
+        .custom-square-marker:hover div {
+            width: 10px !important;
+            height: 10px !important;
+            box-shadow: 0 2px 8px rgba(211, 88, 11, 0.5) !important;
+        }
+
+        /* Tooltip pour les marqueurs */
+        .marker-tooltip {
+            position: fixed;
+            background: white;
+            color: #1a1a1a;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 500;
+            pointer-events: none;
+            z-index: 10000;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            transform: translate(-50%, calc(-100% - 12px));
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            overflow: hidden;
+            max-width: 280px;
+            min-width: 260px;
+        }
+
+        .marker-tooltip-image {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .marker-tooltip-content {
+            padding: 12px;
+        }
+
+        .marker-tooltip-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #222;
+            margin: 0 0 8px 0;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .marker-tooltip-price {
+            font-size: 16px;
+            font-weight: 600;
+            color: #222;
+            margin: 0 0 8px 0;
+        }
+
+        .marker-tooltip-description {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.4;
+            margin: 0 0 8px 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .marker-tooltip-stats {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #666;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .marker-tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid white;
+        }
+
+        .marker-tooltip.visible {
+            opacity: 1;
+            transform: translate(-50%, calc(-100% - 8px));
+        }
+
+        /* ========== SIDEBAR ========== */
+        .sidebar {
+            width: 580px;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+            box-shadow: -4px 0 16px rgba(0, 0, 0, 0.03);
+        }
+
+        .sidebar-header {
+            padding: 14px 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            background: #ffffff;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 10;
+            max-height: 200px;
+            overflow: hidden;
+        }
+
+        .sidebar-header.hidden {
+            max-height: 0;
+            padding: 0;
+            margin: 0;
+            opacity: 0;
+            pointer-events: none;
+            border: none;
+        }
+
+        .sidebar-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 0;
+            line-height: 1.4;
+            flex: 1;
+        }
+
+        .sidebar-tabs {
+            display: flex;
+            gap: 4px;
+            background: #f5f5f5;
+            padding: 4px;
+            border-radius: 8px;
+            margin-top: 2px;
+            align-self: flex-start;
+        }
+
+        .sidebar-tab {
+            padding: 6px 12px;
+            border: none;
+            background: transparent;
+            color: #666;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            line-height: 1.4;
+        }
+
+        .sidebar-tab:hover {
+            color: #1a1a1a;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .sidebar-tab.active {
+            background: #ffffff;
+            color: #1a1a1a;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-subtitle {
+            font-size: 12px;
+            color: #666;
+            font-weight: 400;
+            margin: 8px 0 0 0;
+            line-height: 1.4;
+        }
+
+        .sidebar-intro {
+            font-size: 11px;
+            color: #666;
+            line-height: 1.4;
+            margin: 6px 0 0 0;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        /* ========== SEARCH BAR ========== */
+        .search-container {
+            padding: 10px 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            background: #ffffff;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 10;
+            max-height: 100px;
+            overflow: hidden;
+        }
+
+        .search-container.hidden {
+            max-height: 0;
+            padding: 0;
+            margin: 0;
+            opacity: 0;
+            pointer-events: none;
+            border: none;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 10px;
+            color: #999;
+            pointer-events: none;
+            z-index: 1;
+            width: 16px;
+            height: 16px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 8px 12px 8px 32px;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+            font-size: 13px;
+            transition: all 0.2s ease;
+            background: #ffffff;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #D3580B;
+            box-shadow: 0 0 0 2px rgba(211, 88, 11, 0.1);
+        }
+
+        .search-input::placeholder {
+            color: #999;
+        }
+
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            margin-top: 4px;
+            max-height: 400px;
+            overflow-y: auto;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            z-index: 1000;
+        display: none;
     }
-    .hero {
-      text-align: center;
-      background: white;
-      border-radius: 10px;
-      padding: 40px 20px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
-      max-width: 900px;
-      margin: 0 auto 30px;
-    }
-    .hero h1 {
-      margin-bottom: 15px;
-      color: #333;
-      font-size: 28px;
-    }
-    .hero p {
-      max-width: 700px;
-      margin: 0 auto;
-      color: #555;
-      font-size: 16px;
-    }
-    .content-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-    .search-container {
-      margin-bottom: 32px;
-    }
-    .search-bar {
-      background: white;
-      border-radius: 16px;
-      padding: 18px 24px;
-      display: flex;
-      align-items: center;
-      gap: 24px;
-      max-width: 900px;
-      margin: 0 auto;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-      position: relative;
-      flex-wrap: wrap;
-    }
-    .search-input-wrapper {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-    }
-    .search-label {
-      font-weight: 600;
-      color: #1a1a1a;
-      margin-bottom: 6px;
-    }
-    .search-input {
-      width: 100%;
-      border: none;
-      outline: none;
-      font-size: 1rem;
-      color: #666;
-      background: transparent;
-      padding: 0;
-    }
-    .search-input::placeholder {
-      color: #999;
-    }
-    .divider {
-      width: 1px;
-      height: 48px;
-      background: #e0e0e0;
-      flex-shrink: 0;
-    }
-    .filters-wrapper {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
-    .filters-btn {
-      background: transparent;
-      border: none;
-      font-size: 1rem;
-      font-weight: 500;
-      color: #333;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 12px;
-      border-radius: 8px;
-      transition: background 0.2s;
-      white-space: nowrap;
-    }
-    .filters-btn:hover {
-      background: #f8f8f8;
-    }
-    .chevron-icon {
-      transition: transform 0.2s;
-    }
-    .filters-btn:hover .chevron-icon {
-      transform: translateY(2px);
-    }
-    .filters-dropdown {
-      display: none;
-      position: absolute;
-      top: calc(100% + 8px);
-      right: 0;
-      background: white;
-      border-radius: 12px;
-      padding: 12px 16px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-      min-width: 200px;
-      border: 1px solid #e5e5e5;
-      z-index: 100;
-    }
-    .filters-dropdown.active {
-      display: block;
-    }
-    .filter-option {
-      display: flex;
-      flex-direction: column;
-      margin-bottom: 8px;
-      font-size: 0.95rem;
-      color: #333;
-    }
-    .filter-option label {
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-    .filter-option input {
-      padding: 6px 8px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
-    .search-btn {
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      padding: 10px;
-      border-radius: 50%;
-      color: #ff6b35;
-      font-size: 1.3rem;
-      transition: background 0.2s;
-    }
-    .search-btn:hover {
-      background: #fff5ed;
-    }
-    .map-and-list {
-      display: flex;
-      gap: 20px;
-      height: 600px;
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-      overflow: hidden;
-    }
-    #map {
-      flex: 2;
-      height: 100%;
-      border-radius: 10px 0 0 10px;
-      min-width: 300px;
-    }
-    #list-logements {
-      flex: 1;
-      overflow-y: auto;
-      background: #fafafa;
-      border-radius: 0 10px 10px 0;
-      padding: 10px;
-      box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      min-width: 250px;
-    }
-    .logement-card {
-      background: white;
-      border-radius: 8px;
-      padding: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      cursor: pointer;
-      transition: box-shadow 0.3s;
-    }
-    .logement-card:hover {
-      box-shadow: 0 4px 12px rgba(255,102,0,0.6);
-    }
-    .logement-card h4 {
-      margin: 0 0 8px;
-      font-size: 18px;
-      color: #333;
-    }
-    .logement-card img {
-      width: 100%;
-      height: 120px;
-      object-fit: cover;
-      border-radius: 6px;
-      margin-bottom: 8px;
-    }
-    .logement-card p {
-      margin: 4px 0;
-      font-size: 14px;
-      color: #555;
-    }
-    @media (max-width: 900px) {
-      .map-and-list {
-        flex-direction: column;
-        height: auto;
-      }
-      #map {
-        border-radius: 10px 10px 0 0;
-        height: 400px;
-      }
-      #list-logements {
-        border-radius: 0 0 10px 10px;
-        height: 300px;
-      }
-    }
-  </style>
+    
+        .autocomplete-dropdown.active {
+            display: block;
+        }
+
+        .autocomplete-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            transition: background 0.2s ease;
+        }
+
+        .autocomplete-item:hover {
+            background: rgba(211, 88, 11, 0.05);
+        }
+
+        .autocomplete-item-title {
+            font-weight: 600;
+    font-size: 14px;
+    color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+
+        .autocomplete-item-sub {
+    font-size: 12px;
+    color: #666;
+        }
+
+        /* ========== FILTERS BAR ========== */
+        .filters-bar {
+            padding: 10px 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            background: #fafafa;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 10;
+            max-height: 150px;
+            overflow: hidden;
+        }
+
+        .filters-bar.hidden {
+            max-height: 0;
+            padding: 0;
+            margin: 0;
+            opacity: 0;
+            pointer-events: none;
+            border: none;
+        }
+
+        .filter-chips {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .filter-chip {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            background: white;
+            border: 1.5px solid rgba(0, 0, 0, 0.12);
+            border-radius: 18px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .filter-chip::after {
+            content: '▾';
+            font-size: 10px;
+            margin-left: 4px;
+            opacity: 0.6;
+        }
+
+        .filter-chip:hover {
+            border-color: #D3580B;
+    color: #D3580B;
+        }
+
+        .filter-chip.active {
+            background: #D3580B;
+            color: white;
+            border-color: #D3580B;
+        }
+
+        .filter-chip.active::after {
+    opacity: 1;
+        }
+
+        .filter-chip-badge {
+            background: rgba(211, 88, 11, 0.15);
+            color: #D3580B;
+            border-radius: 10px;
+            padding: 2px 6px;
+            font-size: 11px;
+    font-weight: 700;
+            margin-left: 4px;
+        }
+
+        .filter-chip.active .filter-chip-badge {
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+        }
+
+        /* Dropdown pour Pertinence */
+        .filter-chip-dropdown {
+            position: relative;
+        }
+
+        .filter-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            background: white;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            min-width: 200px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-8px);
+            transition: all 0.2s ease;
+            padding: 8px 0;
+        }
+
+        .filter-chip-dropdown:hover .filter-dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .filter-dropdown-item {
+            display: block;
+            width: 100%;
+            padding: 10px 16px;
+            text-align: left;
+            background: none;
+            border: none;
+            font-size: 13px;
+            font-weight: 500;
+            color: #1a1a1a;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .filter-dropdown-item:hover {
+            background: #f5f5f5;
+        }
+
+        .filter-dropdown-item.active {
+            background: rgba(211, 88, 11, 0.1);
+            color: #D3580B;
+            font-weight: 600;
+        }
+
+        .filter-dropdown-item.active::after {
+            content: '✓';
+            float: right;
+            color: #D3580B;
+        }
+
+        .filter-show-all {
+            width: 100%;
+            padding: 8px 12px;
+            background: #ffffff;
+            color: #1a1a1a;
+            border: 1.5px solid rgba(0, 0, 0, 0.12);
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .filter-show-all:hover {
+            background: #f5f5f5;
+            border-color: #D3580B;
+            color: #D3580B;
+        }
+
+        .filter-show-all:active {
+            background: #eeeeee;
+        }
+
+        /* ========== LOGEMENTS LIST ========== */
+        .logements-list-container {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 0; /* Permet au scroll de fonctionner */
+        }
+
+        .logements-list {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 16px 20px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            align-content: start;
+            min-height: 0; /* Permet au scroll de fonctionner */
+        }
+
+        .logement-card {
+            background: white;
+            border: none;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            position: relative;
+            height: 100%; /* Hauteur automatique pour s'adapter au contenu */
+            min-height: 280px; /* Hauteur minimale pour éviter l'écrasement */
+        }
+
+        .logement-card:hover {
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .logement-card.active {
+            box-shadow: 0 0 0 2px #222;
+        }
+
+        .logement-image-wrapper {
+            position: relative;
+            width: 100%;
+            padding-top: 75%; /* Ratio 4:3 */
+            overflow: hidden;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+            flex-shrink: 0; /* Empêche la compression de l'image */
+        }
+
+        .logement-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .logement-image[loading="lazy"] {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .logement-image[loading="lazy"].loaded {
+            opacity: 1;
+        }
+
+        /* Bouton favori */
+        .btn-favorite {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 28px;
+            height: 28px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            transition: all 0.2s ease;
+            z-index: 10;
+        }
+
+        .btn-favorite:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .heart-icon {
+            width: 16px;
+            height: 16px;
+            stroke: #222;
+            stroke-width: 1.5;
+            fill: transparent;
+            transition: all 0.2s ease;
+        }
+
+        .btn-favorite.active .heart-icon {
+            fill: #ff385c;
+            stroke: #ff385c;
+            animation: heartBeat 0.3s ease;
+        }
+
+        @keyframes heartBeat {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+
+        .logement-content {
+            padding: 12px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-height: 0; /* Permet au contenu de se comprimer si nécessaire */
+        }
+
+        .logement-content > * {
+            flex-shrink: 0; /* Empêche la compression des éléments */
+        }
+
+        .logement-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .logement-title {
+            font-size: 15px;
+            font-weight: 500;
+            color: #222;
+            margin: 0;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            flex: 1;
+        }
+
+        .logement-rating {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #222;
+            white-space: nowrap;
+        }
+
+        .logement-location {
+            font-size: 14px;
+            color: #717171;
+            margin: 0;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .logement-features {
+            display: flex;
+            gap: 8px;
+            margin: 4px 0 0 0;
+            font-size: 13px;
+            color: #717171;
+            flex-wrap: wrap;
+        }
+
+        .logement-features span {
+            white-space: nowrap;
+        }
+
+        .logement-footer {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+            margin-top: auto; /* Pousse le footer en bas */
+            padding-top: 8px;
+            border-top: none;
+        }
+
+        .logement-price {
+            font-size: 15px;
+            font-weight: 600;
+            color: #222;
+            line-height: 1;
+        }
+
+        .logement-price span {
+            font-size: 13px;
+            font-weight: 400;
+            color: #717171;
+            margin-left: 2px;
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #666;
+        }
+
+        .empty-state-subtext {
+            font-size: 14px;
+            color: #999;
+        }
+
+        /* ========== PAGINATION ========== */
+        .pagination {
+            padding: 16px 20px;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+    display: flex;
+            justify-content: center;
+    align-items: center;
+    gap: 12px;
+            background: white;
+        }
+
+        .pagination-btn {
+            padding: 8px 16px;
+            border: 1.5px solid rgba(0, 0, 0, 0.12);
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            border-color: #D3580B;
+            color: #D3580B;
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .pagination-info {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* ========== MAP CONTAINER ========== */
+
+        .leaflet-control-zoom {
+            border: none !important;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+            border-radius: 12px !important;
+        }
+
+        .leaflet-control-zoom a {
+            background: white !important;
+            color: #1a1a1a !important;
+            border: none !important;
+            width: 40px !important;
+            height: 40px !important;
+            line-height: 40px !important;
+        }
+
+        .custom-marker {
+            width: 20px;
+            height: 20px;
+            background: #D3580B;
+            border: 2px solid white;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    cursor: pointer;
+    transition: all 0.2s ease;
+        }
+        
+        .custom-marker:hover {
+            transform: rotate(-45deg) scale(1.15);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.35);
+        }
+
+        /* Marker Cluster Styles */
+        .marker-cluster-custom {
+            background: transparent !important;
+            border: none !important;
+        }
+        
+        .marker-cluster-custom div {
+            background: #D3580B !important;
+            color: white !important;
+            border-radius: 50% !important;
+            width: 40px !important;
+            height: 40px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-weight: 700 !important;
+            font-size: 14px !important;
+            border: 3px solid white !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+            transition: all 0.2s ease !important;
+        }
+        
+        .marker-cluster-custom div:hover {
+            transform: scale(1.1) !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important;
+        }
+
+        /* ========== FILTER MODALS ========== */
+        .filter-modal {
+            position: fixed;
+    top: 0;
+            left: 0;
+            right: 0;
+    bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .filter-modal.active {
+            display: flex;
+        }
+
+        .filter-modal-content {
+            background: white;
+            border-radius: 24px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .filter-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .filter-modal-header h2 {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .filter-modal-close {
+            background: none;
+    border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .filter-section {
+            margin-bottom: 24px;
+        }
+
+        .filter-section h3 {
+            font-size: 16px;
+    font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .filter-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+    cursor: pointer;
+        }
+
+        .filter-checkbox input {
+            width: 18px;
+            height: 18px;
+    cursor: pointer;
+        }
+
+        .price-range {
+            display: flex;
+            gap: 12px;
+        }
+
+        .price-range input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .filter-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-filter-apply {
+            padding: 12px 24px;
+            background: #D3580B;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-filter-clear {
+            padding: 12px 24px;
+            background: transparent;
+            color: #666;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+}
+    </style>
 </head>
 <body>
-  <nav class="navbar">
-  <a href="index.html" id="logo">Transpareo</a>
 
-  <ul class="nav-center">
-    <li class="dropdown">
-      <a href="#" class="dropbtn">Je suis locataire</a>
-      <div class="dropdown-content">
-        <div class="dropdown-left">
-          <h3>Fonctionnalités</h3>
-          <ul>
-            <li><a href="#">Recherche de logement</a></li>
-            <li><a href="#">Gestion du bail</a></li>
-            <li><a href="#">Paiement en ligne</a></li>
-          </ul>
-        </div>
-        <div class="dropdown-right">
-          <h3>Blog locataire</h3>
-          <div class="blog-examples">
-            <article>
-              <img src="https://via.placeholder.com/150" alt="Blog 1">
-              <p>Conseils pour bien louer</p>
-            </article>
-            <article>
-              <img src="https://via.placeholder.com/150" alt="Blog 2">
-              <p>Droits du locataire</p>
-            </article>
-            <article>
-              <img src="https://via.placeholder.com/150" alt="Blog 3">
-              <p>Entretenir son logement</p>
-            </article>
-          </div>
-        </div>
-      </div>
-    </li>
+<!-- ========== NAVBAR (EXACTE DE LA LANDING PAGE) ========== -->
+<nav class="navbar">
+    <!-- Logo -->
+    <a href="{% url 'landing-page' %}" id="logo" class="navbar-logo">
+        <span class="logo-text">Transpareo</span>
+    </a>
 
-    <li class="dropdown">
-      <a href="#" class="dropbtn">Je suis propriétaire</a>
-      <div class="dropdown-content">
-        <div class="dropdown-left">
-          <h3>Fonctionnalités</h3>
-          <ul>
-            <li><a href="#">Gestion des locataires</a></li>
-            <li><a href="#">Suivi des paiements</a></li>
-            <li><a href="#">Documents légaux</a></li>
-          </ul>
-        </div>
-        <div class="dropdown-right">
-          <h3>Blog propriétaire</h3>
-          <div class="blog-examples">
-            <article>
-              <img src="https://via.placeholder.com/150" alt="Blog 4">
-              <p>Optimiser ses loyers</p>
-            </article>
-            <article>
-              <img src="https://via.placeholder.com/150" alt="Blog 5">
-              <p>Loi sur la location</p>
-            </article>
-            <article>
-              <img src="https://via.placeholder.com/150" alt="Blog 6">
-              <p>Travaux et rénovations</p>
-            </article>
-          </div>
-        </div>
-      </div>
-    </li>
-    <li><a href="#">Carte</a></li>
-    <li><a href="#">Contactez-nous</a></li>
-  </ul>
-
-  <ul class="user">
-    <li><a href="#">Se connecter</a></li>
-    <li><a href="#">S'inscrire</a></li>
-  </ul>
-</nav>
-<div class="navbar-spacer"></div>
-
-  <section class="hero">
-    <h1>Bienvenue sur la carte interactive de Transpareo</h1>
-    <p>
-      Explorez les logements disponibles à Toulouse avec nos filtres avancés et découvrez leurs détails, notes, prix et photos.
-      Cliquez sur un pin pour plus d'informations.
-    </p>
-  </section>
-
-  <main>
-    <div class="content-container">
-      <div class="search-container">
-        <form class="search-bar" id="search-bar" onsubmit="event.preventDefault(); onSearch();">
-          <div class="search-input-wrapper">
-            <label for="search-input" class="search-label">Rechercher une adresse</label>
-            <input id="search-input" class="search-input" type="text" placeholder="Ex: Rue de Toulouse, Boulevard..." autocomplete="off" />
-          </div>
-
-          <div class="divider"></div>
-
-          <div class="filters-wrapper">
-            <button type="button" id="filters-btn" class="filters-btn">
-              Filtres <span class="chevron-icon">▼</span>
+    <!-- Navigation Center -->
+    <ul class="nav-center">
+        <!-- Dropdown Locataire -->
+        <li class="dropdown">
+            <button class="dropbtn" aria-haspopup="true" aria-expanded="false" aria-controls="dropdown-locataire">
+                Je suis locataire
+                <span class="dropdown-chevron">▾</span>
             </button>
-            <div class="filters-dropdown" id="filters-dropdown">
-              <div class="filter-option">
-                <label for="filter-price">Prix max (€)</label>
-                <input id="filter-price" type="number" min="0" placeholder="Ex: 300000" />
-              </div>
-              <div class="filter-option">
-                <label for="filter-surface">Surface min (m²)</label>
-                <input id="filter-surface" type="number" min="0" placeholder="Ex: 50" />
-              </div>
-              <div class="filter-option">
-                <label for="filter-note">Note min (0-5)</label>
-                <input id="filter-note" type="number" min="0" max="5" step="0.1" placeholder="Ex: 4.5" />
-              </div>
+            <div id="dropdown-locataire" class="dropdown-content" role="menu" aria-hidden="true">
+                <div class="dropdown-inner">
+                    <!-- Connect Section -->
+                    <div class="connect-section">
+                        <div class="connect-header">
+                            <h3>Transpareo Connect</h3>
+                            <p>Découvrez un réseau social qui met en relation directe propriétaires et locataires grâce à des fonctionnalités innovantes.</p>
+                        </div>
+                        <img src="{% static 'images/transpareo-connect.jpg' %}" alt="Illustration Transpareo Connect" class="connect-image" onerror="this.style.display='none';" />
+                        <a href="" class="btn-more">En savoir plus →</a>
+                    </div>
+
+                    <!-- Features Section -->
+                    <div class="features-section">
+                        <h3 class="features-title">Fonctionnalités locataire</h3>
+                        
+                        <div class="feature-category">
+                            <h4 class="feature-category-title">Noter et trouver un logement</h4>
+                            <ul class="feature-list">
+                                <li><a href="">Noter votre location</a></li>
+                                <li><a href="">Trouver votre futur logement</a></li>
+                                <li><a href="#">Temporalité flexible</a></li>
+                            </ul>
+                        </div>
+
+                        <div class="feature-category">
+                            <h4 class="feature-category-title">Gestion administrative</h4>
+                            <ul class="feature-list">
+                                <li><a href="#">Documents importants</a></li>
+                                <li><a href="#">Contrats numériques</a></li>
+                                <li><a href="#">Historique locations</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
+        </li>
 
-          <button type="submit" class="search-btn" aria-label="Rechercher">🔍</button>
-        </form>
-      </div>
+        <!-- Dropdown Propriétaire -->
+        <li class="dropdown">
+            <button class="dropbtn" aria-haspopup="true" aria-expanded="false" aria-controls="dropdown-proprietaire">
+                Je suis propriétaire
+                <span class="dropdown-chevron">▾</span>
+            </button>
+            <div id="dropdown-proprietaire" class="dropdown-content" role="menu" aria-hidden="true">
+                <div class="dropdown-inner">
+                    <!-- Connect Section -->
+                    <div class="connect-section">
+                        <div class="connect-header">
+                            <h3>Transpareo Connect</h3>
+                            <p>Découvrez un réseau social qui met en relation directe propriétaires et locataires grâce à des fonctionnalités innovantes.</p>
+                        </div>
+                        <img src="{% static 'images/transpareo-connect.jpg' %}" alt="Illustration Transpareo Connect" class="connect-image" onerror="this.style.display='none';" />
+                        <a href="" class="btn-more">En savoir plus →</a>
+                    </div>
 
-      <div class="map-and-list">
+                    <!-- Features Section -->
+                    <div class="features-section">
+                        <h3 class="features-title">Fonctionnalités propriétaire</h3>
+                        
+                        <div class="feature-category">
+                            <h4 class="feature-category-title">Mettre en avant son bien</h4>
+                            <ul class="feature-list">
+                                <li><a href="#">Créer une annonce</a></li>
+                                <li><a href="#">Photos professionnelles</a></li>
+                                <li><a href="#">Options de visibilité</a></li>
+                            </ul>
+                        </div>
+
+                        <div class="feature-category">
+                            <h4 class="feature-category-title">Gestion locative</h4>
+                            <ul class="feature-list">
+                                <li><a href="#">Portefeuille immobilier</a></li>
+                                <li><a href="#">Administratif & contrats</a></li>
+                                <li><a href="#">Suivi des locataires</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </li>
+
+        <!-- Simple Links -->
+        <li><a href="{% url 'map' %}" class="nav-link">Carte</a></li>
+        <li><a href="#" class="nav-link">Contactez-nous</a></li>
+    </ul>
+
+    <!-- User Section -->
+    <ul class="user">
+        {% if user.is_authenticated %}
+            <li class="user-profile-dropdown">
+                <button class="user-profile-btn" aria-haspopup="true" aria-expanded="false">
+                    {% if user.avatar %}
+                        <img src="{{ user.avatar.url }}" alt="{{ user.username }}" class="user-avatar">
+                    {% else %}
+                        <div class="user-avatar-placeholder">{{ user.username|first|upper }}</div>
+                    {% endif %}
+                    <span class="user-username">{{ user.username }}</span>
+                    <svg class="user-dropdown-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+                <div class="user-dropdown-content" role="menu" aria-hidden="true">
+                    <a href="{% url 'profile' %}" class="user-dropdown-item">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        <span>Gérer mon compte</span>
+                    </a>
+                    <a href="#" class="user-dropdown-item">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span>Transpareo Connect</span>
+                    </a>
+                    <div class="user-dropdown-divider"></div>
+                    <a href="{% url 'logout' %}" class="user-dropdown-item">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                        <span>Se déconnecter</span>
+                    </a>
+                </div>
+            </li>
+        {% else %}
+            <li>
+                <a href="{% url 'login' %}" class="btn-login">Se connecter</a>
+            </li>
+            <li>
+                <a href="{% url 'signup' %}" class="btn-signup">S'inscrire</a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+
+<div class="navbar-spacer"></div>
+    
+<div class="main-container">
+    <!-- Map -->
+    <div class="map-container">
         <div id="map"></div>
-        <div id="list-logements"></div>
-      </div>
     </div>
-  </main>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-header-top">
+                <div style="flex: 1;">
+                    <h2 class="sidebar-title">Trouvez votre logement</h2>
+                    <p class="sidebar-intro">
+                        Recherchez un bien noté par la communauté ou ajoutez votre avis sur un logement pour aider les autres.
+                    </p>
+                </div>
+                <div class="sidebar-tabs">
+                    <button class="sidebar-tab active" data-tab="carte" onclick="switchTab('carte')">Carte</button>
+                    <button class="sidebar-tab" data-tab="liste" onclick="switchTab('liste')">Liste</button>
+                </div>
+            </div>
+            <p class="sidebar-subtitle" id="results-count">Chargement...</p>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-container">
+            <div class="search-input-wrapper">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input type="text" id="search-input" class="search-input" placeholder="Saisissez une ville, un code postal ou un département" autocomplete="off">
+                <div id="autocomplete-dropdown" class="autocomplete-dropdown"></div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-bar">
+            <div class="filter-chips">
+                <button class="filter-chip" id="filter-type">
+                    <span>5 types de biens</span>
+                    <span class="filter-chip-badge" id="type-badge" style="display: none;">0</span>
+                </button>
+                <button class="filter-chip" id="filter-budget">
+                    <span>Votre budget</span>
+                    <span class="filter-chip-badge" id="budget-badge" style="display: none;">0</span>
+                </button>
+                <button class="filter-chip" id="filter-rooms">
+                    <span>Nb de pièces</span>
+                    <span class="filter-chip-badge" id="rooms-badge" style="display: none;">0</span>
+                </button>
+                <button class="filter-chip" id="filter-rating">
+                    <span>Note</span>
+                    <span class="filter-chip-badge" id="rating-badge" style="display: none;">0</span>
+                </button>
+                <div class="filter-chip-dropdown">
+                    <button class="filter-chip" id="filter-pertinence">
+                        <span>Pertinence</span>
+                        <span class="filter-chip-badge" id="pertinence-badge" style="display: none;">0</span>
+                    </button>
+                    <div class="filter-dropdown-menu">
+                        <button class="filter-dropdown-item" data-pertinence="relevance">Pertinence (défaut)</button>
+                        <button class="filter-dropdown-item" data-pertinence="price-asc">Prix croissant</button>
+                        <button class="filter-dropdown-item" data-pertinence="price-desc">Prix décroissant</button>
+                        <button class="filter-dropdown-item" data-pertinence="rating-desc">Note décroissante</button>
+                        <button class="filter-dropdown-item" data-pertinence="surface-asc">Surface croissante</button>
+                        <button class="filter-dropdown-item" data-pertinence="surface-desc">Surface décroissante</button>
+                        <button class="filter-dropdown-item" data-pertinence="recent">Plus récents</button>
+                        <button class="filter-dropdown-item" data-pertinence="distance">Distance</button>
+                    </div>
+                </div>
+            </div>
+            <button class="filter-show-all" id="show-all-filters" onclick="openAllFiltersModal()">Tous les filtres</button>
+        </div>
+
+        <!-- Logements List -->
+        <div class="logements-list-container">
+            <div class="logements-list" id="logements-list">
+                <div class="empty-state">
+                    <div class="empty-state-icon">⏳</div>
+                    <div class="empty-state-text">Chargement des logements...</div>
+                    <div class="empty-state-subtext">Veuillez patienter</div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination" id="pagination" style="display: none;">
+                <button class="pagination-btn" id="pagination-prev" disabled>Précédent</button>
+                <span class="pagination-info">Page <span id="pagination-current">1</span> sur <span id="pagination-total">1</span></span>
+                <button class="pagination-btn" id="pagination-next" disabled>Suivant</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Modals -->
+<div id="modal-budget" class="filter-modal">
+    <div class="filter-modal-content">
+        <div class="filter-modal-header">
+            <h2>Budget mensuel</h2>
+            <button class="filter-modal-close" onclick="closeModal('modal-budget')">×</button>
+                </div>
+        <div class="filter-section">
+            <div class="price-range">
+                <input type="number" id="price-min" placeholder="Min (€)">
+                <input type="number" id="price-max" placeholder="Max (€)">
+            </div>
+        </div>
+        <div class="filter-modal-footer">
+            <button class="btn-filter-clear" onclick="clearBudget()">Effacer</button>
+            <button class="btn-filter-apply" onclick="applyBudget()">Appliquer</button>
+                        </div>
+                        </div>
+    </div>
+    
+<div id="modal-rating" class="filter-modal">
+    <div class="filter-modal-content">
+        <div class="filter-modal-header">
+            <h2>Note minimale</h2>
+            <button class="filter-modal-close" onclick="closeModal('modal-rating')">×</button>
+                        </div>
+        <div class="filter-section">
+            <label class="filter-checkbox"><input type="radio" name="rating" value="4.5"> 4.5 et plus</label>
+            <label class="filter-checkbox"><input type="radio" name="rating" value="4.0"> 4.0 et plus</label>
+            <label class="filter-checkbox"><input type="radio" name="rating" value="3.5"> 3.5 et plus</label>
+        </div>
+        <div class="filter-modal-footer">
+            <button class="btn-filter-clear" onclick="clearRating()">Effacer</button>
+            <button class="btn-filter-apply" onclick="applyRating()">Appliquer</button>
+        </div>
+                        </div>
+        </div>
+        
+<div id="modal-type" class="filter-modal">
+    <div class="filter-modal-content">
+        <div class="filter-modal-header">
+            <h2>Type de logement</h2>
+            <button class="filter-modal-close" onclick="closeModal('modal-type')">×</button>
+            </div>
+        <div class="filter-section">
+            <label class="filter-checkbox"><input type="checkbox" name="type" value="appartement"> Appartement</label>
+            <label class="filter-checkbox"><input type="checkbox" name="type" value="maison"> Maison</label>
+            <label class="filter-checkbox"><input type="checkbox" name="type" value="studio"> Studio</label>
+            <label class="filter-checkbox"><input type="checkbox" name="type" value="chambre"> Chambre</label>
+            </div>
+        <div class="filter-modal-footer">
+            <button class="btn-filter-clear" onclick="clearType()">Effacer</button>
+            <button class="btn-filter-apply" onclick="applyType()">Appliquer</button>
+        </div>
+        </div>
+    </div>
+    
+<div id="modal-rooms" class="filter-modal">
+    <div class="filter-modal-content">
+        <div class="filter-modal-header">
+            <h2>Nombre de pièces</h2>
+            <button class="filter-modal-close" onclick="closeModal('modal-rooms')">×</button>
+            </div>
+        <div class="filter-section">
+            <label class="filter-checkbox"><input type="checkbox" name="rooms" value="1"> 1 pièce</label>
+            <label class="filter-checkbox"><input type="checkbox" name="rooms" value="2"> 2 pièces</label>
+            <label class="filter-checkbox"><input type="checkbox" name="rooms" value="3"> 3 pièces</label>
+            <label class="filter-checkbox"><input type="checkbox" name="rooms" value="4"> 4 pièces et plus</label>
+        </div>
+        <div class="filter-modal-footer">
+            <button class="btn-filter-clear" onclick="clearRooms()">Effacer</button>
+            <button class="btn-filter-apply" onclick="applyRooms()">Appliquer</button>
+    </div>
+    </div>
+</div>
+
+<!-- Modal Tous les Filtres -->
+<div id="modal-all-filters" class="filter-modal">
+    <div class="filter-modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+        <div class="filter-modal-header">
+            <h2>Tous les filtres</h2>
+            <button class="filter-modal-close" onclick="closeModal('modal-all-filters')">×</button>
+        </div>
+        
+        <div style="padding: 20px;">
+            <!-- Budget -->
+            <div class="filter-section">
+                <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #1a1a1a;">Budget mensuel</h3>
+                <div class="price-range" style="display: flex; gap: 12px;">
+                    <input type="number" id="all-filters-price-min" placeholder="Min (€)" style="flex: 1; padding: 10px; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px;">
+                    <input type="number" id="all-filters-price-max" placeholder="Max (€)" style="flex: 1; padding: 10px; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px;">
+                </div>
+            </div>
+
+            <!-- Type de logement -->
+            <div class="filter-section">
+                <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #1a1a1a;">Type de logement</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+                    <label class="filter-checkbox"><input type="checkbox" name="all-filters-type" value="appartement"> Appartement</label>
+                    <label class="filter-checkbox"><input type="checkbox" name="all-filters-type" value="maison"> Maison</label>
+                    <label class="filter-checkbox"><input type="checkbox" name="all-filters-type" value="studio"> Studio</label>
+                    <label class="filter-checkbox"><input type="checkbox" name="all-filters-type" value="chambre"> Chambre</label>
+                </div>
+            </div>
+
+            <!-- Nombre de pièces -->
+            <div class="filter-section">
+                <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #1a1a1a;">Nombre de pièces</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+                    <label class="filter-checkbox"><input type="checkbox" name="all-filters-rooms" value="1"> 1 pièce</label>
+                    <label class="filter-checkbox"><input type="checkbox" name="all-filters-rooms" value="2"> 2 pièces</label>
+                    <label class="filter-checkbox"><input type="checkbox" name="all-filters-rooms" value="3"> 3 pièces</label>
+                    <label class="filter-checkbox"><input type="checkbox" name="all-filters-rooms" value="4"> 4 pièces</label>
+                    <label class="filter-checkbox"><input type="checkbox" name="all-filters-rooms" value="5"> 5 pièces et plus</label>
+                </div>
+            </div>
+
+            <!-- Surface -->
+            <div class="filter-section">
+                <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #1a1a1a;">Surface (m²)</h3>
+                <div class="price-range" style="display: flex; gap: 12px;">
+                    <input type="number" id="all-filters-surface-min" placeholder="Min (m²)" style="flex: 1; padding: 10px; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px;">
+                    <input type="number" id="all-filters-surface-max" placeholder="Max (m²)" style="flex: 1; padding: 10px; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px;">
+                </div>
+            </div>
+
+            <!-- Note minimale -->
+            <div class="filter-section">
+                <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #1a1a1a;">Note minimale</h3>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label class="filter-checkbox"><input type="radio" name="all-filters-rating" value="4.5"> 4.5 et plus</label>
+                    <label class="filter-checkbox"><input type="radio" name="all-filters-rating" value="4.0"> 4.0 et plus</label>
+                    <label class="filter-checkbox"><input type="radio" name="all-filters-rating" value="3.5"> 3.5 et plus</label>
+                    <label class="filter-checkbox"><input type="radio" name="all-filters-rating" value="3.0"> 3.0 et plus</label>
+                </div>
+            </div>
+
+            <!-- Pertinence -->
+            <div class="filter-section">
+                <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #1a1a1a;">Trier par pertinence</h3>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label class="filter-checkbox"><input type="radio" name="all-filters-pertinence" value="relevance"> Pertinence (défaut)</label>
+                    <label class="filter-checkbox"><input type="radio" name="all-filters-pertinence" value="price-asc"> Prix croissant</label>
+                    <label class="filter-checkbox"><input type="radio" name="all-filters-pertinence" value="price-desc"> Prix décroissant</label>
+                    <label class="filter-checkbox"><input type="radio" name="all-filters-pertinence" value="rating-desc"> Note décroissante</label>
+                    <label class="filter-checkbox"><input type="radio" name="all-filters-pertinence" value="surface-asc"> Surface croissante</label>
+                    <label class="filter-checkbox"><input type="radio" name="all-filters-pertinence" value="surface-desc"> Surface décroissante</label>
+                    <label class="filter-checkbox"><input type="radio" name="all-filters-pertinence" value="recent"> Plus récents</label>
+                    <label class="filter-checkbox"><input type="radio" name="all-filters-pertinence" value="distance"> Distance</label>
+                </div>
+            </div>
+
+            <!-- Équipements -->
+            <div class="filter-section">
+                <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #1a1a1a;">Équipements</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+                    <label class="filter-checkbox"><input type="checkbox" name="all-filters-amenities" value="wifi"> Wi-Fi</label>
+                    <label class="filter-checkbox"><input type="checkbox" name="all-filters-amenities" value="parking"> Parking</label>
+                    <label class="filter-checkbox"><input type="checkbox" name="all-filters-amenities" value="pets"> Animaux acceptés</label>
+                    <label class="filter-checkbox"><input type="checkbox" name="all-filters-amenities" value="elevator"> Ascenseur</label>
+                    <label class="filter-checkbox"><input type="checkbox" name="all-filters-amenities" value="balcony"> Balcon</label>
+                    <label class="filter-checkbox"><input type="checkbox" name="all-filters-amenities" value="garden"> Jardin</label>
+                    <label class="filter-checkbox"><input type="checkbox" name="all-filters-amenities" value="ac"> Climatisation</label>
+                    <label class="filter-checkbox"><input type="checkbox" name="all-filters-amenities" value="washing-machine"> Lave-linge</label>
+                </div>
+            </div>
+
+            <!-- Meublé / Non meublé -->
+            <div class="filter-section">
+                <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #1a1a1a;">Meublé</h3>
+                <div style="display: flex; gap: 16px;">
+                    <label class="filter-checkbox"><input type="radio" name="all-filters-furnished" value="meuble"> Meublé</label>
+                    <label class="filter-checkbox"><input type="radio" name="all-filters-furnished" value="non-meuble"> Non meublé</label>
+                    <label class="filter-checkbox"><input type="radio" name="all-filters-furnished" value="both"> Les deux</label>
+                </div>
+            </div>
+
+            <!-- Proche de -->
+            <div class="filter-section">
+                <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #1a1a1a;">Proche de</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+                    <label class="filter-checkbox"><input type="checkbox" name="all-filters-nearby" value="transport"> Transports en commun</label>
+                    <label class="filter-checkbox"><input type="checkbox" name="all-filters-nearby" value="commerce"> Commerces</label>
+                    <label class="filter-checkbox"><input type="checkbox" name="all-filters-nearby" value="ecole"> Écoles</label>
+                    <label class="filter-checkbox"><input type="checkbox" name="all-filters-nearby" value="hopital"> Hôpitaux</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="filter-modal-footer">
+            <button class="btn-filter-clear" onclick="clearAllFilters()">Effacer tout</button>
+            <button class="btn-filter-apply" onclick="applyAllFilters()">Appliquer les filtres</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+// Attendre que Leaflet soit complètement chargé
+if (typeof L === 'undefined') {
+    console.error('Leaflet not loaded! Make sure the script tag is before this script.');
+}
+// ============================================
+// STATE MANAGEMENT
+// ============================================
+
+const state = {
+    map: null,
+    markers: [], // Array d'objets { marker, logement }
+    markerLayer: null, // Layer group pour tous les marqueurs
+    allLogements: [], // Tous les logements chargés au démarrage
+    visibleLogements: [], // Logements visibles dans les bounds actuels
+    displayedLogements: [], // Logements affichés sur la page actuelle
+    currentPage: 1,
+    itemsPerPage: 20, // Réduire pour des cards plus petites
+    searchTimeout: null,
+    isLoading: false,
+    currentCenter: null,
+    currentZoom: null,
+    lastSearchHash: null, // Cache pour éviter les re-renders inutiles
+    lastDisplayedIds: null, // Cache des IDs affichés
+    favorisIds: new Set() // IDs des logements favoris
+};
+
+const filters = {
+    priceMin: null,
+    priceMax: null,
+    ratingMin: null,
+    propertyTypes: [],
+    rooms: [],
+    surfaceMin: null,
+    surfaceMax: null,
+    amenities: [],
+    furnished: null,
+    nearby: [],
+    pertinence: 'relevance' // Par défaut: pertinence
+};
+
+// ============================================
+// MAP INITIALIZATION
+// ============================================
+
+function initMap() {
+    // Vérifier que l'élément map existe
+    const mapElement = document.getElementById('map');
+    if (!mapElement) {
+        console.error('Map element not found!');
+        return;
+    }
+    
+    try {
+        // Par défaut : carte de France
+        state.map = L.map('map').setView([46.6034, 1.8883], 6);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap',
+            maxZoom: 19
+        }).addTo(state.map);
+        
+        // Créer un layer group pour tous les marqueurs (sans clustering)
+        state.markerLayer = L.layerGroup().addTo(state.map);
+        
+        // Charger TOUS les logements au démarrage (sans recherche)
+        loadAllLogements();
+    } catch (error) {
+        console.error('Error initializing map:', error);
+    }
+    
+    // Écouter les changements de zoom et de position avec debounce
+    let mapUpdateTimeout = null;
+    const scheduleMapUpdate = () => {
+        if (mapUpdateTimeout) clearTimeout(mapUpdateTimeout);
+        mapUpdateTimeout = setTimeout(() => {
+            filterLogementsByVisibleBounds();
+        }, 300); // Réduire le délai pour une réactivité plus rapide
+    };
+    
+    state.map.on('moveend', scheduleMapUpdate);
+    state.map.on('zoomend', scheduleMapUpdate);
+    
+    // Vérifier les paramètres URL depuis la landing page
+    checkURLParams();
+}
+
+function checkURLParams() {
+    if (!state.map) return; // S'assurer que la carte est initialisée
+    
+    const params = new URLSearchParams(window.location.search);
+    
+    // Adresse depuis la landing page
+    const address = params.get('address');
+    const lat = params.get('lat');
+    const lng = params.get('lng');
+    
+    if (lat && lng && state.map) {
+        const latNum = parseFloat(lat);
+        const lngNum = parseFloat(lng);
+        if (!isNaN(latNum) && !isNaN(lngNum)) {
+            state.map.setView([latNum, lngNum], 13);
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.value = address || '';
+            }
+            updateLogementsFromMap();
+        }
+    }
+    
+    // Filtres depuis la landing page
+    if (params.get('price_min')) filters.priceMin = parseInt(params.get('price_min'));
+    if (params.get('price_max')) filters.priceMax = parseInt(params.get('price_max'));
+    if (params.get('rating_min')) filters.ratingMin = parseFloat(params.get('rating_min'));
+    
+    const types = params.getAll('property_type');
+    if (types.length) filters.propertyTypes = types;
+    
+    const rooms = params.getAll('rooms');
+    if (rooms.length) filters.rooms = rooms;
+    
+    updateFilterBadges();
+}
+
+// ============================================
+// AUTOCOMPLETE
+// ============================================
+
+let autocompleteResults = [];
+let autocompleteDebounce = null;
+
+function initAutocomplete() {
+    const searchInput = document.getElementById('search-input');
+    const dropdown = document.getElementById('autocomplete-dropdown');
+    
+    if (!searchInput || !dropdown) return;
+    
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.trim();
+        
+        if (autocompleteDebounce) clearTimeout(autocompleteDebounce);
+        
+        if (query.length < 2) {
+            dropdown.classList.remove('active');
+            return;
+        }
+        
+        autocompleteDebounce = setTimeout(async () => {
+            try {
+                const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=8&autocomplete=1`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.features && data.features.length > 0) {
+                    autocompleteResults = data.features.map(f => ({
+                        lat: f.geometry.coordinates[1],
+                        lng: f.geometry.coordinates[0],
+                        label: f.properties.label,
+                        name: f.properties.name || f.properties.label.split(',')[0],
+                        city: f.properties.city || '',
+                        postcode: f.properties.postcode || ''
+                    }));
+                    
+                    dropdown.innerHTML = autocompleteResults.map((result, index) => `
+                        <div class="autocomplete-item" data-index="${index}">
+                            <div class="autocomplete-item-title">${escapeHtml(result.name)}</div>
+                            <div class="autocomplete-item-sub">${escapeHtml(result.label)}</div>
+                        </div>
+                    `).join('');
+                    dropdown.classList.add('active');
+                } else {
+                    dropdown.innerHTML = '<div class="autocomplete-item">Aucun résultat</div>';
+                    dropdown.classList.add('active');
+                }
+            } catch (error) {
+                console.error('Autocomplete error:', error);
+            }
+        }, 250);
+    });
+    
+    // Clic sur un résultat d'autocomplete
+    dropdown.addEventListener('click', (e) => {
+        const item = e.target.closest('.autocomplete-item');
+        if (item) {
+            const index = parseInt(item.dataset.index);
+            const result = autocompleteResults[index];
+            
+            searchInput.value = result.name;
+            dropdown.classList.remove('active');
+            
+            // Centrer la carte sur l'adresse
+            if (state.map) {
+                state.map.flyTo([result.lat, result.lng], 14, { duration: 1.2 });
+            }
+        }
+    });
+    
+    // Fermer l'autocomplete en cliquant ailleurs
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-input-wrapper')) {
+            dropdown.classList.remove('active');
+        }
+    });
+}
+
+// ============================================
+// LOAD ALL LOGEMENTS (au démarrage)
+// ============================================
+
+function loadAllLogements() {
+    state.isLoading = true;
+    showLoading();
+    
+    // Charger TOUS les logements sans filtre de position
+    fetch('/api/map/logements-by-radius/?lat=46.6034&lng=1.8883&radius=1000')
+        .then(response => response.json())
+        .then(data => {
+            state.isLoading = false;
+            hideLoading();
+            
+            if (data.success && data.logements) {
+                // Construire les URLs d'images correctement
+                state.allLogements = data.logements.map(logement => {
+                    if (logement.url_image && !logement.url_image.startsWith('http')) {
+                        logement.url_image = logement.url_image.startsWith('/') 
+                            ? window.location.origin + logement.url_image
+                            : window.location.origin + '/' + logement.url_image;
+                    }
+                    return logement;
+                });
+                
+                // Recharger les favoris pour mettre à jour les boutons
+                loadFavoris().then(() => {
+                    // Filtrer par bounds visibles et afficher
+                    filterLogementsByVisibleBounds();
+                    
+                    // Afficher tous les marqueurs
+                    updateMarkers(state.allLogements);
+                    updateResultsCount(state.allLogements.length);
+                });
+            } else {
+                state.allLogements = [];
+                displayLogements();
+                updateMarkers([]);
+                updateResultsCount(0);
+            }
+        })
+        .catch(error => {
+            state.isLoading = false;
+            hideLoading();
+            console.error('Error loading logements:', error);
+            showError('Erreur lors du chargement des logements');
+        });
+}
+
+// ============================================
+// FILTER BY VISIBLE BOUNDS (sans nouvelle requête API)
+// ============================================
+
+function filterLogementsByVisibleBounds() {
+    if (!state.map || state.allLogements.length === 0) return;
+    
+    const bounds = state.map.getBounds();
+    
+    // Filtrer les logements visibles dans les bounds
+    let visibleLogements = state.allLogements.filter(l => 
+        bounds.contains([l.latitude, l.longitude])
+    );
+    
+    // Appliquer les filtres utilisateur
+    if (filters.priceMin) {
+        visibleLogements = visibleLogements.filter(l => l.prix >= filters.priceMin);
+    }
+    if (filters.priceMax) {
+        visibleLogements = visibleLogements.filter(l => l.prix <= filters.priceMax);
+    }
+    if (filters.ratingMin) {
+        visibleLogements = visibleLogements.filter(l => l.note >= filters.ratingMin);
+    }
+    if (filters.propertyTypes.length > 0) {
+        visibleLogements = visibleLogements.filter(l => 
+            filters.propertyTypes.includes(l.type)
+        );
+    }
+    if (filters.rooms.length > 0) {
+        visibleLogements = visibleLogements.filter(l => 
+            filters.rooms.includes(l.chambres)
+        );
+    }
+    if (filters.surfaceMin) {
+        visibleLogements = visibleLogements.filter(l => l.surface >= filters.surfaceMin);
+    }
+    if (filters.surfaceMax) {
+        visibleLogements = visibleLogements.filter(l => l.surface <= filters.surfaceMax);
+    }
+    
+    // Trier par pertinence
+    if (filters.pertinence && filters.pertinence !== 'relevance') {
+        switch(filters.pertinence) {
+            case 'price-asc':
+                visibleLogements.sort((a, b) => a.prix - b.prix);
+                break;
+            case 'price-desc':
+                visibleLogements.sort((a, b) => b.prix - a.prix);
+                break;
+            case 'rating-desc':
+                visibleLogements.sort((a, b) => (b.note || 0) - (a.note || 0));
+                break;
+            case 'surface-asc':
+                visibleLogements.sort((a, b) => a.surface - b.surface);
+                break;
+            case 'surface-desc':
+                visibleLogements.sort((a, b) => b.surface - a.surface);
+                break;
+            case 'recent':
+                visibleLogements.sort((a, b) => {
+                    const dateA = new Date(a.date_creation || 0);
+                    const dateB = new Date(b.date_creation || 0);
+                    return dateB - dateA;
+                });
+                break;
+            case 'distance':
+                // Trier par distance du centre de la carte (si disponible)
+                if (state.map) {
+                    const center = state.map.getCenter();
+                    visibleLogements.sort((a, b) => {
+                        const distA = Math.sqrt(
+                            Math.pow(a.latitude - center.lat, 2) + 
+                            Math.pow(a.longitude - center.lng, 2)
+                        );
+                        const distB = Math.sqrt(
+                            Math.pow(b.latitude - center.lat, 2) + 
+                            Math.pow(b.longitude - center.lng, 2)
+                        );
+                        return distA - distB;
+                    });
+                }
+                break;
+        }
+    }
+    
+    // Mettre à jour l'affichage seulement si les résultats ont changé
+    const newIds = visibleLogements.map(l => l.id).sort().join(',');
+    const oldIds = (state.displayedLogements || []).map(l => l.id).sort().join(',');
+    
+    if (newIds !== oldIds || state.currentPage === 1) {
+        // Stocker les logements visibles pour l'affichage
+        state.visibleLogements = visibleLogements;
+        state.currentPage = 1;
+        displayLogements();
+        updateMarkers(visibleLogements);
+        updateResultsCount(visibleLogements.length);
+    }
+}
+
+// ============================================
+// UPDATE LOGEMENTS FROM MAP (ancienne fonction - conservée pour compatibilité)
+// ============================================
+
+function updateLogementsFromMap() {
+    // Maintenant on utilise juste le filtrage par bounds
+    filterLogementsByVisibleBounds();
+}
+
+function calculateRadius(bounds) {
+    const center = bounds.getCenter();
+    const ne = bounds.getNorthEast();
+    const distance = haversineDistance(center.lat, center.lng, ne.lat, ne.lng);
+    return Math.max(5, Math.min(50, distance));
+}
+
+function haversineDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
+// ============================================
+// DISPLAY LOGEMENTS
+// ============================================
+
+// Cache pour éviter les re-renders inutiles
+let lastDisplayHash = null;
+
+function displayLogements() {
+    const container = document.getElementById('logements-list');
+    
+    // Utiliser les logements visibles si disponibles, sinon tous
+    const logementsToDisplay = state.visibleLogements || state.allLogements;
+    
+    if (logementsToDisplay.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">🔍</div>
+                <div class="empty-state-text">Aucun logement dans cette zone</div>
+                <div class="empty-state-subtext">Déplacez la carte pour voir plus de logements</div>
+            </div>
+        `;
+        document.getElementById('pagination').style.display = 'none';
+        lastDisplayHash = null;
+        state.lastDisplayedIds = null;
+        return;
+    }
+    
+    // Pagination
+    const totalPages = Math.ceil(logementsToDisplay.length / state.itemsPerPage);
+    const start = (state.currentPage - 1) * state.itemsPerPage;
+    const end = start + state.itemsPerPage;
+    state.displayedLogements = logementsToDisplay.slice(start, end);
+    
+    // Créer un hash pour vérifier si on doit vraiment mettre à jour
+    const currentIds = state.displayedLogements.map(l => l.id).sort().join(',');
+    
+    // Si les mêmes logements sont déjà affichés, ne pas mettre à jour
+    if (currentIds === state.lastDisplayedIds && state.currentPage === (lastDisplayHash ? JSON.parse(lastDisplayHash).page : 0)) {
+        return;
+    }
+    
+    state.lastDisplayedIds = currentIds;
+    lastDisplayHash = JSON.stringify({ page: state.currentPage, ids: currentIds });
+    
+    // Utiliser requestAnimationFrame pour un rendu fluide
+    requestAnimationFrame(() => {
+        // Utiliser DocumentFragment pour un rendu plus performant
+        const fragment = document.createDocumentFragment();
+        const tempDiv = document.createElement('div');
+        tempDiv.style.display = 'contents';
+        
+        // Afficher
+        tempDiv.innerHTML = state.displayedLogements.map(logement => {
+            // Construire l'URL d'image correctement
+            let imageUrl = 'https://via.placeholder.com/400x300?text=Logement';
+            if (logement.url_image) {
+                if (logement.url_image.startsWith('http')) {
+                    imageUrl = logement.url_image;
+                } else {
+                    // Chemin relatif - construire l'URL complète
+                    imageUrl = logement.url_image.startsWith('/') 
+                        ? window.location.origin + logement.url_image
+                        : window.location.origin + '/' + logement.url_image;
+                }
+            }
+        const typeLabels = {
+            'appartement': 'Appartement',
+            'maison': 'Maison',
+            'studio': 'Studio',
+            'chambre': 'Chambre'
+        };
+        const typeLabel = typeLabels[logement.type] || logement.type;
+        
+            const isFavorite = state.favorisIds && state.favorisIds.has(logement.id);
+            return `
+            <div class="logement-card" data-id="${logement.id}" onclick="selectLogement(${logement.id})">
+                <div class="logement-image-wrapper">
+                    <img src="${imageUrl}" alt="${escapeHtml(logement.titre)}" class="logement-image" loading="lazy" onload="this.classList.add('loaded')" onerror="this.onerror=null; this.src='https://via.placeholder.com/400x300?text=Logement'; this.classList.add('loaded')">
+                    <button 
+                        class="btn-favorite ${isFavorite ? 'active' : ''}" 
+                        aria-label="Ajouter aux favoris"
+                        onclick="event.stopPropagation(); toggleFavorite(${logement.id}, this)"
+                    >
+                        <svg viewBox="0 0 24 24" class="heart-icon">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="logement-content">
+                    <div class="logement-header">
+                        <h3 class="logement-title">${escapeHtml(logement.titre)}</h3>
+                        ${logement.note > 0 ? `<div class="logement-rating">⭐ ${logement.note.toFixed(1)}</div>` : ''}
+                    </div>
+                    <div class="logement-location">${escapeHtml(logement.adresse)}</div>
+                    <div class="logement-features">
+                        <span>${logement.surface} m²</span>
+                        <span>•</span>
+                        <span>${logement.chambres} pièce${logement.chambres > 1 ? 's' : ''}</span>
+                        <span>•</span>
+                        <span>${typeLabel}</span>
+                    </div>
+                    <div class="logement-footer">
+                        <div class="logement-price">${Math.round(logement.prix)}<span> €/mois</span></div>
+                    </div>
+                </div>
+            </div>
+        `;
+        }).join('');
+        
+        // Transférer les éléments au fragment
+        while (tempDiv.firstChild) {
+            fragment.appendChild(tempDiv.firstChild);
+        }
+        
+        // Remplacer le contenu en une seule opération atomique
+        container.innerHTML = '';
+        container.appendChild(fragment);
+        
+        // Pagination
+        updatePagination(totalPages);
+    });
+}
+
+function updatePagination(totalPages) {
+    const pagination = document.getElementById('pagination');
+    const prevBtn = document.getElementById('pagination-prev');
+    const nextBtn = document.getElementById('pagination-next');
+    const currentSpan = document.getElementById('pagination-current');
+    const totalSpan = document.getElementById('pagination-total');
+    
+    if (totalPages <= 1) {
+        pagination.style.display = 'none';
+        return;
+    }
+    
+    pagination.style.display = 'flex';
+    currentSpan.textContent = state.currentPage;
+    totalSpan.textContent = totalPages;
+    
+    prevBtn.disabled = state.currentPage === 1;
+    nextBtn.disabled = state.currentPage === totalPages;
+    
+    prevBtn.onclick = () => {
+        if (state.currentPage > 1) {
+            state.currentPage--;
+            displayLogements();
+            document.getElementById('logements-list').scrollTop = 0;
+        }
+    };
+    
+    nextBtn.onclick = () => {
+        if (state.currentPage < totalPages) {
+            state.currentPage++;
+            displayLogements();
+            document.getElementById('logements-list').scrollTop = 0;
+        }
+    };
+}
+
+// ============================================
+// MARKERS
+// ============================================
+
+// Variable globale pour le tooltip des marqueurs
+let globalTooltip = null;
+
+function initGlobalTooltip() {
+    if (!globalTooltip) {
+        const existing = document.querySelector('.marker-tooltip-global');
+        if (existing) {
+            globalTooltip = existing;
+        } else {
+            globalTooltip = document.createElement('div');
+            globalTooltip.className = 'marker-tooltip marker-tooltip-global';
+            document.body.appendChild(globalTooltip);
+        }
+    }
+    return globalTooltip;
+}
+
+function updateMarkers(logements) {
+    // Masquer le tooltip s'il est visible
+    initGlobalTooltip();
+    if (globalTooltip) {
+        globalTooltip.classList.remove('visible');
+    }
+    
+    // Vider tous les marqueurs existants
+    if (state.markerLayer) {
+        state.markerLayer.clearLayers();
+    }
+    state.markers = [];
+    
+    // Créer un icône de marqueur en petit carré orange (style Airbnb)
+    const createSmallSquareIcon = () => {
+        return L.divIcon({
+            className: 'custom-square-marker',
+            html: `<div style="
+                width: 8px;
+                height: 8px;
+                background: #D3580B;
+                border: 1px solid white;
+                border-radius: 1px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+                transform: rotate(45deg);
+            "></div>`,
+            iconSize: [8, 8],
+            iconAnchor: [4, 4],
+            popupAnchor: [0, -4]
+        });
+    };
+    
+    // S'assurer que le tooltip global existe
+    initGlobalTooltip();
+    
+    // Ajouter les nouveaux marqueurs
+    logements.forEach(logement => {
+        const icon = createSmallSquareIcon();
+        const marker = L.marker([logement.latitude, logement.longitude], { icon });
+        
+        const price = Math.round(logement.prix);
+        const typeLabels = {
+            'appartement': 'Appartement',
+            'maison': 'Maison',
+            'studio': 'Studio',
+            'chambre': 'Chambre'
+        };
+        const typeLabel = typeLabels[logement.type] || logement.type;
+        
+        // Construire l'URL de l'image pour le tooltip
+        let tooltipImageUrl = 'https://via.placeholder.com/400x300?text=Logement';
+        if (logement.url_image) {
+            if (logement.url_image.startsWith('http')) {
+                tooltipImageUrl = logement.url_image;
+            } else {
+                tooltipImageUrl = logement.url_image.startsWith('/') 
+                    ? window.location.origin + logement.url_image
+                    : window.location.origin + '/' + logement.url_image;
+            }
+        }
+        
+        // Description pour le tooltip
+        const tooltipDescription = logement.description || "Logement lumineux situé dans un quartier calme et résidentiel. Proche de tous les commerces et transports en commun.";
+        const truncatedDescription = tooltipDescription.length > 100 
+            ? tooltipDescription.substring(0, 100) + '...' 
+            : tooltipDescription;
+        
+        // Construire le contenu HTML du tooltip
+        const tooltipHTML = `
+            <img src="${tooltipImageUrl}" alt="${escapeHtml(logement.titre)}" class="marker-tooltip-image" onerror="this.src='https://via.placeholder.com/400x300?text=Logement';">
+            <div class="marker-tooltip-content">
+                <h3 class="marker-tooltip-title">${escapeHtml(logement.titre)}</h3>
+                <div class="marker-tooltip-price">${price}€/mois</div>
+                <p class="marker-tooltip-description">${escapeHtml(truncatedDescription)}</p>
+                <div class="marker-tooltip-stats">
+                    <span>${Math.round(logement.surface)}m²</span>
+                    <span>•</span>
+                    <span>${logement.chambres} pièce${logement.chambres > 1 ? 's' : ''}</span>
+                    <span>•</span>
+                    <span>${typeLabel}</span>
+                    ${logement.note > 0 ? `<span style="margin-left: auto;">⭐ ${logement.note.toFixed(1)}</span>` : ''}
+                </div>
+            </div>
+        `;
+        
+        let tooltipTimeout = null;
+        
+        // Utiliser les événements DOM directement sur le marqueur une fois ajouté
+        marker.on('add', function() {
+            setTimeout(() => {
+                const iconElement = marker.getElement();
+                if (iconElement) {
+                    // Trouver l'élément du marqueur (peut être l'icône elle-même)
+                    const markerElement = iconElement.querySelector('.custom-square-marker') || iconElement;
+                    
+                    let tooltipUpdateInterval = null;
+                    
+                    markerElement.addEventListener('mouseenter', function(e) {
+                        clearTimeout(tooltipTimeout);
+                        if (!state.map || !globalTooltip) return;
+                        
+                        const updateTooltipPosition = () => {
+                            if (!state.map || !globalTooltip) return;
+                            const latlng = marker.getLatLng();
+                            const point = state.map.latLngToContainerPoint(latlng);
+                            const mapContainer = state.map.getContainer();
+                            const mapRect = mapContainer.getBoundingClientRect();
+                            
+                            globalTooltip.innerHTML = tooltipHTML;
+                            const tooltipWidth = 280; // max-width du tooltip
+                            const tooltipLeft = mapRect.left + point.x;
+                            const tooltipTop = mapRect.top + point.y - 8;
+                            
+                            // Ajuster la position pour que le tooltip ne sorte pas de l'écran
+                            let finalLeft = tooltipLeft;
+                            if (tooltipLeft - tooltipWidth / 2 < mapRect.left) {
+                                finalLeft = mapRect.left + tooltipWidth / 2;
+                            } else if (tooltipLeft + tooltipWidth / 2 > mapRect.right) {
+                                finalLeft = mapRect.right - tooltipWidth / 2;
+                            }
+                            
+                            globalTooltip.style.left = finalLeft + 'px';
+                            globalTooltip.style.top = tooltipTop + 'px';
+                            globalTooltip.classList.add('visible');
+                        };
+                        
+                        updateTooltipPosition();
+                        
+                        // Mettre à jour la position du tooltip lors du déplacement/zoom
+                        tooltipUpdateInterval = setInterval(updateTooltipPosition, 50);
+                        
+                        e.stopPropagation();
+                    });
+                    
+                    markerElement.addEventListener('mouseleave', function(e) {
+                        clearTimeout(tooltipTimeout);
+                        if (tooltipUpdateInterval) {
+                            clearInterval(tooltipUpdateInterval);
+                            tooltipUpdateInterval = null;
+                        }
+                        tooltipTimeout = setTimeout(() => {
+                            if (globalTooltip) {
+                                globalTooltip.classList.remove('visible');
+                            }
+                        }, 150);
+                    });
+                }
+            }, 100);
+        });
+        
+        // Popup améliorée style Airbnb
+        const ratingStars = logement.note > 0 ? '⭐'.repeat(Math.min(Math.round(logement.note), 5)) : '';
+        const popupContent = `
+            <div style="font-size: 13px; width: 220px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                <div style="font-weight: 600; font-size: 15px; margin-bottom: 8px; color: #222; line-height: 1.3;">${escapeHtml(logement.titre)}</div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <span style="font-weight: 600; color: #222; font-size: 16px;">${price}€</span>
+                    <span style="color: #717171; font-size: 13px;">/mois</span>
+                    ${logement.note > 0 ? `<span style="margin-left: 8px; color: #717171; font-size: 13px;">${ratingStars} ${logement.note.toFixed(1)}</span>` : ''}
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 13px; color: #717171;">
+                    <span>${Math.round(logement.surface)}m²</span>
+                    <span>•</span>
+                    <span>${logement.chambres} pièce${logement.chambres > 1 ? 's' : ''}</span>
+                    <span>•</span>
+                    <span>${typeLabel}</span>
+                </div>
+                <a href="/logement/${logement.id}/" style="
+                    display: inline-block;
+                    width: 100%;
+                    text-align: center;
+                    margin-top: 8px;
+                    padding: 10px 16px;
+                    background: #222;
+                    color: white;
+                    border-radius: 8px;
+                    text-decoration: none;
+                    font-weight: 500;
+                    font-size: 13px;
+                    transition: all 0.2s ease;
+                " onmouseover="this.style.background='#000'" onmouseout="this.style.background='#222'">Voir le logement</a>
+            </div>
+        `;
+        
+        marker.bindPopup(popupContent, {
+            maxWidth: 250,
+            className: 'custom-popup'
+        });
+        
+        marker.on('click', () => {
+            selectLogement(logement.id);
+        });
+        
+        state.markerLayer.addLayer(marker);
+        state.markers.push({ marker, logement });
+    });
+    
+    // Le tooltip est maintenant géré directement par les événements mouseenter/mouseleave
+    // Pas besoin de mettre à jour globalement
+}
+
+function selectLogement(id) {
+    // Rediriger directement vers la page de détail du logement
+    window.location.href = `/logement/${id}/`;
+}
+
+// ============================================
+// FILTERS
+// ============================================
+
+function openModal(modalId) {
+    document.getElementById(modalId).classList.add('active');
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+}
+
+function openAllFiltersModal() {
+    // Charger les valeurs actuelles dans le modal
+    if (filters.priceMin) document.getElementById('all-filters-price-min').value = filters.priceMin;
+    if (filters.priceMax) document.getElementById('all-filters-price-max').value = filters.priceMax;
+    if (filters.surfaceMin) document.getElementById('all-filters-surface-min').value = filters.surfaceMin;
+    if (filters.surfaceMax) document.getElementById('all-filters-surface-max').value = filters.surfaceMax;
+    if (filters.ratingMin) {
+        const ratingInput = document.querySelector(`input[name="all-filters-rating"][value="${filters.ratingMin}"]`);
+        if (ratingInput) ratingInput.checked = true;
+    }
+    
+    // Types
+    filters.propertyTypes.forEach(type => {
+        const input = document.querySelector(`input[name="all-filters-type"][value="${type}"]`);
+        if (input) input.checked = true;
+    });
+    
+    // Pièces
+    filters.rooms.forEach(room => {
+        const input = document.querySelector(`input[name="all-filters-rooms"][value="${room}"]`);
+        if (input) input.checked = true;
+    });
+    
+    // Pertinence
+    if (filters.pertinence) {
+        const pertinenceInput = document.querySelector(`input[name="all-filters-pertinence"][value="${filters.pertinence}"]`);
+        if (pertinenceInput) pertinenceInput.checked = true;
+    }
+    
+    openModal('modal-all-filters');
+}
+
+function applyAllFilters() {
+    // Budget
+    filters.priceMin = document.getElementById('all-filters-price-min').value ? parseInt(document.getElementById('all-filters-price-min').value) : null;
+    filters.priceMax = document.getElementById('all-filters-price-max').value ? parseInt(document.getElementById('all-filters-price-max').value) : null;
+    
+    // Surface
+    filters.surfaceMin = document.getElementById('all-filters-surface-min').value ? parseInt(document.getElementById('all-filters-surface-min').value) : null;
+    filters.surfaceMax = document.getElementById('all-filters-surface-max').value ? parseInt(document.getElementById('all-filters-surface-max').value) : null;
+    
+    // Note
+    const ratingSelected = document.querySelector('input[name="all-filters-rating"]:checked');
+    filters.ratingMin = ratingSelected ? parseFloat(ratingSelected.value) : null;
+    
+    // Types
+    filters.propertyTypes = Array.from(document.querySelectorAll('input[name="all-filters-type"]:checked')).map(cb => cb.value);
+    
+    // Pièces
+    filters.rooms = Array.from(document.querySelectorAll('input[name="all-filters-rooms"]:checked')).map(cb => parseInt(cb.value));
+    
+    // Équipements (pour l'instant stockés mais pas encore utilisés dans le filtrage)
+    filters.amenities = Array.from(document.querySelectorAll('input[name="all-filters-amenities"]:checked')).map(cb => cb.value);
+    
+    // Meublé
+    const furnishedSelected = document.querySelector('input[name="all-filters-furnished"]:checked');
+    filters.furnished = furnishedSelected ? furnishedSelected.value : null;
+    
+    // Proche de (pour l'instant stockés mais pas encore utilisés dans le filtrage)
+    filters.nearby = Array.from(document.querySelectorAll('input[name="all-filters-nearby"]:checked')).map(cb => cb.value);
+    
+    // Pertinence
+    const pertinenceSelected = document.querySelector('input[name="all-filters-pertinence"]:checked');
+    filters.pertinence = pertinenceSelected ? pertinenceSelected.value : 'relevance';
+    
+    updateFilterBadges();
+    closeModal('modal-all-filters');
+    updateLogementsFromMap();
+}
+
+function clearAllFilters() {
+    // Réinitialiser tous les champs
+    document.getElementById('all-filters-price-min').value = '';
+    document.getElementById('all-filters-price-max').value = '';
+    document.getElementById('all-filters-surface-min').value = '';
+    document.getElementById('all-filters-surface-max').value = '';
+    
+    document.querySelectorAll('input[name="all-filters-rating"]').forEach(rb => rb.checked = false);
+    document.querySelectorAll('input[name="all-filters-type"]').forEach(cb => cb.checked = false);
+    document.querySelectorAll('input[name="all-filters-rooms"]').forEach(cb => cb.checked = false);
+    document.querySelectorAll('input[name="all-filters-amenities"]').forEach(cb => cb.checked = false);
+    document.querySelectorAll('input[name="all-filters-furnished"]').forEach(rb => rb.checked = false);
+    document.querySelectorAll('input[name="all-filters-nearby"]').forEach(cb => cb.checked = false);
+    document.querySelectorAll('input[name="all-filters-pertinence"]').forEach(rb => rb.checked = false);
+    const defaultPertinence = document.querySelector('input[name="all-filters-pertinence"][value="relevance"]');
+    if (defaultPertinence) defaultPertinence.checked = true;
+    
+    // Réinitialiser les filtres
+    filters.priceMin = null;
+    filters.priceMax = null;
+    filters.surfaceMin = null;
+    filters.surfaceMax = null;
+    filters.ratingMin = null;
+    filters.propertyTypes = [];
+    filters.rooms = [];
+    filters.amenities = [];
+    filters.furnished = null;
+    filters.nearby = [];
+    filters.pertinence = 'relevance';
+    
+    updateFilterBadges();
+    updateLogementsFromMap();
+}
+
+// Initialiser les gestionnaires d'événements pour les filtres
+function initFilterButtons() {
+    const filterBudget = document.getElementById('filter-budget');
+    const filterRating = document.getElementById('filter-rating');
+    const filterType = document.getElementById('filter-type');
+    const filterRooms = document.getElementById('filter-rooms');
+    
+    if (filterBudget) filterBudget.onclick = () => openModal('modal-budget');
+    if (filterRating) filterRating.onclick = () => openModal('modal-rating');
+    if (filterType) filterType.onclick = () => openModal('modal-type');
+    if (filterRooms) filterRooms.onclick = () => openModal('modal-rooms');
+    
+    // Initialiser le dropdown de pertinence
+    initPertinenceDropdown();
+}
+
+function initPertinenceDropdown() {
+    const dropdownItems = document.querySelectorAll('.filter-dropdown-item[data-pertinence]');
+    
+    dropdownItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const pertinenceValue = item.dataset.pertinence;
+            
+            // Mettre à jour l'état actif
+            dropdownItems.forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            
+            // Appliquer le filtre
+            filters.pertinence = pertinenceValue;
+            updateFilterBadges();
+            updateLogementsFromMap();
+        });
+    });
+    
+    // Mettre à jour l'état actif au chargement
+    updatePertinenceDropdownState();
+}
+
+function updatePertinenceDropdownState() {
+    const dropdownItems = document.querySelectorAll('.filter-dropdown-item[data-pertinence]');
+    dropdownItems.forEach(item => {
+        if (item.dataset.pertinence === filters.pertinence) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
+    });
+}
+
+function applyBudget() {
+    filters.priceMin = document.getElementById('price-min').value ? parseInt(document.getElementById('price-min').value) : null;
+    filters.priceMax = document.getElementById('price-max').value ? parseInt(document.getElementById('price-max').value) : null;
+    updateFilterBadges();
+    closeModal('modal-budget');
+    updateLogementsFromMap();
+}
+
+function clearBudget() {
+    document.getElementById('price-min').value = '';
+    document.getElementById('price-max').value = '';
+    filters.priceMin = null;
+    filters.priceMax = null;
+    updateFilterBadges();
+}
+
+function applyRating() {
+    const selected = document.querySelector('input[name="rating"]:checked');
+    filters.ratingMin = selected ? parseFloat(selected.value) : null;
+    updateFilterBadges();
+    closeModal('modal-rating');
+    updateLogementsFromMap();
+}
+
+function clearRating() {
+    document.querySelectorAll('input[name="rating"]').forEach(r => r.checked = false);
+    filters.ratingMin = null;
+    updateFilterBadges();
+}
+
+function applyType() {
+    filters.propertyTypes = Array.from(document.querySelectorAll('input[name="type"]:checked')).map(c => c.value);
+    updateFilterBadges();
+    closeModal('modal-type');
+    updateLogementsFromMap();
+}
+
+function clearType() {
+    document.querySelectorAll('input[name="type"]').forEach(c => c.checked = false);
+    filters.propertyTypes = [];
+    updateFilterBadges();
+}
+
+function applyRooms() {
+    filters.rooms = Array.from(document.querySelectorAll('input[name="rooms"]:checked')).map(c => c.value);
+    updateFilterBadges();
+    closeModal('modal-rooms');
+    updateLogementsFromMap();
+}
+
+function clearRooms() {
+    document.querySelectorAll('input[name="rooms"]').forEach(c => c.checked = false);
+    filters.rooms = [];
+    updateFilterBadges();
+}
+
+function applyPertinence() {
+    // Cette fonction n'est plus utilisée car on utilise le dropdown
+    // Conservée pour compatibilité
+    updatePertinenceDropdownState();
+}
+
+function clearPertinence() {
+    filters.pertinence = 'relevance';
+    updatePertinenceDropdownState();
+    updateFilterBadges();
+    updateLogementsFromMap();
+}
+
+function updateFilterBadges() {
+    // Budget
+    const budgetBadge = document.getElementById('budget-badge');
+    if (filters.priceMin || filters.priceMax) {
+        budgetBadge.textContent = '1';
+        budgetBadge.style.display = 'inline-block';
+        document.getElementById('filter-budget').classList.add('active');
+    } else {
+        budgetBadge.style.display = 'none';
+        document.getElementById('filter-budget').classList.remove('active');
+    }
+    
+    // Rating
+    const ratingBadge = document.getElementById('rating-badge');
+    if (filters.ratingMin) {
+        ratingBadge.textContent = '1';
+        ratingBadge.style.display = 'inline-block';
+        document.getElementById('filter-rating').classList.add('active');
+    } else {
+        ratingBadge.style.display = 'none';
+        document.getElementById('filter-rating').classList.remove('active');
+    }
+    
+    // Type
+    const typeBadge = document.getElementById('type-badge');
+    if (filters.propertyTypes.length > 0) {
+        typeBadge.textContent = filters.propertyTypes.length;
+        typeBadge.style.display = 'inline-block';
+        document.getElementById('filter-type').classList.add('active');
+    } else {
+        typeBadge.style.display = 'none';
+        document.getElementById('filter-type').classList.remove('active');
+    }
+    
+    // Rooms
+    const roomsBadge = document.getElementById('rooms-badge');
+    if (filters.rooms.length > 0) {
+        roomsBadge.textContent = filters.rooms.length;
+        roomsBadge.style.display = 'inline-block';
+        document.getElementById('filter-rooms').classList.add('active');
+    } else {
+        roomsBadge.style.display = 'none';
+        document.getElementById('filter-rooms').classList.remove('active');
+    }
+    
+    // Pertinence
+    const pertinenceBadge = document.getElementById('pertinence-badge');
+    if (filters.pertinence && filters.pertinence !== 'relevance') {
+        pertinenceBadge.textContent = '1';
+        pertinenceBadge.style.display = 'inline-block';
+        const pertinenceChip = document.getElementById('filter-pertinence');
+        if (pertinenceChip) pertinenceChip.classList.add('active');
+        updatePertinenceDropdownState();
+    } else {
+        pertinenceBadge.style.display = 'none';
+        const pertinenceChip = document.getElementById('filter-pertinence');
+        if (pertinenceChip) pertinenceChip.classList.remove('active');
+        updatePertinenceDropdownState();
+    }
+}
+
+// ============================================
+// UTILITIES
+// ============================================
+
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function showLoading() {
+    document.getElementById('logements-list').innerHTML = `
+        <div class="empty-state">
+            <div class="empty-state-icon">⏳</div>
+            <div class="empty-state-text">Chargement...</div>
+        </div>
+    `;
+}
+
+function hideLoading() {
+    // Le contenu sera remplacé par displayLogements()
+    // Cette fonction existe pour la compatibilité
+}
+
+function showError(message) {
+    document.getElementById('logements-list').innerHTML = `
+        <div class="empty-state">
+            <div class="empty-state-icon">⚠️</div>
+            <div class="empty-state-text">${escapeHtml(message)}</div>
+        </div>
+    `;
+}
+
+function updateResultsCount(count) {
+    const countEl = document.getElementById('results-count');
+    if (count === 0) {
+        countEl.textContent = 'Aucun logement trouvé';
+    } else if (count === 1) {
+        countEl.textContent = '1 logement trouvé';
+    } else {
+        countEl.textContent = `${count} logements trouvés`;
+    }
+}
+
+// ============================================
+// INITIALIZATION
+// ============================================
+
+// ============================================
+// FAVORIS
+// ============================================
+
+function toggleFavorite(logementId, button) {
+    event.stopPropagation();
+    
+    // Toggle visuel immédiat
+    button.classList.toggle('active');
+    
+    // Mettre à jour l'état
+    if (button.classList.contains('active')) {
+        state.favorisIds.add(logementId);
+    } else {
+        state.favorisIds.delete(logementId);
+    }
+    
+    // Appel AJAX pour sauvegarder en favoris
+    fetch(`/api/map/logement/${logementId}/favori/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success || data.error) {
+            // Annuler le toggle si erreur
+            button.classList.toggle('active');
+            if (button.classList.contains('active')) {
+                state.favorisIds.add(logementId);
+            } else {
+                state.favorisIds.delete(logementId);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error toggling favorite:', error);
+        // Annuler le toggle si erreur
+        button.classList.toggle('active');
+        if (button.classList.contains('active')) {
+            state.favorisIds.add(logementId);
+        } else {
+            state.favorisIds.delete(logementId);
+        }
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function loadFavoris() {
+    // Charger les favoris de l'utilisateur
+    return fetch('/api/get-user-favoris/', {
+        method: 'GET',
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.authenticated && data.favoris) {
+            state.favorisIds = new Set(data.favoris);
+        }
+        return data;
+    })
+    .catch(error => {
+        console.error('Error loading favoris:', error);
+        return null;
+    });
+}
+
+// ============================================
+// TAB SWITCHING
+// ============================================
+
+function switchTab(tabName) {
+    // Mettre à jour les onglets
+    document.querySelectorAll('.sidebar-tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.dataset.tab === tabName) {
+            tab.classList.add('active');
+        }
+    });
+    
+    if (tabName === 'liste') {
+        // Rediriger vers la page liste
+        window.location.href = '/liste/';
+    } else if (tabName === 'carte') {
+        // Rester sur la page carte (déjà là)
+        // Ne rien faire
+    }
+}
+
+// ============================================
+// SCROLL DETECTION (cacher la section de recherche)
+// ============================================
+
+function initScrollDetection() {
+    const logementsList = document.getElementById('logements-list');
+    const sidebarHeader = document.querySelector('.sidebar-header');
+    const searchContainer = document.querySelector('.search-container');
+    const filtersBar = document.querySelector('.filters-bar');
+    
+    if (!logementsList) return;
+    
+    let lastScrollTop = 0;
+    let scrollThreshold = 50; // Seuil de scroll pour déclencher la disparition
+    let ticking = false; // Pour throttler les événements scroll
+    
+    logementsList.addEventListener('scroll', () => {
+        if (!ticking) {
+            window.requestAnimationFrame(() => {
+                const scrollTop = logementsList.scrollTop;
+                
+                if (scrollTop > scrollThreshold && lastScrollTop <= scrollThreshold) {
+                    // Scroller vers le bas - cacher les sections
+                    if (sidebarHeader) sidebarHeader.classList.add('hidden');
+                    if (searchContainer) searchContainer.classList.add('hidden');
+                    if (filtersBar) filtersBar.classList.add('hidden');
+                } else if (scrollTop <= scrollThreshold && lastScrollTop > scrollThreshold) {
+                    // Scroller vers le haut - afficher les sections
+                    if (sidebarHeader) sidebarHeader.classList.remove('hidden');
+                    if (searchContainer) searchContainer.classList.remove('hidden');
+                    if (filtersBar) filtersBar.classList.remove('hidden');
+                }
+                
+                lastScrollTop = scrollTop;
+                ticking = false;
+            });
+            
+            ticking = true;
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM Content Loaded - Starting initialization...');
+    
+    // Vérifier que Leaflet est chargé
+    if (typeof L === 'undefined') {
+        console.error('Leaflet library not loaded!');
+        return;
+    }
+    console.log('Leaflet loaded successfully');
+    
+    // Vérifier que les éléments existent
+    const mapElement = document.getElementById('map');
+    const searchInput = document.getElementById('search-input');
+    
+    if (!mapElement) {
+        console.error('Map element not found in DOM!');
+        return;
+    }
+    console.log('Map element found');
+    
+    if (!searchInput) {
+        console.warn('Search input not found, but continuing...');
+    }
+    
+    // Initialiser les boutons de filtres
+    try {
+        initFilterButtons();
+        console.log('Filter buttons initialized');
+    } catch (error) {
+        console.error('Error initializing filter buttons:', error);
+    }
+    
+    // Initialiser l'autocomplete
+    try {
+        initAutocomplete();
+        console.log('Autocomplete initialized');
+    } catch (error) {
+        console.error('Error initializing autocomplete:', error);
+    }
+    
+    // Initialiser la détection de scroll
+    try {
+        // Attendre un peu que la liste soit chargée
+        setTimeout(() => {
+            initScrollDetection();
+            console.log('Scroll detection initialized');
+        }, 500);
+    } catch (error) {
+        console.error('Error initializing scroll detection:', error);
+    }
+    
+    // Fermer les modals en cliquant en dehors
+    try {
+        document.querySelectorAll('.filter-modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+        console.log('Modal close handlers initialized');
+    } catch (error) {
+        console.error('Error initializing modal handlers:', error);
+    }
+    
+    // Charger les favoris au démarrage
+    try {
+        loadFavoris().then(() => {
+            console.log('Favoris loaded');
+        }).catch(error => {
+            console.error('Error loading favoris:', error);
+        });
+    } catch (error) {
+        console.error('Error in loadFavoris:', error);
+    }
+    
+    // Initialiser la carte (doit être en dernier)
+    try {
+        initMap();
+        console.log('Map initialization started');
+    } catch (error) {
+        console.error('Error initializing map:', error);
+    }
+});
+
+</script>
 
 </body>
 </html>
-

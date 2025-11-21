@@ -1,0 +1,632 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Aide & Support{% endblock %}
+
+{% block content %}
+<div class="connect-help-page">
+    <div class="help-container">
+        <!-- En-tête -->
+        <div class="page-header">
+            <h1>Aide & Support</h1>
+            <p class="page-subtitle">Trouvez des réponses à vos questions sur Transpareo Connect</p>
+        </div>
+
+        <!-- Barre de recherche -->
+        <div class="help-search-section">
+            <div class="search-box">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="M21 21l-4.35-4.35"></path>
+                </svg>
+                <input type="text" id="help-search" class="search-input" placeholder="Rechercher dans l'aide...">
+            </div>
+        </div>
+
+        <!-- Catégories d'aide -->
+        <div class="help-categories">
+            <div class="category-card" onclick="scrollToSection('getting-started')">
+                <div class="category-icon">🚀</div>
+                <h3 class="category-title">Premiers pas</h3>
+                <p class="category-description">Découvrez comment utiliser Transpareo Connect</p>
+            </div>
+            <div class="category-card" onclick="scrollToSection('profile')">
+                <div class="category-icon">👤</div>
+                <h3 class="category-title">Profil</h3>
+                <p class="category-description">Gérer votre profil et vos paramètres</p>
+            </div>
+            <div class="category-card" onclick="scrollToSection('connections')">
+                <div class="category-icon">🤝</div>
+                <h3 class="category-title">Connexions</h3>
+                <p class="category-description">Se connecter avec d'autres utilisateurs</p>
+            </div>
+            <div class="category-card" onclick="scrollToSection('messages')">
+                <div class="category-icon">💬</div>
+                <h3 class="category-title">Messagerie</h3>
+                <p class="category-description">Envoyer et recevoir des messages</p>
+            </div>
+            <div class="category-card" onclick="scrollToSection('lease')">
+                <div class="category-icon">📄</div>
+                <h3 class="category-title">Gestion de bail</h3>
+                <p class="category-description">Gérer votre bail et vos paiements</p>
+            </div>
+            <div class="category-card" onclick="scrollToSection('safety')">
+                <div class="category-icon">🛡️</div>
+                <h3 class="category-title">Sécurité</h3>
+                <p class="category-description">Protéger votre compte et vos données</p>
+            </div>
+        </div>
+
+        <!-- Contenu de l'aide -->
+        <div class="help-content">
+            <!-- Premiers pas -->
+            <section id="getting-started" class="help-section">
+                <h2 class="section-title">🚀 Premiers pas</h2>
+                
+                <div class="help-item">
+                    <h3 class="help-question">Qu'est-ce que Transpareo Connect ?</h3>
+                    <div class="help-answer">
+                        <p>Transpareo Connect est un réseau social dédié à l'immobilier qui permet aux locataires et propriétaires de :</p>
+                        <ul>
+                            <li>Se connecter et échanger</li>
+                            <li>Gérer leurs contrats de location</li>
+                            <li>Construire leur réputation</li>
+                            <li>Participer à des groupes thématiques</li>
+                            <li>Trouver des logements ou des locataires</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="help-item">
+                    <h3 class="help-question">Comment créer mon compte ?</h3>
+                    <div class="help-answer">
+                        <p>Pour créer votre compte Transpareo Connect :</p>
+                        <ol>
+                            <li>Cliquez sur "Inscription" dans le menu</li>
+                            <li>Remplissez le formulaire avec vos informations</li>
+                            <li>Choisissez votre type de compte (Locataire, Propriétaire, ou les deux)</li>
+                            <li>Vérifiez votre email</li>
+                            <li>Complétez votre profil</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="help-item">
+                    <h3 class="help-question">Comment personnaliser mon profil ?</h3>
+                    <div class="help-answer">
+                        <p>Pour personnaliser votre profil :</p>
+                        <ol>
+                            <li>Allez sur votre profil</li>
+                            <li>Cliquez sur "Éditer profil"</li>
+                            <li>Modifiez vos informations (photo, biographie, localisation, etc.)</li>
+                            <li>Enregistrez vos modifications</li>
+                        </ol>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Profil -->
+            <section id="profile" class="help-section">
+                <h2 class="section-title">👤 Profil</h2>
+                
+                <div class="help-item">
+                    <h3 class="help-question">Comment vérifier mon profil ?</h3>
+                    <div class="help-answer">
+                        <p>Pour obtenir des badges de vérification :</p>
+                        <ul>
+                            <li><strong>Identité vérifiée</strong> : Uploadez une pièce d'identité (CNI, passeport)</li>
+                            <li><strong>Propriétaire vérifié</strong> : Uploadez un justificatif de propriété (taxe foncière, acte notarié)</li>
+                        </ul>
+                        <p>Vos documents seront vérifiés par notre équipe. Une fois validés, les badges apparaîtront sur votre profil.</p>
+                    </div>
+                </div>
+
+                <div class="help-item">
+                    <h3 class="help-question">Comment changer ma photo de profil ?</h3>
+                    <div class="help-answer">
+                        <p>Pour modifier votre photo de profil :</p>
+                        <ol>
+                            <li>Allez sur votre profil</li>
+                            <li>Cliquez sur "Éditer profil"</li>
+                            <li>Cliquez sur votre photo de profil actuelle</li>
+                            <li>Sélectionnez une nouvelle image (JPG, PNG, max 5MB)</li>
+                            <li>Enregistrez</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="help-item">
+                    <h3 class="help-question">Comment gérer la visibilité de mon profil ?</h3>
+                    <div class="help-answer">
+                        <p>Dans les paramètres Connect (Onglet "Profil"), vous pouvez choisir :</p>
+                        <ul>
+                            <li><strong>Public</strong> : Visible par tous</li>
+                            <li><strong>Connexions uniquement</strong> : Visible uniquement par vos connexions</li>
+                            <li><strong>Privé</strong> : Invisible, uniquement recherche par nom</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Connexions -->
+            <section id="connections" class="help-section">
+                <h2 class="section-title">🤝 Connexions</h2>
+                
+                <div class="help-item">
+                    <h3 class="help-question">Comment se connecter à un utilisateur ?</h3>
+                    <div class="help-answer">
+                        <p>Pour se connecter à un utilisateur :</p>
+                        <ol>
+                            <li>Trouvez l'utilisateur via la recherche</li>
+                            <li>Allez sur son profil</li>
+                            <li>Cliquez sur "Se connecter"</li>
+                            <li>Optionnellement, ajoutez un message personnalisé</li>
+                            <li>Envoyez la demande</li>
+                        </ol>
+                        <p>L'utilisateur recevra une notification et pourra accepter ou ignorer votre demande.</p>
+                    </div>
+                </div>
+
+                <div class="help-item">
+                    <h3 class="help-question">Comment gérer mes connexions ?</h3>
+                    <div class="help-answer">
+                        <p>Vous pouvez gérer vos connexions depuis "Mes connexions" :</p>
+                        <ul>
+                            <li>Voir toutes vos connexions</li>
+                            <li>Rechercher dans vos connexions</li>
+                            <li>Retirer une connexion</li>
+                            <li>Voir les demandes en attente</li>
+                            <li>Accepter ou ignorer des demandes</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Messagerie -->
+            <section id="messages" class="help-section">
+                <h2 class="section-title">💬 Messagerie</h2>
+                
+                <div class="help-item">
+                    <h3 class="help-question">Comment envoyer un message ?</h3>
+                    <div class="help-answer">
+                        <p>Pour envoyer un message :</p>
+                        <ol>
+                            <li>Allez sur le profil de l'utilisateur</li>
+                            <li>Cliquez sur "Envoyer un message"</li>
+                            <li>Écrivez votre message</li>
+                            <li>Optionnellement, ajoutez une pièce jointe (image, document)</li>
+                            <li>Envoyez</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="help-item">
+                    <h3 class="help-question">Comment contrôler qui peut m'envoyer des messages ?</h3>
+                    <div class="help-answer">
+                        <p>Dans les paramètres Connect (Onglet "Profil"), section "Qui peut me contacter", vous pouvez choisir :</p>
+                        <ul>
+                            <li><strong>Tout le monde</strong> : Tous les utilisateurs peuvent vous envoyer un message</li>
+                            <li><strong>Mes connexions uniquement</strong> : Seulement vos connexions</li>
+                            <li><strong>Vérifiés uniquement</strong> : Seulement les utilisateurs vérifiés</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="help-item">
+                    <h3 class="help-question">Comment bloquer un utilisateur ?</h3>
+                    <div class="help-answer">
+                        <p>Pour bloquer un utilisateur :</p>
+                        <ol>
+                            <li>Allez sur son profil</li>
+                            <li>Cliquez sur le menu "Plus" (⋯)</li>
+                            <li>Sélectionnez "Bloquer"</li>
+                            <li>Confirmez</li>
+                        </ol>
+                        <p>Vous pouvez aussi gérer les utilisateurs bloqués dans Paramètres Connect > Confidentialité.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Gestion de bail -->
+            <section id="lease" class="help-section">
+                <h2 class="section-title">📄 Gestion de bail</h2>
+                
+                <div class="help-item">
+                    <h3 class="help-question">Comment gérer mon bail ?</h3>
+                    <div class="help-answer">
+                        <p>En tant que locataire, accédez à "Gérer mon bail" dans le menu Connect. Vous pouvez :</p>
+                        <ul>
+                            <li>Consulter les détails de votre contrat</li>
+                            <li>Suivre vos paiements</li>
+                            <li>Signaler des problèmes de maintenance</li>
+                            <li>Échanger avec votre propriétaire</li>
+                            <li>Gérer vos documents</li>
+                            <li>Demander la résiliation</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="help-item">
+                    <h3 class="help-question">Comment signaler un problème de maintenance ?</h3>
+                    <div class="help-answer">
+                        <p>Pour signaler un problème :</p>
+                        <ol>
+                            <li>Allez dans "Gérer mon bail" > Onglet "Entretien & Travaux"</li>
+                            <li>Cliquez sur "Signaler un problème"</li>
+                            <li>Remplissez le formulaire (type, description, photos, urgence)</li>
+                            <li>Envoyez au propriétaire</li>
+                        </ol>
+                        <p>Le propriétaire recevra une notification et pourra répondre.</p>
+                    </div>
+                </div>
+
+                <div class="help-item">
+                    <h3 class="help-question">Comment gérer mes locations (propriétaire) ?</h3>
+                    <div class="help-answer">
+                        <p>En tant que propriétaire, accédez à "Gérer mes locations". Vous pouvez :</p>
+                        <ul>
+                            <li>Voir toutes vos locations</li>
+                            <li>Gérer les paiements et générer des quittances</li>
+                            <li>Répondre aux demandes de maintenance</li>
+                            <li>Échanger avec vos locataires</li>
+                            <li>Gérer les résiliations</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sécurité -->
+            <section id="safety" class="help-section">
+                <h2 class="section-title">🛡️ Sécurité</h2>
+                
+                <div class="help-item">
+                    <h3 class="help-question">Comment protéger mon compte ?</h3>
+                    <div class="help-answer">
+                        <p>Pour protéger votre compte :</p>
+                        <ul>
+                            <li>Utilisez un mot de passe fort et unique</li>
+                            <li>Activez l'authentification à deux facteurs (2FA) dans Paramètres > Sécurité</li>
+                            <li>Ne partagez jamais vos identifiants</li>
+                            <li>Surveillez vos sessions actives</li>
+                            <li>Signalez toute activité suspecte</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="help-item">
+                    <h3 class="help-question">Comment activer la 2FA ?</h3>
+                    <div class="help-answer">
+                        <p>Pour activer l'authentification à deux facteurs :</p>
+                        <ol>
+                            <li>Allez dans Paramètres Connect > Sécurité</li>
+                            <li>Section "Authentification à deux facteurs"</li>
+                            <li>Cliquez sur "Activer la 2FA"</li>
+                            <li>Suivez les instructions pour configurer</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="help-item">
+                    <h3 class="help-question">Comment télécharger mes données (RGPD) ?</h3>
+                    <div class="help-answer">
+                        <p>Pour télécharger vos données personnelles :</p>
+                        <ol>
+                            <li>Allez dans Paramètres Connect > Confidentialité</li>
+                            <li>Section "Données personnelles"</li>
+                            <li>Cliquez sur "Télécharger mes données"</li>
+                            <li>Un fichier JSON sera téléchargé avec toutes vos données</li>
+                        </ol>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Contact support -->
+            <div class="contact-support-section">
+                <h2 class="section-title">Besoin d'aide supplémentaire ?</h2>
+                <p>Si vous ne trouvez pas la réponse à votre question, notre équipe est là pour vous aider.</p>
+                <div class="contact-options">
+                    <a href="mailto:support@transpareo.com" class="contact-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        support@transpareo.com
+                    </a>
+                    <a href="tel:+33123456789" class="contact-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                        </svg>
+                        01 23 45 67 89
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .connect-help-page {
+        min-height: calc(100vh - 70px);
+        background: #f5f5f5;
+        padding-top: 70px;
+    }
+
+    .help-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 32px 24px;
+    }
+
+    .page-header {
+        margin-bottom: 32px;
+        text-align: center;
+    }
+
+    .page-header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0 0 8px 0;
+    }
+
+    .page-subtitle {
+        font-size: 15px;
+        color: #666;
+        margin: 0;
+    }
+
+    /* Recherche */
+    .help-search-section {
+        margin-bottom: 32px;
+    }
+
+    .search-box {
+        position: relative;
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #999;
+        pointer-events: none;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 14px 16px 14px 52px;
+        border: 2px solid #e5e5e5;
+        border-radius: 8px;
+        font-size: 16px;
+        font-family: inherit;
+        transition: all 0.2s ease;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: #D3580B;
+        box-shadow: 0 0 0 3px rgba(211, 88, 11, 0.1);
+    }
+
+    /* Catégories */
+    .help-categories {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 48px;
+    }
+
+    .category-card {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .category-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    }
+
+    .category-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+    }
+
+    .category-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0 0 8px 0;
+    }
+
+    .category-description {
+        font-size: 14px;
+        color: #666;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    /* Contenu de l'aide */
+    .help-content {
+        background: white;
+        border-radius: 12px;
+        padding: 32px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .help-section {
+        margin-bottom: 48px;
+        padding-bottom: 48px;
+        border-bottom: 2px solid #e5e5e5;
+    }
+
+    .help-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .section-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0 0 32px 0;
+    }
+
+    .help-item {
+        margin-bottom: 32px;
+    }
+
+    .help-question {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0 0 12px 0;
+    }
+
+    .help-answer {
+        padding-left: 24px;
+        color: #333;
+        line-height: 1.6;
+    }
+
+    .help-answer p {
+        margin: 0 0 12px 0;
+    }
+
+    .help-answer ul,
+    .help-answer ol {
+        margin: 0 0 12px 0;
+        padding-left: 24px;
+    }
+
+    .help-answer li {
+        margin-bottom: 8px;
+    }
+
+    .help-answer strong {
+        color: #1a1a1a;
+        font-weight: 600;
+    }
+
+    /* Contact support */
+    .contact-support-section {
+        background: linear-gradient(135deg, rgba(211, 88, 11, 0.05) 0%, rgba(196, 81, 10, 0.05) 100%);
+        border: 2px solid #D3580B;
+        border-radius: 12px;
+        padding: 32px;
+        text-align: center;
+        margin-top: 48px;
+    }
+
+    .contact-support-section h2 {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0 0 12px 0;
+    }
+
+    .contact-support-section p {
+        color: #666;
+        margin: 0 0 24px 0;
+    }
+
+    .contact-options {
+        display: flex;
+        gap: 16px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .contact-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 24px;
+        background: #D3580B;
+        color: white;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+    .contact-btn:hover {
+        background: #c4510a;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(211, 88, 11, 0.3);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .help-container {
+            padding: 16px;
+        }
+
+        .help-content {
+            padding: 20px;
+        }
+
+        .help-categories {
+            grid-template-columns: 1fr;
+        }
+
+        .contact-options {
+            flex-direction: column;
+        }
+
+        .contact-btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+
+<script>
+    function scrollToSection(sectionId) {
+        const section = document.getElementById(sectionId);
+        if (section) {
+            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    // Recherche dans l'aide
+    document.getElementById('help-search')?.addEventListener('input', function(e) {
+        const query = e.target.value.toLowerCase().trim();
+        const sections = document.querySelectorAll('.help-section');
+        const items = document.querySelectorAll('.help-item');
+
+        if (!query) {
+            sections.forEach(section => section.style.display = 'block');
+            items.forEach(item => item.style.display = 'block');
+            return;
+        }
+
+        sections.forEach(section => {
+            section.style.display = 'none';
+        });
+
+        items.forEach(item => {
+            const question = item.querySelector('.help-question').textContent.toLowerCase();
+            const answer = item.querySelector('.help-answer').textContent.toLowerCase();
+            
+            if (question.includes(query) || answer.includes(query)) {
+                item.style.display = 'block';
+                item.closest('.help-section').style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}
+

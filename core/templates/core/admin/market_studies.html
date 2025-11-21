@@ -1,0 +1,169 @@
+{% extends 'core/admin/base_admin.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block page_title %}Études de Marché{% endblock %}
+
+{% block content %}
+<div class="market-studies-page">
+    <!-- Header Actions -->
+    <div class="studies-header">
+        <div class="header-left">
+            <h1 class="page-title-main">Études de Marché</h1>
+            <p class="page-subtitle">Créez et gérez vos questionnaires d'étude de marché</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'admin-market-study-create' %}" class="btn-primary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Nouvelle étude
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-section">
+        <form method="GET" class="filters-form">
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label for="status_filter">Statut</label>
+                    <select id="status_filter" name="status" class="filter-select" onchange="this.form.submit()">
+                        <option value="">Tous les statuts</option>
+                        <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Brouillon</option>
+                        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>En cours</option>
+                        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Terminée</option>
+                        <option value="archived" {% if status_filter == 'archived' %}selected{% endif %}>Archivée</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="date_from">Date début</label>
+                    <input type="date" id="date_from" name="date_from" class="filter-input" value="{{ date_from }}" onchange="this.form.submit()">
+                </div>
+                <div class="filter-group">
+                    <label for="date_to">Date fin</label>
+                    <input type="date" id="date_to" name="date_to" class="filter-input" value="{{ date_to }}" onchange="this.form.submit()">
+                </div>
+                <div class="filter-group">
+                    <button type="reset" class="btn-secondary" onclick="window.location.href='{% url 'admin-market-studies' %}'">
+                        Réinitialiser
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Studies Grid -->
+    <div class="studies-grid">
+        {% for study in studies %}
+        <div class="study-card">
+            <div class="study-card-header">
+                <h3 class="study-title">{{ study.title }}</h3>
+                <span class="status-badge status-{{ study.status }}">
+                    {{ study.get_status_display }}
+                </span>
+            </div>
+            
+            {% if study.description %}
+            <p class="study-description">{{ study.description|truncatewords:20 }}</p>
+            {% endif %}
+            
+            <div class="study-stats">
+                <div class="stat-item">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <span>{{ study.responses_count }} réponses</span>
+                </div>
+                {% if study.responses_count > 0 %}
+                <div class="stat-item">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>{{ study.completion_rate }}% complétées</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="study-dates">
+                <div class="date-item">
+                    <span class="date-label">Créée le</span>
+                    <span class="date-value">{{ study.created_at|date:"d/m/Y" }}</span>
+                </div>
+                {% if study.date_start %}
+                <div class="date-item">
+                    <span class="date-label">Période</span>
+                    <span class="date-value">{{ study.date_start|date:"d/m/Y" }} - {% if study.date_end %}{{ study.date_end|date:"d/m/Y" }}{% else %}En cours{% endif %}</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="study-actions">
+                <a href="{% url 'admin-market-study-results' study.id %}" class="btn-link">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    Voir résultats
+                </a>
+                <a href="{% url 'admin-market-study-builder' study.id %}" class="btn-link">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    Éditer
+                </a>
+                <button type="button" class="btn-link" onclick="shareStudy('{{ study.share_token }}')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="18" cy="5" r="3"></circle>
+                        <circle cx="6" cy="12" r="3"></circle>
+                        <circle cx="18" cy="19" r="3"></circle>
+                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                    </svg>
+                    Partager lien
+                </button>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="empty-icon">
+                <line x1="12" y1="20" x2="12" y2="10"></line>
+                <line x1="18" y1="20" x2="18" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="16"></line>
+            </svg>
+            <h3>Aucune étude de marché</h3>
+            <p>Créez votre première étude de marché pour commencer à collecter des données.</p>
+            <a href="{% url 'admin-market-study-create' %}" class="btn-primary">
+                Créer une étude
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Styles -->
+<link rel="stylesheet" href="{% static 'core/admin/market-studies.css' %}">
+
+<!-- JavaScript -->
+<script src="{% static 'core/admin/market-studies.js' %}"></script>
+
+<script>
+    function shareStudy(token) {
+        const shareUrl = `${window.location.origin}/study/${token}/`;
+        
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            alert('Lien de partage copié dans le presse-papier !\n\n' + shareUrl);
+        }).catch(() => {
+            prompt('Copiez ce lien pour partager l\'étude:', shareUrl);
+        });
+    }
+</script>
+{% endblock %}
+

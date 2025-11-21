@@ -1,0 +1,434 @@
+/* ============================================
+   MARKET STUDY FORM - PHASE 6 STYLES
+   ============================================ */
+
+.market-study-form-page {
+    min-height: 100vh;
+    padding: 40px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.form-container {
+    max-width: 700px;
+    width: 100%;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.form-header {
+    padding: 40px;
+    text-align: center;
+    background: linear-gradient(135deg, #D3580B 0%, #c4510a 100%);
+    color: white;
+}
+
+.form-logo {
+    max-width: 120px;
+    max-height: 120px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+}
+
+.form-title {
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0 0 12px 0;
+    color: white;
+}
+
+.form-description {
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0;
+    opacity: 0.95;
+}
+
+/* ============================================
+   PROGRESS BAR
+   ============================================ */
+
+.progress-bar {
+    height: 4px;
+    background: #F3F4F6;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #D3580B;
+    transition: width 0.3s ease;
+}
+
+/* ============================================
+   FORM
+   ============================================ */
+
+#study-form {
+    padding: 40px;
+}
+
+.questions-container {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    margin-bottom: 32px;
+}
+
+.question-block {
+    padding: 24px;
+    background: #F9FAFB;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.question-block:focus-within {
+    border-color: #D3580B;
+    box-shadow: 0 0 0 3px rgba(211, 88, 11, 0.1);
+}
+
+.question-label {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 8px;
+}
+
+.required {
+    color: #EF4444;
+}
+
+.question-help {
+    font-size: 14px;
+    color: #6B7280;
+    margin: 0 0 16px 0;
+}
+
+.question-input {
+    margin-top: 16px;
+}
+
+/* ============================================
+   INPUT FIELDS
+   ============================================ */
+
+.form-input,
+.form-textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #D1D5DB;
+    border-radius: 8px;
+    font-size: 16px;
+    font-family: inherit;
+    line-height: 1.6;
+    color: #111827;
+    background: white;
+    transition: all 0.2s ease;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: #D3580B;
+    box-shadow: 0 0 0 3px rgba(211, 88, 11, 0.1);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.form-file {
+    width: 100%;
+    padding: 12px;
+    border: 2px dashed #D1D5DB;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #6B7280;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.form-file:hover {
+    border-color: #D3580B;
+    background: #F9FAFB;
+}
+
+/* ============================================
+   RADIO & CHECKBOX
+   ============================================ */
+
+.radio-group,
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.radio-label,
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: white;
+    border: 2px solid #D1D5DB;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.radio-label:hover,
+.checkbox-label:hover {
+    border-color: #D3580B;
+    background: #F9FAFB;
+}
+
+.radio-label input[type="radio"],
+.checkbox-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #D3580B;
+}
+
+.radio-label input[type="radio"]:checked + span,
+.checkbox-label input[type="checkbox"]:checked + span {
+    font-weight: 600;
+    color: #D3580B;
+}
+
+.radio-label:has(input:checked),
+.checkbox-label:has(input:checked) {
+    border-color: #D3580B;
+    background: rgba(211, 88, 11, 0.05);
+}
+
+/* ============================================
+   SCALE
+   ============================================ */
+
+.scale-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.scale-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #6B7280;
+}
+
+.scale-options {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.scale-option {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px;
+    background: white;
+    border: 2px solid #D1D5DB;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.scale-option:hover {
+    border-color: #D3580B;
+    background: #F9FAFB;
+}
+
+.scale-option input[type="radio"] {
+    display: none;
+}
+
+.scale-option span {
+    font-size: 18px;
+    font-weight: 700;
+    color: #6B7280;
+    transition: all 0.2s ease;
+}
+
+.scale-option:has(input:checked) {
+    border-color: #D3580B;
+    background: rgba(211, 88, 11, 0.05);
+}
+
+.scale-option:has(input:checked) span {
+    color: #D3580B;
+}
+
+/* ============================================
+   NPS
+   ============================================ */
+
+.nps-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.nps-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #6B7280;
+}
+
+.nps-options {
+    display: flex;
+    justify-content: space-between;
+    gap: 4px;
+}
+
+.nps-option {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 8px;
+    background: white;
+    border: 2px solid #D1D5DB;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.nps-option:hover {
+    border-color: #D3580B;
+    background: #F9FAFB;
+}
+
+.nps-option input[type="radio"] {
+    display: none;
+}
+
+.nps-option span {
+    font-size: 16px;
+    font-weight: 600;
+    color: #6B7280;
+    transition: all 0.2s ease;
+}
+
+.nps-option:has(input:checked) {
+    border-color: #D3580B;
+    background: rgba(211, 88, 11, 0.05);
+}
+
+.nps-option:has(input:checked) span {
+    color: #D3580B;
+}
+
+/* ============================================
+   ACTIONS
+   ============================================ */
+
+.form-actions {
+    display: flex;
+    justify-content: center;
+    padding-top: 24px;
+    border-top: 1px solid #E5E7EB;
+}
+
+.btn-submit {
+    padding: 14px 40px;
+    background: #D3580B;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-submit:hover {
+    background: #c4510a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(211, 88, 11, 0.3);
+}
+
+.btn-submit:active {
+    transform: translateY(0);
+}
+
+/* ============================================
+   SUCCESS MESSAGE
+   ============================================ */
+
+.success-message {
+    padding: 60px 40px;
+    text-align: center;
+}
+
+.success-icon {
+    color: #10B981;
+    margin-bottom: 24px;
+}
+
+.success-message h2 {
+    font-size: 32px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 16px 0;
+}
+
+.success-message p {
+    font-size: 18px;
+    color: #6B7280;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    .market-study-form-page {
+        padding: 20px 12px;
+    }
+
+    .form-header {
+        padding: 32px 24px;
+    }
+
+    .form-title {
+        font-size: 24px;
+    }
+
+    #study-form {
+        padding: 24px;
+    }
+
+    .question-block {
+        padding: 20px;
+    }
+
+    .scale-options,
+    .nps-options {
+        flex-wrap: wrap;
+    }
+
+    .scale-option,
+    .nps-option {
+        min-width: 50px;
+    }
+}
+
